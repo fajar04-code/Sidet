@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>SiDEt Siswa v2 — LOGIN FINAL V5</title>
+<title>SiDEt Siswa v2 — NO FETCH FINAL V6</title>
 <script>
 const ATTENDANCE_LOCATIONS = [
   { lat: 4.048999, lng: 117.726480, name: "Titik 1" },
@@ -146,7 +146,7 @@ function isInsideAttendanceArea_(lat, lng) {
     <button class="btn primary" style="width:100%" onclick="login()">Masuk</button>
     <div id="loginMsg" class="alert hidden"></div>
     <div id="loginConnectionHint" class="muted" style="margin-top:10px;text-align:center;font-size:11px">
-      Koneksi server: <b style="color:#16834b">Google Apps Script aktif</b> · <span>LOGIN FINAL V5</span>
+      Koneksi server: <b style="color:#16834b">Google Apps Script aktif</b> · <span>NO FETCH V6</span>
     </div>
     <p class="muted" style="margin-top:16px">Terhubung otomatis ke Google Apps Script. Presensi dapat dilakukan di mana pun; GPS tetap dicatat untuk laporan jarak.</p>
   </div>
@@ -268,69 +268,69 @@ function setRole(r){state.role=r;$('rPeg').classList.toggle('active',r==='siswa'
 function toast(t,ok=false){$('toast').textContent=t;$('toast').classList.remove('hidden');setTimeout(()=>$('toast').classList.add('hidden'),3000)}
 function saveApi(v){const u=v.trim();state.api=/^https:\/\//i.test(u)?u:DEFAULT_API_URL;localStorage.setItem('sidet_api',state.api)}
 function apiReady(){return /^https:\/\//i.test(state.api)}
-async function api(action,payload={}){
-  if(!apiReady()) throw Error('URL Google Apps Script belum dikonfigurasi.');
+function api(action,payload={}){
+  return new Promise((resolve,reject)=>{
+    const requestId='sidet_api_'+Date.now()+'_'+Math.random().toString(36).slice(2);
+    let frame=document.getElementById('sidetApiFrame');
 
-  const body=JSON.stringify({action,...payload});
-  const controller=new AbortController();
-  const timer=setTimeout(()=>controller.abort(),30000);
+    if(!frame){
+      frame=document.createElement('iframe');
+      frame.id='sidetApiFrame';
+      frame.name='sidetApiFrame';
+      frame.style.display='none';
+      frame.setAttribute('aria-hidden','true');
+      document.body.appendChild(frame);
+    }
 
-  try{
-    /*
-      FIX LOGIN GOOGLE APPS SCRIPT
-      - text/plain mencegah preflight OPTIONS
-      - redirect:'follow' penting karena ContentService dapat mengalihkan
-        respons dari script.google.com ke script.googleusercontent.com
-      - credentials:'omit' mencegah masalah cookie lintas situs
-      - cache:'no-store' memastikan login membaca data terbaru
-    */
-    const r=await fetch(state.api,{
-      method:'POST',
-      mode:'cors',
-      credentials:'omit',
-      redirect:'follow',
-      cache:'no-store',
-      headers:{
-        'Content-Type':'text/plain;charset=utf-8',
-        'Accept':'application/json,text/plain,*/*'
-      },
-      body,
-      signal:controller.signal
+    const timeout=setTimeout(()=>{
+      cleanup();
+      reject(Error('Server tidak mengirim respons dalam 30 detik. Silakan coba lagi.'));
+    },30000);
+
+    function cleanup(){
+      clearTimeout(timeout);
+      window.removeEventListener('message',onMessage);
+      if(form && form.parentNode)form.parentNode.removeChild(form);
+    }
+
+    function onMessage(ev){
+      const d=ev.data;
+      if(!d || d.type!=='SIDET_API_RESULT' || d.requestId!==requestId)return;
+      cleanup();
+      if(d.ok) resolve(d);
+      else reject(Error(d.message||'Permintaan ke server gagal.'));
+    }
+
+    window.addEventListener('message',onMessage);
+
+    const form=document.createElement('form');
+    form.method='POST';
+    form.action=state.api;
+    form.target='sidetApiFrame';
+    form.style.display='none';
+
+    const add=(name,value)=>{
+      const input=document.createElement('input');
+      input.type='hidden';
+      input.name=name;
+      input.value=String(value??'');
+      form.appendChild(input);
+    };
+
+    add('transport','iframe_api');
+    add('action',action);
+    add('requestId',requestId);
+
+    Object.keys(payload||{}).forEach(key=>{
+      const value=payload[key];
+      if(value!==undefined && value!==null){
+        add(key, typeof value==='object' ? JSON.stringify(value) : value);
+      }
     });
 
-    const raw=await r.text();
-
-    if(!r.ok){
-      throw Error('Server Google Apps Script HTTP '+r.status);
-    }
-
-    let j;
-    try{
-      j=JSON.parse(raw);
-    }catch(_){
-      const preview=String(raw||'').replace(/\s+/g,' ').slice(0,180);
-      throw Error('Respons server bukan JSON. Respons: '+(preview||'kosong'));
-    }
-
-    if(!j || j.ok!==true){
-      throw Error(j?.message || 'Permintaan ke server gagal.');
-    }
-
-    return j;
-  }catch(e){
-    if(e?.name==='AbortError'){
-      throw Error('Koneksi ke server terlalu lama (timeout 30 detik). Periksa internet lalu coba lagi.');
-    }
-
-    const msg=String(e?.message||e||'');
-    if(/networkerror|load failed/i.test(msg)){
-      throw Error('Komunikasi server gagal. Silakan periksa koneksi internet.');
-    }
-
-    throw e;
-  }finally{
-    clearTimeout(timer);
-  }
+    document.body.appendChild(form);
+    form.submit();
+  });
 }
 
 function loginViaForm_(username,password){
