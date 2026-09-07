@@ -101,6 +101,11 @@ table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:10px 8px;
 .gps-live-note{margin-top:8px;font-size:11px;color:#66788a;line-height:1.5}
 
 </style>
+<style>
+#empHistory td:nth-child(2),#empHistory td:nth-child(3){white-space:nowrap}
+#empHistory .badge{display:inline-flex;align-items:center;justify-content:center;white-space:nowrap}
+</style>
+
 </head>
 
 <script>
@@ -189,7 +194,7 @@ function isInsideAttendanceArea_(lat, lng) {
 
       <div class="card">
         <div class="card-title"><div><div class="section-label">Aktivitas Saya</div><h3 style="margin:0">Riwayat Presensi</h3><div class="muted" style="font-size:11px;margin-top:4px">Menampilkan hingga 30 presensi terakhir Anda</div></div><button class="btn" onclick="loadData()">↻ Muat ulang</button></div>
-        <div class="tablewrap"><table><thead><tr><th>Tanggal</th><th>Jam</th><th>Jenis</th><th>Status</th><th>Jarak</th></tr></thead><tbody id="empHistory"></tbody></table></div>
+        <div class="tablewrap"><table><thead><tr><th>Tanggal</th><th>Jam Datang</th><th>Jam Pulang</th><th>Status</th></tr></thead><tbody id="empHistory"></tbody></table></div>
       </div>
     </div>
 
@@ -1474,12 +1479,12 @@ async function loadData(){
  if(state.user?.role==='siswa')renderEmpHistory();else renderAdminDashboard()
 }
 function renderEmpHistory(){
- const rows=(state.data.attendance||[]).filter(x=>String(x.userId??x.UserID??'')===String(state.user?.id??'')||String(x.nisn??x.NISN??'')===String(state.user?.nisn??'')).slice(-30).reverse();
+ const all=(state.data.attendance||[]).filter(x=>String(x.userId??x.UserID??'')===String(state.user?.id??'')||String(x.nisn??x.NISN??''));
  const today=new Date().toISOString().slice(0,10);
- const todayRows=(state.data.attendance||[]).filter(x=>(String(x.userId??x.UserID??'')===String(state.user?.id??'')||String(x.nisn??x.NISN??'')===String(state.user?.nisn??''))&&(x.tanggal||String(x.timestamp||'').slice(0,10))===today);
+ const todayRows=all.filter(x=>(x.tanggal||String(x.timestamp||'').slice(0,10))===today);
  const masuk=todayRows.find(x=>(x.type||x.jenis)==='MASUK'), pulang=todayRows.find(x=>(x.type||x.jenis)==='PULANG');
- $('masukTime').textContent=masuk?(masuk.jam||new Date(masuk.timestamp).toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'})):'—';
- $('pulangTime').textContent=pulang?(pulang.jam||new Date(pulang.timestamp).toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'})):'—';
+ $('masukTime').textContent=masuk?(masuk.jam||'-'):'—';
+ $('pulangTime').textContent=pulang?(pulang.jam||'-'):'—';
  $('masukSub').textContent=masuk?'Presensi masuk tercatat':'Belum melakukan presensi masuk';
  $('pulangSub').textContent=pulang?'Presensi pulang tercatat':'Belum melakukan presensi pulang';
  $('masukBadge').textContent=masuk?'✓ Tercatat':'Belum';$('masukBadge').className='badge '+(masuk?'ok':'warn');
@@ -1489,7 +1494,41 @@ function renderEmpHistory(){
  $('btnMasuk').classList.toggle('disabled',!!masuk);$('btnPulang').classList.toggle('disabled',!!pulang);
  $('empNotice').textContent=masuk&&pulang?'Presensi hari ini sudah lengkap. Terima kasih.':masuk?'Presensi masuk sudah tercatat. Jangan lupa presensi pulang.':'Kamera dapat digunakan di mana pun. GPS dicatat untuk membedakan lokasi dekat dan jauh.';
  $('empNotice').className='alert '+(masuk&&pulang?'ok':'');
- $('empHistory').innerHTML=rows.map(x=>`<tr><td>${x.tanggal||'-'}</td><td>${x.jam||'-'}</td><td><span class="badge info">${x.type||x.jenis||'-'}</span></td><td><span class="badge ${x.status==='VALID'||x.status==='HADIR'?'ok':'warn'}">${x.status||'VALID'}</span></td><td>${x.jarak!=null?Math.round(Number(x.jarak))+' m':'-'}</td></tr>`).join('')||'<tr><td colspan="5" class="empty-history">Belum ada riwayat presensi.</td></tr>';
+
+ // Gabungkan presensi MASUK dan PULANG berdasarkan tanggal.
+ const byDate={};
+ all.forEach(x=>{
+   const tanggal=x.tanggal||String(x.timestamp||'').slice(0,10)||'-';
+   if(!byDate[tanggal]) byDate[tanggal]={tanggal,masuk:null,pulang:null};
+   const jenis=String(x.type||x.jenis||'').toUpperCase();
+   if(jenis==='MASUK' && !byDate[tanggal].masuk) byDate[tanggal].masuk=x;
+   if(jenis==='PULANG' && !byDate[tanggal].pulang) byDate[tanggal].pulang=x;
+ });
+
+ const rows=Object.values(byDate)
+   .sort((a,b)=>String(b.tanggal).localeCompare(String(a.tanggal)))
+   .slice(0,30);
+
+ const jam=x=>x?(x.jam||'-'):'—';
+ const statusRow=r=>{
+   if(r.masuk && r.pulang){
+     const mOk=r.masuk.status==='VALID'||r.masuk.status==='HADIR'||!r.masuk.status;
+     const pOk=r.pulang.status==='VALID'||r.pulang.status==='HADIR'||!r.pulang.status;
+     return mOk&&pOk
+       ? '<span class="badge ok">✓ Lengkap</span>'
+       : '<span class="badge warn">Periksa</span>';
+   }
+   if(r.masuk) return '<span class="badge info">Masuk tercatat</span>';
+   if(r.pulang) return '<span class="badge warn">Pulang saja</span>';
+   return '<span class="badge warn">Belum lengkap</span>';
+ };
+
+ $('empHistory').innerHTML=rows.map(r=>`<tr>
+   <td><b>${r.tanggal}</b></td>
+   <td>${r.masuk?`<span class="badge info">🕐 ${jam(r.masuk)}</span>`:'—'}</td>
+   <td>${r.pulang?`<span class="badge ok">🕐 ${jam(r.pulang)}</span>`:'—'}</td>
+   <td>${statusRow(r)}</td>
+ </tr>`).join('')||'<tr><td colspan="4" class="empty-history">Belum ada riwayat presensi.</td></tr>';
 }
 
 function renderAdminDashboard(){
