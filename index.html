@@ -332,11 +332,19 @@ const INITIAL_STUDENTS=Object.entries(initialSchoolData).flatMap(([kelas,arr])=>
 const DEFAULT_API_URL='https://script.google.com/macros/s/AKfycbw3QH8q6W3HrkK9O4XUK91c7Q8y1iBnIn3AGwq8vGmhlqWrpUKy8bIZggxMR18xdrg1/exec';
 // Endpoint final dikunci ke Web App yang diberikan pengguna.
 const API_URL=DEFAULT_API_URL;
-const state={role:'siswa',user:null,api:API_URL,data:{attendance:[],users:INITIAL_STUDENTS,leave:[],settings:{}}};
+const savedApi=(()=>{try{return localStorage.getItem('sidet_api')||''}catch(e){return ''}})();
+const initialApi=/^https:\/\//i.test(savedApi)?savedApi:DEFAULT_API_URL;
+const state={role:'siswa',user:null,api:initialApi,data:{attendance:[],users:INITIAL_STUDENTS,leave:[],settings:{}}};
 const $=id=>document.getElementById(id);
 function setRole(r){state.role=r;$('rPeg').classList.toggle('active',r==='siswa');$('rAdm').classList.toggle('active',r==='admin')}
 function toast(t,ok=false){$('toast').textContent=t;$('toast').classList.remove('hidden');setTimeout(()=>$('toast').classList.add('hidden'),3000)}
-function saveApi(v){state.api=DEFAULT_API_URL;localStorage.setItem('sidet_api',DEFAULT_API_URL);}
+function saveApi(v){
+ const url=String(v||'').trim();
+ if(!/^https:\/\//i.test(url)) throw Error('URL Web App tidak valid.');
+ state.api=url;
+ try{localStorage.setItem('sidet_api',url)}catch(e){}
+ return url;
+}
 function apiReady(){return /^https:\/\//i.test(state.api)}
 function apiViaIframe_(action,payload={}){
   return new Promise((resolve,reject)=>{
@@ -1315,7 +1323,7 @@ async function compressCanvasMax100KB(canvas){
  const TARGET_MAX=99*1024;
  const ctx=canvas.getContext('2d',{alpha:false});
  let width=canvas.width,height=canvas.height;
- const MAX_DIM=1920;
+ const MAX_DIM=1600;
  if(width>MAX_DIM||height>MAX_DIM){
    const scale=Math.min(MAX_DIM/width,MAX_DIM/height);
    width=Math.max(1,Math.round(width*scale));height=Math.max(1,Math.round(height*scale));
@@ -1352,6 +1360,19 @@ async function compressCanvasMax100KB(canvas){
  if(!blob || blob.size>MAX_BYTES)throw new Error('Foto terlalu besar. Silakan ambil foto kembali.');
  const dataUrl=await new Promise((resolve,reject)=>{const r=new FileReader();r.onload=()=>resolve(r.result);r.onerror=reject;r.readAsDataURL(blob);});
  return {blob,dataUrl,size:blob.size,sizeKB:Math.ceil(blob.size/1024)};
+}
+
+function submitGoogleFormAsync_(link){
+  const url=String(link||'').trim();
+  if(!url) return;
+  try{
+    const img=new Image();
+    img.style.display='none';
+    img.referrerPolicy='no-referrer';
+    img.src=url+(url.includes('?')?'&':'?')+'_sidet='+Date.now();
+    document.body.appendChild(img);
+    setTimeout(()=>{try{img.remove()}catch(e){}},8000);
+  }catch(e){}
 }
 
 async function captureAttendance(type){
@@ -1408,6 +1429,9 @@ async function captureAttendance(type){
   if(apiReady()){
     $('attInfo').textContent='Mengirim presensi dan foto '+compressed.sizeKB+' KB ke server…';
     const result=await api('attendance',record);
+    // Google Form dikirim dari browser secara asynchronous agar proses presensi
+    // tidak menunggu UrlFetchApp/Google Forms di server. Link tetap tersimpan di PRESENSI.
+    submitGoogleFormAsync_(record.link);
     const msg=result?.record?.photoUrl?'Presensi '+type+' berhasil. Foto '+compressed.sizeKB+' KB tersimpan di Drive.':'Presensi '+type+' berhasil.';
     toast(msg,true);
   }else{
@@ -1500,14 +1524,14 @@ function adminTab(tab){
  if(tab==='users') c.innerHTML=`<div class="card"><div class="hero"><h3>Kelola Siswa</h3><button class="btn primary" onclick="userForm()">+ Tambah</button></div><div class="tablewrap"><table><thead><tr><th>NISN</th><th>Nama</th><th>Sekolah</th><th>Kelas</th><th>Status</th></tr></thead><tbody>${(state.data.users||[]).map(u=>`<tr><td>${u.nisn||u.id}</td><td>${u.name}</td><td>${u.sekolah||'-'}</td><td>${u.kelas||'-'}</td><td>${u.active===false?'Nonaktif':'Aktif'}</td></tr>`).join('')||'<tr><td colspan="5">Belum ada data.</td></tr>'}</tbody></table></div></div>`;
  if(tab==='attendance') c.innerHTML=`<div class="card"><div class="hero"><h3>Data Presensi</h3><button class="btn ok" onclick="exportExcel()">Ekspor</button></div><div class="tablewrap"><table><thead><tr><th>Tanggal</th><th>NISN</th><th>Nama</th><th>Jenis</th><th>Jam</th><th>Status</th><th>Jarak</th></tr></thead><tbody>${(state.data.attendance||[]).slice().reverse().map(x=>`<tr><td>${x.tanggal||'-'}</td><td>${x.nip||'-'}</td><td>${x.name||'-'}</td><td>${x.type||x.jenis||'-'}</td><td>${x.jam||'-'}</td><td><span class="badge ok">${x.status||'VALID'}</span></td><td>${x.jarak?Math.round(x.jarak)+' m':'-'}</td></tr>`).join('')||'<tr><td colspan="7">Belum ada data.</td></tr>'}</tbody></table></div></div>`;
  if(tab==='leave') c.innerHTML=`<div class="card"><h3>Persetujuan Izin</h3><div class="tablewrap"><table><thead><tr><th>Nama</th><th>Jenis</th><th>Tanggal</th><th>Alasan</th><th>Status</th><th>Aksi</th></tr></thead><tbody>${(state.data.leave||[]).map(x=>`<tr><td>${x.name||x.nip}</td><td>${x.type}</td><td>${x.tanggalMulai||''} s/d ${x.tanggalSelesai||''}</td><td>${x.alasan||'-'}</td><td>${x.status}</td><td>${x.status==='MENUNGGU'?`<button class="btn ok" onclick="approveLeave('${x.id}','DISETUJUI')">Setujui</button> <button class="btn danger" onclick="approveLeave('${x.id}','DITOLAK')">Tolak</button>`:'-'}</td></tr>`).join('')||'<tr><td colspan="6">Belum ada pengajuan.</td></tr>'}</tbody></table></div></div>`;
- if(tab==='settings') c.innerHTML=`<div class="card"><h3>Pengaturan Sistem</h3><div class="field"><label>URL Google Apps Script Web App</label><input id="apiInput" value="${DEFAULT_API_URL}" readonly></div><div class="grid two"><div class="field"><label>Radius Geofence (meter)</label><input id="radius" type="number" min="10" value="${state.data.settings?.radius||100}"></div><div class="field"><label>Jam Masuk</label><input id="jamMasuk" type="time" value="${state.data.settings?.jamMasuk||'07:30'}"></div></div><div class="actions"><button class="btn primary" onclick="saveSettings()">Simpan Pengaturan</button><button class="btn" onclick="testApi()">Tes Koneksi</button><button class="btn warn" onclick="setCenter()">Ambil Titik Geofence dari GPS</button></div><div id="setMsg" class="alert">Endpoint Web App sudah dikunci ke server SiDEt.</div></div>`;
+ if(tab==='settings') c.innerHTML=`<div class="card"><h3>Pengaturan Sistem</h3><div class="field"><label>URL Google Apps Script Web App</label><input id="apiInput" value="${state.api}" placeholder="https://script.google.com/macros/s/.../exec"></div><div class="grid two"><div class="field"><label>Radius Geofence (meter)</label><input id="radius" type="number" min="10" value="${state.data.settings?.radius||100}"></div><div class="field"><label>Jam Masuk</label><input id="jamMasuk" type="time" value="${state.data.settings?.jamMasuk||'07:30'}"></div></div><div class="actions"><button class="btn primary" onclick="saveSettings()">Simpan Pengaturan</button><button class="btn" onclick="testApi()">Tes Koneksi</button><button class="btn warn" onclick="setCenter()">Ambil Titik Geofence dari GPS</button></div><div id="setMsg" class="alert">URL Web App dapat diubah di sini. Gunakan URL deployment /exec yang aktif.</div></div>`;
 }
 function userForm(){
  $('modal').classList.remove('hidden');$('modalBox').innerHTML=`<h3>Tambah Siswa</h3><div class="field"><label>NISN / Username</label><input id="uNisn"></div><div class="field"><label>Nama Lengkap</label><input id="uName"></div><div class="grid two"><div class="field"><label>Sekolah</label><input id="uSekolah" value="Sekolah"></div><div class="field"><label>Kelas</label><input id="uKelas" value="Siswa"></div></div><div class="field"><label>Password</label><input id="uPass" value="123456"></div><div class="actions"><button class="btn" onclick="closeModal()">Batal</button><button class="btn primary" onclick="addUser()">Simpan</button></div>`
 }
 async function addUser(){const u={nip:$('uNisn').value.trim(),name:$('uName').value.trim(),sekolah:$('uSekolah').value,kelas:$('uKelas').value,password:$('uPass').value};if(!u.nisn||!u.name)return toast('NISN dan nama wajib diisi');try{if(apiReady())await api('userSave',u);else{state.data.users.push({...u,id:u.nisn});}closeModal();toast('Siswa disimpan',true);loadData()}catch(e){toast(e.message)}}
 async function approveLeave(id,status){try{await api('leaveApprove',{id,status,adminId:state.user.id});toast('Status izin diperbarui',true);loadData();adminTab('leave')}catch(e){toast(e.message)}}
-function saveSettings(){saveApi($('apiInput').value);state.data.settings.radius=Number($('radius').value||100);state.data.settings.jamMasuk=$('jamMasuk').value||'07:30';localStorage.setItem('sidet_settings',JSON.stringify(state.data.settings));toast('Pengaturan tersimpan',true)}
+function saveSettings(){try{saveApi($('apiInput').value);state.data.settings.radius=Number($('radius').value||100);state.data.settings.jamMasuk=$('jamMasuk').value||'07:30';localStorage.setItem('sidet_settings',JSON.stringify(state.data.settings));toast('URL Web App dan pengaturan tersimpan',true)}catch(e){toast(e.message)}}
 async function testApi(){try{const j=await api('ping');$('setMsg').textContent='Koneksi berhasil: '+(j.message||'OK');$('setMsg').className='alert ok'}catch(e){$('setMsg').textContent=e.message;$('setMsg').className='alert bad'}}
 function setCenter(){if(!navigator.geolocation)return toast('GPS tidak tersedia');navigator.geolocation.getCurrentPosition(async p=>{try{await api('setGeofence',{lat:p.coords.latitude,lng:p.coords.longitude,radius:Number($('radius').value||100),adminId:state.user.id});toast('Titik geofence tersimpan',true)}catch(e){toast(e.message)}},e=>toast(e.message),{enableHighAccuracy:true,timeout:15000})}
 
