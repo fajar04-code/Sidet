@@ -789,7 +789,7 @@ function renderStudentProfile(){
  $('profileAvatar').textContent=name.trim().split(/\s+/).slice(0,2).map(x=>x[0]).join('').toUpperCase();
 }
 const GEOFENCE_DEFAULT={...ATTENDANCE_LOCATIONS[0],radius:GPS_RADIUS_METERS};
-const GPS_MAX_ACCURACY=100;
+const GPS_MAX_ACCURACY=50;
 let gpsWatchId=null;
 let gpsCountdownTimer=null;
 let gpsCountdownEndsAt=0;
@@ -1260,7 +1260,7 @@ function retryGPS(){
 function validateGPS_(coords){
  if(!coords||!Number.isFinite(Number(coords.latitude))||!Number.isFinite(Number(coords.longitude)))throw Error('Koordinat GPS tidak valid.');
  if(!Number.isFinite(Number(coords.accuracy)))throw Error('Akurasi GPS tidak tersedia.');
- if(Number(coords.accuracy)>50)throw Error('Kualitas GPS buruk (±'+Math.round(coords.accuracy)+' m). Tunggu hingga akurasi ≤50 m.');
+ if(Number(coords.accuracy)>GPS_MAX_ACCURACY)throw Error('Kualitas GPS buruk (±'+Math.round(coords.accuracy)+' m). Tunggu hingga akurasi ≤'+GPS_MAX_ACCURACY+' m.');
  const nearest=getNearestAttendanceLocation_(Number(coords.latitude),Number(coords.longitude));
  const distance=nearest?Number(nearest.distance):Infinity;
  return {
