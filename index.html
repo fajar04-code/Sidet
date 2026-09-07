@@ -292,110 +292,212 @@ async function login(){
 
 function showLocationPermissionPrompt_(){
   const modal=$('locationPermissionModal');
-  if(!modal)return getGPS();
+  if(!modal){
+    getGPS();
+    return;
+  }
+
   modal.classList.remove('hidden');
+
   const hint=$('locationPermissionHint');
   const text=$('locationPermissionText');
   const btn=$('allowLocationBtn');
 
-  // Jika browser mendukung Permissions API, beri status yang lebih jelas.
+  const applyState=(state)=>{
+    if(state==='granted'){
+      if(text)text.textContent='Izin lokasi Chrome sudah aktif. Tekan tombol untuk membaca GPS perangkat.';
+      if(btn)btn.textContent='📍 Mulai Baca GPS';
+      if(hint){
+        hint.innerHTML='Izin situs sudah aktif. Setelah tombol ditekan, SiDEt akan mengambil koordinat GPS Android secara langsung.';
+        hint.style.background='#edf9f2';
+        hint.style.color='#16653c';
+      }
+    }else if(state==='denied'){
+      if(text)text.textContent='Izin lokasi untuk situs ini DITOLAK.';
+      if(btn)btn.textContent='🔄 Coba Lagi';
+      if(hint){
+        hint.innerHTML='Buka <b>Chrome → ikon pengaturan situs → Izin → Lokasi → Izinkan</b>. Pastikan Lokasi HP juga aktif, lalu kembali ke SiDEt.';
+        hint.style.background='#fff4e5';
+        hint.style.color='#7a4b00';
+      }
+    }else{
+      if(text)text.textContent='SiDEt siap meminta izin lokasi perangkat.';
+      if(btn)btn.textContent='📍 Izinkan Lokasi Perangkat';
+      if(hint){
+        hint.innerHTML='Tekan tombol di bawah. Jika Chrome meminta lokasi, pilih <b>Izinkan</b>.';
+        hint.style.background='';
+        hint.style.color='';
+      }
+    }
+  };
+
   try{
     if(navigator.permissions && navigator.permissions.query){
       navigator.permissions.query({name:'geolocation'}).then(p=>{
-        if(p.state==='granted'){
-          if(text)text.textContent='Izin lokasi sudah aktif. Tekan tombol di bawah untuk mulai membaca GPS perangkat.';
-          if(btn)btn.textContent='📍 Mulai Baca Lokasi';
-          if(hint){hint.textContent='Izin sudah diberikan. SiDEt akan langsung memeriksa akurasi dan radius setelah tombol ditekan.';hint.style.background='#edf9f2';hint.style.color='#16653c';}
-        }else if(p.state==='denied'){
-          if(text)text.textContent='Izin lokasi saat ini ditolak oleh browser/perangkat. Anda perlu mengaktifkan kembali izin Lokasi untuk situs ini.';
-          if(btn)btn.textContent='🔄 Coba Periksa Izin Lagi';
-          if(hint){hint.innerHTML='Jika browser tidak menampilkan pop-up, buka <b>Pengaturan Situs → Lokasi → Izinkan</b>, lalu kembali ke halaman ini dan tekan tombol lagi.';}
-        }
-      }).catch(()=>{});
+        applyState(p.state);
+        p.onchange=()=>applyState(p.state);
+      }).catch(()=>applyState('prompt'));
+    }else{
+      applyState('prompt');
     }
-  }catch(e){}
+  }catch(e){
+    applyState('prompt');
+  }
 }
 
 function closeLocationPermission(){
   const modal=$('locationPermissionModal');
   if(modal)modal.classList.add('hidden');
   updateAttendanceButtons_(false);
-  setGPSVisual_('permission','Izin lokasi diperlukan','Aktifkan izin lokasi perangkat untuk menggunakan presensi. Tekan tombol <b>Izinkan Lokasi Perangkat</b> untuk meminta izin kembali.');
-  if($('gpsStatus')){$('gpsStatus').textContent='Menunggu izin lokasi';$('gpsStatus').className='badge warn'}
+  setGPSVisual_(
+    'permission',
+    'Izin lokasi diperlukan',
+    'Aktifkan lokasi perangkat untuk menggunakan presensi.'
+  );
+  if($('gpsStatus')){
+    $('gpsStatus').textContent='Menunggu izin lokasi';
+    $('gpsStatus').className='badge warn';
+  }
 }
 
 function requestLocationPermission(){
   const btn=$('allowLocationBtn');
-
   if(btn){
     btn.disabled=true;
-    btn.textContent='⏳ Mengaktifkan GPS perangkat…';
+    btn.textContent='⏳ Membaca GPS Android…';
   }
 
   const modal=$('locationPermissionModal');
   if(modal)modal.classList.add('hidden');
 
-  // Penting: panggilan GPS dilakukan langsung dari klik tombol pengguna.
-  // Ini memberi Android/Chrome kesempatan menampilkan native permission prompt.
   clearGPSWatch_();
+  stopGPSCountdown_();
   state.gps=null;
   updateAttendanceButtons_(false);
 
-  if(!gpsBrowserReady_()){
-    if(btn){
-      btn.disabled=false;
-      btn.textContent='📍 Izinkan Lokasi Perangkat';
-    }
+  if(!navigator.geolocation){
+    showGPSDiagnostic_('NO_GEOLOCATION','Browser ini tidak menyediakan GPS.');
+    if(btn){btn.disabled=false;btn.textContent='📍 Izinkan Lokasi Perangkat';}
     return;
   }
 
   setGPSVisual_(
-    'permission',
-    'Meminta izin lokasi perangkat…',
-    'Jika Android menampilkan permintaan izin, pilih <b>Izinkan / Allow</b>. Setelah itu SiDEt akan membaca GPS secara otomatis.'
+    'search',
+    'Membaca GPS perangkat…',
+    'Chrome sedang meminta koordinat dari Android. Jangan menutup halaman.'
   );
 
   if($('gpsStatus')){
-    $('gpsStatus').textContent='Meminta izin lokasi…';
+    $('gpsStatus').textContent='Meminta koordinat Android…';
     $('gpsStatus').className='badge warn';
   }
 
-  addGPSCountdown_(30);
+  addGPSCountdown_(45);
 
-  // Gunakan mesin GPS yang sudah diperbaiki.
-  getCurrentPositionBestEffort_(
+  // Satu panggilan langsung dari klik pengguna.
+  navigator.geolocation.getCurrentPosition(
     pos=>{
       stopGPSCountdown_();
+
+      if(!pos || !pos.coords){
+        showGPSDiagnostic_('EMPTY_POSITION','Android tidak mengirim data koordinat.');
+        if(btn){btn.disabled=false;btn.textContent='📍 Coba GPS Lagi';}
+        return;
+      }
+
       updateGPSUI_(pos.coords);
       startGPSWatch_();
 
       if(btn){
         btn.disabled=false;
-        btn.textContent='📍 Lokasi Aktif';
+        btn.textContent='📍 GPS Aktif';
       }
     },
     err=>{
       stopGPSCountdown_();
 
-      if(err && err.code===1){
-        // Izin benar-benar ditolak. Tampilkan kembali modal dengan
-        // petunjuk mengaktifkan izin situs dari Chrome.
+      const code=err && Number(err.code);
+      if(code===1){
+        showGPSDiagnostic_(
+          'PERMISSION_DENIED',
+          'Akses lokasi ditolak. Periksa izin lokasi untuk ajar04-code.github.io di Chrome dan pastikan Lokasi HP aktif.'
+        );
         showLocationPermissionPrompt_();
+      }else if(code===2){
+        showGPSDiagnostic_(
+          'POSITION_UNAVAILABLE',
+          'Android tidak dapat menentukan posisi. Aktifkan Lokasi + Akurasi Lokasi Google, lalu coba lagi di area terbuka.'
+        );
+      }else if(code===3){
+        showGPSDiagnostic_(
+          'TIMEOUT',
+          'GPS belum mendapatkan koordinat dalam 45 detik. Aktifkan Lokasi HP, keluar ke area terbuka, lalu tekan Coba GPS Lagi.'
+        );
       }else{
-        // Timeout/position unavailable tidak dianggap sebagai penolakan izin.
-        startGPSWatch_();
-        showGPSRetryState_(
-          gpsErrorMessage_(err)+' Sistem tetap mencoba memperoleh lokasi perangkat.'
+        showGPSDiagnostic_(
+          'GPS_ERROR',
+          'GPS gagal dibaca: '+((err&&err.message)||'kesalahan tidak diketahui')+'.'
         );
       }
 
       if(btn){
         btn.disabled=false;
-        btn.textContent='📍 Coba Aktifkan Lokasi Lagi';
+        btn.textContent='🔄 Coba GPS Lagi';
       }
+    },
+    {
+      enableHighAccuracy:true,
+      timeout:45000,
+      maximumAge:0
     }
   );
 }
+
+function showGPSDiagnostic_(code,message){
+  console.warn('[SiDEt GPS]',code,message);
+
+  if($('gpsStatus')){
+    $('gpsStatus').textContent='GPS: '+code;
+    $('gpsStatus').className='badge bad';
+  }
+
+  setGPSVisual_(
+    'waiting',
+    'GPS belum berhasil diperoleh',
+    '<b>'+code+'</b><br>'+message
+  );
+
+  const reason=$('btnMasukReason');
+  if(reason){
+    reason.className='presensi-lock-reason';
+    reason.textContent='🔒 '+message;
+  }
+}
+
+function resumeGPSAfterReturn_(){
+  if(!state.user || state.user.role!=='siswa')return;
+  if(document.visibilityState!=='visible')return;
+  if(state.gps)return;
+
+  // Hanya mengecek status izin. Tidak memulai request GPS secara otomatis
+  // agar Android tetap menganggap pembacaan berasal dari tindakan pengguna.
+  try{
+    if(navigator.permissions && navigator.permissions.query){
+      navigator.permissions.query({name:'geolocation'}).then(p=>{
+        if(p.state==='granted'){
+          showGPSDiagnostic_(
+            'READY',
+            'Izin lokasi sudah aktif. Tekan tombol Coba GPS Lagi untuk membaca posisi perangkat.'
+          );
+        }
+      }).catch(()=>{});
+    }
+  }catch(e){}
+}
+
+document.addEventListener('visibilitychange',resumeGPSAfterReturn_);
+window.addEventListener('focus',resumeGPSAfterReturn_);
+
 
 function showLogin(t,bad=false){$('loginMsg').textContent=t;$('loginMsg').className='alert '+(bad?'bad':'ok')}
 function resumeGPSAfterReturn_(){
@@ -641,26 +743,36 @@ function beginGPSAcquisition_(){
 }
 
 function getGPS(){
-  clearGPSWatch_();
-  state.gps=null;
-  updateAttendanceButtons_(false);
-
-  if(!gpsBrowserReady_())return;
-
-  setGPSVisual_(
-    'permission',
-    'Meminta izin lokasi…',
-    'Silakan izinkan akses lokasi untuk SiDEt. Setelah izin diberikan, sistem langsung membaca GPS perangkat.'
-  );
-  addGPSCountdown_(20);
-
-  if($('gpsStatus')){
-    $('gpsStatus').textContent='Meminta izin lokasi…';
-    $('gpsStatus').className='badge warn';
+  if(!navigator.geolocation){
+    showGPSDiagnostic_('NO_GEOLOCATION','Browser tidak mendukung geolocation.');
+    return;
   }
 
-  // Dipanggil dari tindakan pengguna atau alur izin yang sudah diberikan.
-  getCurrentPositionBestEffort_(
+  const btn=$('gpsRetryBtn');
+  if(btn){
+    btn.disabled=false;
+    btn.textContent='🔄 Coba GPS Lagi';
+  }
+
+  state.gps=null;
+  clearGPSWatch_();
+  stopGPSCountdown_();
+  updateAttendanceButtons_(false);
+
+  setGpsMetric_('gpsAccuracyValue','—','warn');
+  setGpsMetric_('gpsQualityValue','MENUNGGU','warn');
+  setGpsMetric_('gpsDistanceValue','—','warn');
+  setGpsMetric_('gpsRadiusValue','MENUNGGU','warn');
+
+  setGPSVisual_(
+    'search',
+    'Membaca GPS perangkat…',
+    'Tekan tombol Coba GPS Lagi jika koordinat belum muncul.'
+  );
+
+  addGPSCountdown_(45);
+
+  navigator.geolocation.getCurrentPosition(
     pos=>{
       stopGPSCountdown_();
       updateGPSUI_(pos.coords);
@@ -668,109 +780,74 @@ function getGPS(){
     },
     err=>{
       stopGPSCountdown_();
-      if(err && err.code===1){
-        showLocationPermissionPrompt_();
-      }else{
-        showGPSRetryState_(gpsErrorMessage_(err));
-        if($('gpsStatus')){
-          $('gpsStatus').textContent='GPS belum diperoleh';
-          $('gpsStatus').className='badge warn';
-        }
-      }
+      handleGPSError_(err);
+    },
+    {
+      enableHighAccuracy:true,
+      timeout:45000,
+      maximumAge:0
     }
   );
 }
 
+function handleGPSError_(err){
+  const code=err && Number(err.code);
+
+  if(code===1){
+    showGPSDiagnostic_(
+      'PERMISSION_DENIED',
+      'Izin lokasi ditolak. Aktifkan Lokasi untuk situs ini di Chrome.'
+    );
+    showLocationPermissionPrompt_();
+  }else if(code===2){
+    showGPSDiagnostic_(
+      'POSITION_UNAVAILABLE',
+      'Android belum dapat menentukan posisi. Aktifkan Lokasi dan Akurasi Lokasi Google, lalu coba lagi.'
+    );
+  }else if(code===3){
+    showGPSDiagnostic_(
+      'TIMEOUT',
+      'GPS belum memperoleh koordinat dalam 45 detik. Coba di area terbuka dan tekan Coba GPS Lagi.'
+    );
+  }else{
+    showGPSDiagnostic_(
+      'GPS_ERROR',
+      (err&&err.message)||'GPS gagal dibaca.'
+    );
+  }
+
+  updateAttendanceButtons_(false);
+}
+
 function startGPSWatch_(){
-  if(!gpsBrowserReady_())return;
+  if(!navigator.geolocation)return;
 
   clearGPSWatch_();
-
-  setGPSVisual_(
-    'search',
-    state.gps ? 'Memantau GPS perangkat…' : 'Mencari GPS perangkat…',
-    state.gps
-      ? 'Lokasi akan diperbarui otomatis saat posisi atau akurasi berubah.'
-      : 'Jangan menutup halaman. Android dapat membutuhkan beberapa detik untuk memperoleh posisi pertama.'
-  );
-
-  if($('gpsStatus')){
-    $('gpsStatus').textContent=state.gps?'GPS aktif · memantau':'Mencari GPS…';
-    $('gpsStatus').className='badge warn';
-  }
 
   gpsWatchId=navigator.geolocation.watchPosition(
     pos=>{
       stopGPSCountdown_();
-
-      // Setiap posisi dari Android langsung diproses. Tidak menggunakan
-      // koordinat lama untuk menentukan tombol presensi.
       updateGPSUI_(pos.coords);
 
       const acc=Number(pos.coords.accuracy);
       if(Number.isFinite(acc) && acc>50){
         setGPSVisual_(
           'waiting',
-          'Menunggu akurasi GPS membaik…',
-          'Akurasi saat ini ±'+Math.round(acc)+' m. SiDEt membutuhkan akurasi ≤50 m untuk presensi.'
+          'GPS terbaca — menunggu akurasi membaik',
+          'Akurasi saat ini ±'+Math.round(acc)+' m. Presensi membutuhkan akurasi ≤50 m.'
         );
-        addGPSCountdown_(20);
-        if($('gpsStatus')){
-          $('gpsStatus').textContent='GPS terbaca · akurasi belum cukup';
-          $('gpsStatus').className='badge warn';
-        }
-      }else if(Number.isFinite(acc)){
-        setGPSVisual_(
-          'good',
-          'GPS siap digunakan',
-          'Koordinat perangkat berhasil diperoleh. SiDEt terus memantau perubahan lokasi secara otomatis.'
-        );
-        if($('gpsStatus')){
-          $('gpsStatus').textContent='GPS siap';
-          $('gpsStatus').className='badge ok';
-        }
       }
     },
     err=>{
-      // Jangan langsung mematikan sistem pada TIMEOUT/POSITION_UNAVAILABLE.
-      // Browser Android bisa kehilangan fix sementara.
-      if(err && (err.code===2 || err.code===3)){
-        if($('gpsStatus')){
-          $('gpsStatus').textContent='Mencari ulang GPS…';
-          $('gpsStatus').className='badge warn';
-        }
-        setGPSVisual_(
-          'waiting',
-          'Mencari ulang GPS…',
-          'Sinyal lokasi belum stabil. Sistem tetap mencoba mendapatkan posisi perangkat.'
-        );
-        addGPSCountdown_(20);
-
-        setTimeout(()=>{
-          if(!state.gps || !state.gps.latitude){
-            startGPSWatch_();
-          }else{
-            // Tetap pantau meskipun posisi terakhir masih tersedia.
-            startGPSWatch_();
-          }
-        },1200);
-        return;
-      }
-
-      stopGPSCountdown_();
-      if(err && err.code===1){
-        state.gps=null;
-        updateAttendanceButtons_(false);
-        showLocationPermissionPrompt_();
-      }else{
-        showGPSRetryState_(gpsErrorMessage_(err));
-        if($('gpsStatus')){
-          $('gpsStatus').textContent='GPS gagal';
-          $('gpsStatus').className='badge bad';
-        }
-      }
+      // Setelah sudah pernah memperoleh posisi, error sementara dari
+      // watchPosition tidak menghapus state GPS terakhir.
+      console.warn('[SiDEt GPS watch]',err);
     },
-    gpsOptions_(true,30000,3000)
+    {
+      enableHighAccuracy:true,
+      timeout:30000,
+      maximumAge:3000
+    }
   );
 }
 
@@ -786,51 +863,37 @@ function retryGPS(){
   setGpsMetric_('gpsRadiusValue','MENUNGGU','warn');
 
   if($('gpsStatus')){
-    $('gpsStatus').textContent='Memulai ulang GPS…';
+    $('gpsStatus').textContent='Mencoba GPS lagi…';
     $('gpsStatus').className='badge warn';
   }
 
-  const b=$('gpsRetryBtn');
-  if(b){
-    b.disabled=true;
-    b.textContent='⏳ Mencari GPS…';
-    setTimeout(()=>{
-      b.disabled=false;
-      b.textContent='🔄 Coba GPS Lagi';
-    },3500);
-  }
-
-  if(!gpsBrowserReady_())return;
-
   setGPSVisual_(
     'search',
-    'Memulai ulang GPS…',
-    'Meminta pembacaan lokasi baru dari perangkat. Pastikan Lokasi/GPS Android aktif.'
+    'Mencoba GPS perangkat…',
+    'Pastikan Lokasi/GPS Android aktif dan tunggu hingga koordinat diterima.'
   );
-  addGPSCountdown_(30);
 
-  // Tidak memuat ulang halaman dan tidak memakai koordinat lama.
-  getCurrentPositionBestEffort_(
+  addGPSCountdown_(45);
+
+  if(!navigator.geolocation){
+    showGPSDiagnostic_('NO_GEOLOCATION','Browser tidak menyediakan layanan lokasi.');
+    return;
+  }
+
+  navigator.geolocation.getCurrentPosition(
     pos=>{
       stopGPSCountdown_();
       updateGPSUI_(pos.coords);
       startGPSWatch_();
     },
     err=>{
-      if(err && err.code===1){
-        stopGPSCountdown_();
-        showLocationPermissionPrompt_();
-      }else{
-        // Mulai watch walaupun getCurrentPosition pertama timeout.
-        startGPSWatch_();
-        if(!state.gps){
-          setGPSVisual_(
-            'waiting',
-            'Mencari GPS perangkat…',
-            gpsErrorMessage_(err)+' Sistem tetap mencoba membaca lokasi secara otomatis.'
-          );
-        }
-      }
+      stopGPSCountdown_();
+      handleGPSError_(err);
+    },
+    {
+      enableHighAccuracy:true,
+      timeout:45000,
+      maximumAge:0
     }
   );
 }
