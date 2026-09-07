@@ -60,6 +60,9 @@ table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:10px 8px;
 .progress{height:7px;background:#e8eef5;border-radius:999px;overflow:hidden;margin-top:9px}.progress>i{display:block;height:100%;width:42%;background:var(--primary);border-radius:999px}
 .notice-info{display:flex;gap:10px;align-items:flex-start;padding:12px 14px;border-radius:14px;background:#eef6ff;color:#24527f;font-size:12px;margin-top:14px}.notice-info strong{display:block;margin-bottom:3px}
 .profile-row{display:flex;align-items:center;gap:12px}.profile-avatar{width:52px;height:52px;border-radius:16px;background:#eaf2ff;color:var(--primary);display:grid;place-items:center;font-weight:900;font-size:18px}.profile-lines strong{display:block}.profile-lines small{color:var(--muted)}
+
+.history-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}.history-title-row{display:flex;align-items:center;gap:12px}.history-title-row h3{margin:0;font-size:21px}.history-all-btn{border:0;background:none;color:#1769e0;font-weight:800;cursor:pointer;padding:4px 0;font-size:13px}.history-filter-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;align-items:center;margin:10px 0 14px}.history-filter-row select{border-radius:11px;padding:10px 12px;background:var(--card);color:var(--text);border:1px solid var(--line)}.history-counts{display:flex;gap:13px;font-size:12px;color:var(--muted);white-space:nowrap}.history-counts b{color:var(--text);margin-left:3px}.history-list{display:grid;gap:8px}.history-day{display:grid;grid-template-columns:minmax(0,1fr) 132px 132px;align-items:center;min-height:72px;padding:0 16px;background:#45a743;color:#fff;border-radius:12px}.history-date{font-size:16px;font-weight:500}.history-time{height:100%;display:flex;flex-direction:column;justify-content:center;padding-left:17px;border-left:1px solid rgba(255,255,255,.58)}.history-time span{font-size:12px;opacity:.9;margin-bottom:2px}.history-time b{font-size:21px;line-height:1;font-weight:800}.history-empty{padding:24px;text-align:center;color:var(--muted);border:1px dashed var(--line);border-radius:14px;background:var(--card)}
+@media(max-width:700px){.history-day{grid-template-columns:minmax(0,1fr) 92px 92px;padding:0 12px}.history-time{padding-left:10px}.history-time b{font-size:17px}.history-date{font-size:14px}.history-filter-row{grid-template-columns:1fr}.history-counts{justify-content:flex-end}.history-title-row{align-items:flex-start;flex-direction:column;gap:4px}}
 .empty-history{text-align:center;padding:25px!important;color:var(--muted)}
 @media(max-width:900px){.student-layout{grid-template-columns:1fr}.side-stack{grid-template-columns:1fr 1fr}.livebox{text-align:left}.student-hero{flex-direction:column}}
 @media(max-width:560px){.today-grid,.side-stack{grid-template-columns:1fr}.student-name{font-size:23px}.livebox .time{font-size:23px}.student-hero{padding:19px}.gps-card{align-items:flex-start;flex-direction:column}.bigbtn{min-height:105px}}
@@ -241,13 +244,22 @@ function isInsideAttendanceArea_(lat, lng) {
           <button id="btnMasuk" class="btn primary bigbtn" onclick="openAttendance('MASUK')"><span>📸</span><strong>Presensi Masuk</strong><small>Selfie + GPS</small></button><div id="btnMasukReason" class="presensi-lock-reason">🔒 Terkunci: menunggu GPS memenuhi syarat.</div>
           <button id="btnPulang" class="btn bigbtn" onclick="openAttendance('PULANG')"><span>🏁</span><strong>Presensi Pulang</strong><small>Selfie + GPS</small></button><div id="btnPulangReason" class="presensi-lock-reason">🔒 Terkunci: menunggu GPS memenuhi syarat.</div>
         </div>
-        <div class="notice-info"><div>📷</div><div><strong>Foto otomatis dikompres</strong>Foto selfie diproses maksimal <b>300 KB</b> sebelum dikirim ke server dan Drive sekolah.</div></div>
+        <div class="notice-info"><div>📷</div><div><strong>Foto otomatis dikompres</strong>Foto selfie diproses maksimal <b>100 KB</b> sebelum dikirim ke server dan Drive sekolah.</div></div>
         <div id="empNotice" class="alert">Kamera dapat digunakan di mana pun. GPS dicatat untuk membedakan lokasi dekat dan jauh.</div>
       </div>
 
-      <div class="card">
-        <div class="card-title"><div><div class="section-label">Aktivitas</div><h3 style="margin:0">Riwayat Presensi</h3></div><button class="btn" onclick="loadData()">↻ Muat ulang</button></div>
-        <div class="tablewrap"><table><thead><tr><th>Tanggal</th><th>Jam</th><th>Jenis</th><th>Status</th><th>Jarak</th></tr></thead><tbody id="empHistory"></tbody></table></div>
+      <div class="card history-card">
+        <div class="history-head">
+          <div>
+            <div class="section-label">Aktivitas saya</div>
+            <div class="history-title-row"><h3 id="historyTitle">Riwayat absensi</h3><button id="historyShowAll" class="history-all-btn" type="button" onclick="toggleHistoryAll()">Tampilkan semua</button></div>
+          </div>
+        </div>
+        <div class="history-filter-row">
+          <select id="historyMonth" aria-label="Pilih bulan riwayat" onchange="renderEmpHistory()"></select>
+          <div class="history-counts"><span>Hadir <b id="historyHadir">0</b></span><span>Lengkap <b id="historyLengkap">0</b></span></div>
+        </div>
+        <div id="empHistory" class="history-list"></div>
       </div>
     </div>
 
@@ -1297,13 +1309,13 @@ async function openAttendance(type){
   }
 }
 
-async function compressCanvasMax300KB(canvas){
- const MAX_BYTES=300*1024;
- const TARGET_MIN=270*1024;
- const TARGET_MAX=299*1024;
+async function compressCanvasMax100KB(canvas){
+ const MAX_BYTES=100*1024;
+ const TARGET_MIN=90*1024;
+ const TARGET_MAX=99*1024;
  const ctx=canvas.getContext('2d',{alpha:false});
  let width=canvas.width,height=canvas.height;
- const MAX_DIM=1600;
+ const MAX_DIM=1920;
  if(width>MAX_DIM||height>MAX_DIM){
    const scale=Math.min(MAX_DIM/width,MAX_DIM/height);
    width=Math.max(1,Math.round(width*scale));height=Math.max(1,Math.round(height*scale));
@@ -1368,7 +1380,7 @@ async function captureAttendance(type){
  const button=document.querySelector('#modalBox .btn.primary');
  if(button){button.disabled=true;button.textContent='Mengompres foto…';}
  try{
-  const compressed=await compressCanvasMax300KB(c);
+  const compressed=await compressCanvasMax100KB(c);
   const photo=compressed.dataUrl;
   $('attInfo').textContent='Foto siap · '+compressed.sizeKB+' KB · memeriksa dan mengirim presensi…';
   $('attInfo').className='alert ok';
@@ -1420,24 +1432,63 @@ async function loadData(){
  }catch(e){toast(e.message)}
  if(state.user?.role==='siswa')renderEmpHistory();else renderAdminDashboard()
 }
-function renderEmpHistory(){
- const rows=state.data.attendance.filter(x=>x.userId===state.user.id||x.nisn===state.user.nisn).slice(-30).reverse();
- const today=new Date().toISOString().slice(0,10);
- const todayRows=state.data.attendance.filter(x=>(x.userId===state.user.id||x.nisn===state.user.nisn)&&(x.tanggal||String(x.timestamp||'').slice(0,10))===today);
- const masuk=todayRows.find(x=>(x.type||x.jenis)==='MASUK'), pulang=todayRows.find(x=>(x.type||x.jenis)==='PULANG');
- $('masukTime').textContent=masuk?(masuk.jam||new Date(masuk.timestamp).toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'})):'—';
- $('pulangTime').textContent=pulang?(pulang.jam||new Date(pulang.timestamp).toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'})):'—';
- $('masukSub').textContent=masuk?'Presensi masuk tercatat':'Belum melakukan presensi masuk';
- $('pulangSub').textContent=pulang?'Presensi pulang tercatat':'Belum melakukan presensi pulang';
- $('masukBadge').textContent=masuk?'✓ Tercatat':'Belum';$('masukBadge').className='badge '+(masuk?'ok':'warn');
- $('pulangBadge').textContent=pulang?'✓ Tercatat':'Belum';$('pulangBadge').className='badge '+(pulang?'ok':'warn');
- $('todayStatus').textContent=masuk&&pulang?'Lengkap':masuk?'Masuk tercatat':'Belum lengkap';$('todayStatus').className='badge '+(masuk&&pulang?'ok':masuk?'info':'warn');
- $('btnMasuk').disabled=!!masuk;$('btnPulang').disabled=!!pulang;
- $('btnMasuk').classList.toggle('disabled',!!masuk);$('btnPulang').classList.toggle('disabled',!!pulang);
- $('empNotice').textContent=masuk&&pulang?'Presensi hari ini sudah lengkap. Terima kasih.':masuk?'Presensi masuk sudah tercatat. Jangan lupa presensi pulang.':'Kamera dapat digunakan di mana pun. GPS dicatat untuk membedakan lokasi dekat dan jauh.';
- $('empNotice').className='alert '+(masuk&&pulang?'ok':'');
- $('empHistory').innerHTML=rows.map(x=>`<tr><td>${x.tanggal||new Date(x.timestamp).toLocaleDateString('id-ID')}</td><td>${x.jam||new Date(x.timestamp).toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'})}</td><td><span class="badge info">${x.type||x.jenis||'-'}</span></td><td><span class="badge ${x.status==='VALID'||x.status==='HADIR'?'ok':'warn'}">${x.status||'VALID'}</span></td><td>${x.jarak!=null?Math.round(x.jarak)+' m':'-'}</td></tr>`).join('')||'<tr><td colspan="5" class="empty-history">Belum ada riwayat presensi.</td></tr>';
+const historyState={showAll:false,month:'',initialized:false};
+function historyDateKey_(x){
+ const raw=x?.tanggal||'';
+ if(/^\d{4}-\d{2}-\d{2}$/.test(String(raw))) return String(raw);
+ const ts=x?.timestamp?new Date(x.timestamp):null;
+ if(ts&&!isNaN(ts))return ts.toISOString().slice(0,10);
+ const s=String(raw).trim();
+ const m=s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
+ return m?`${m[3]}-${String(m[2]).padStart(2,'0')}-${String(m[1]).padStart(2,'0')}`:s;
 }
+function historyMonthLabel_(key){
+ const d=new Date(key+'T12:00:00');
+ return isNaN(d)?key:d.toLocaleDateString('id-ID',{month:'long',year:'numeric'});
+}
+function historyDateLabel_(key){
+ const d=new Date(key+'T12:00:00');
+ return isNaN(d)?key:d.toLocaleDateString('id-ID',{weekday:'long',day:'2-digit',month:'long',year:'numeric'});
+}
+function historyTime_(x){
+ if(x?.jam)return String(x.jam).slice(0,8);
+ if(x?.timestamp){const d=new Date(x.timestamp);if(!isNaN(d))return d.toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit',second:'2-digit'});}
+ return '—';
+}
+function renderEmpHistory(){
+ const all=(state.data.attendance||[]).filter(x=>x.userId===state.user.id||x.nisn===state.user.nisn);
+ const grouped={};
+ all.forEach(x=>{const key=historyDateKey_(x);if(!key)return;(grouped[key]??=[]).push(x)});
+ const keys=Object.keys(grouped).sort((a,b)=>b.localeCompare(a));
+ const months=[...new Set(keys.map(k=>k.slice(0,7)))];
+ const monthEl=$('historyMonth');
+ if(monthEl){
+   const previous=historyState.month;
+   if(!historyState.initialized){historyState.month=months[0]||new Date().toISOString().slice(0,7);historyState.initialized=true;}
+   monthEl.innerHTML=months.length?months.map(m=>`<option value="${m}">${historyMonthLabel_(m)}</option>`).join(''):`<option value="${historyState.month}">${historyMonthLabel_(historyState.month)}</option>`;
+   if(months.includes(previous))historyState.month=previous;
+   monthEl.value=historyState.showAll?'':historyState.month;
+   if(historyState.showAll){
+     monthEl.innerHTML=`<option value="">Semua bulan</option>`+months.map(m=>`<option value="${m}">${historyMonthLabel_(m)}</option>`).join('');
+     monthEl.value='';
+   }
+ }
+ const visibleKeys=historyState.showAll?keys:keys.filter(k=>k.startsWith(historyState.month));
+ let hadir=0,lengkap=0;
+ visibleKeys.forEach(k=>{const day=grouped[k]||[];const masuk=day.some(x=>(x.type||x.jenis)==='MASUK');const pulang=day.some(x=>(x.type||x.jenis)==='PULANG');if(masuk)hadir++;if(masuk&&pulang)lengkap++;});
+ $('historyHadir').textContent=hadir;$('historyLengkap').textContent=lengkap;
+ const monthTitle=historyState.showAll?'Semua bulan':historyMonthLabel_(historyState.month||new Date().toISOString().slice(0,7));
+ $('historyTitle').textContent='Riwayat absensi '+monthTitle;
+ $('historyShowAll').textContent=historyState.showAll?'Tampilkan bulan terbaru':'Tampilkan semua';
+ $('empHistory').innerHTML=visibleKeys.length?visibleKeys.map(k=>{
+   const day=(grouped[k]||[]).slice().sort((a,b)=>historyTime_(a).localeCompare(historyTime_(b)));
+   const masuk=day.find(x=>(x.type||x.jenis)==='MASUK');
+   const pulang=day.find(x=>(x.type||x.jenis)==='PULANG');
+   return `<div class="history-day"><div class="history-date">${historyDateLabel_(k)}</div><div class="history-time"><span>Masuk</span><b>${masuk?historyTime_(masuk):'—'}</b></div><div class="history-time"><span>Pulang</span><b>${pulang?historyTime_(pulang):'—'}</b></div></div>`;
+ }).join(''):'<div class="history-empty">Belum ada riwayat presensi pada periode ini.</div>';
+}
+function toggleHistoryAll(){historyState.showAll=!historyState.showAll;renderEmpHistory();}
+document.addEventListener('change',e=>{if(e.target&&e.target.id==='historyMonth'&&e.target.value){historyState.month=e.target.value;historyState.showAll=false;renderEmpHistory();}});
 
 function renderAdminDashboard(){
  const a=state.data.attendance||[],today=new Date().toISOString().slice(0,10),td=a.filter(x=>(x.tanggal||String(x.timestamp||'').slice(0,10))===today);
