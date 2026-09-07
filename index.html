@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>SiDEt Siswa v2 — LOGIN V7 TOP POSTMESSAGE</title>
+<title>SiDEt Siswa v2 — Sistem Digital Presensi Siswa</title>
 <script>
 const ATTENDANCE_LOCATIONS = [
   { lat: 4.048999, lng: 117.726480, name: "Titik 1" },
@@ -11,7 +11,7 @@ const ATTENDANCE_LOCATIONS = [
   { lat: 4.049306, lng: 117.726132, name: "Titik 3" },
   { lat: 4.049390, lng: 117.727064, name: "Titik 4" }
 ];
-const GPS_RADIUS_METERS = 10000;
+const GPS_RADIUS_METERS = 100;
 </script>
 <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
 <style>
@@ -101,68 +101,6 @@ table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:10px 8px;
 .gps-live-note{margin-top:8px;font-size:11px;color:#66788a;line-height:1.5}
 
 </style>
-<style>
-.gps-map-link{display:flex;align-items:center;gap:12px;margin-top:11px;padding:12px 13px;border:1px solid #e3e8ef;border-radius:13px;background:#fff}
-.gps-map-link>span{font-size:22px}
-.gps-map-link>div{flex:1;min-width:0}
-.gps-map-link b{display:block;font-size:13px}
-.gps-map-link small{display:block;color:#667085;font-size:10px;margin-top:2px}
-.gps-map-link .btn{padding:8px 12px;white-space:nowrap}
-</style>
-
-<style>
-.gps-simple-card{padding-bottom:16px}
-.gps-simple-status{display:flex;align-items:center;gap:14px;padding:16px 17px;border:1px solid #e3eaf1;border-radius:15px;background:#f8fbff;margin-top:10px}
-.gps-simple-icon{width:48px;height:48px;border-radius:14px;background:#e8f7ef;display:grid;place-items:center;font-size:24px;flex:0 0 auto}
-.gps-simple-status strong{display:block;font-size:20px;font-weight:800;line-height:1.2}
-.gps-simple-status small{display:block;color:#667085;margin-top:4px;font-size:11px}
-.gps-simple-status.gps-active{background:#effaf3;border-color:#b7e4c7}
-.gps-simple-status.gps-active strong{color:#16834b}
-.gps-simple-status.gps-waiting{background:#fff9ed;border-color:#f1d69a}
-.gps-simple-status.gps-waiting strong{color:#9a6500}
-.gps-simple-status.gps-unavailable{background:#fff3f3;border-color:#f0c5c5}
-.gps-simple-status.gps-unavailable strong{color:#b42318}
-.gps-simple-data{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:10px}
-.gps-simple-data>div{border:1px solid #e5eaf0;border-radius:13px;padding:11px 12px;background:#fff}
-.gps-simple-data span{display:block;color:#667085;font-size:10px;margin-bottom:4px}
-.gps-simple-data b{font-size:17px}
-.gps-simple-card .gps-ready-action{margin-top:10px;width:100%}
-.gps-simple-card .map-caption{margin-top:7px;font-size:11px}
-@media(max-width:560px){
- .gps-simple-data{grid-template-columns:1fr 1fr}
- .gps-simple-status strong{font-size:14px}
-}
-</style>
-
-<style>
-.history-card{overflow:hidden}
-.history-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px}
-.history-title{margin:0;font-size:22px;line-height:1.25}
-.history-toggle{border:0;background:none;color:#3976d3;font:inherit;font-weight:700;cursor:pointer;padding:6px 0}
-.history-filter-row{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:4px 0 14px}
-.history-month{border:1px solid #e1e7ee;background:#fff;border-radius:10px;padding:8px 11px;font:inherit;color:#344054}
-.history-rekap{display:flex;gap:12px;color:#667085;font-size:12px;white-space:nowrap}
-.history-rekap b{color:#1d2939;font-size:14px}
-.history-list{display:flex;flex-direction:column;gap:12px}
-.history-item{display:grid;grid-template-columns:minmax(0,1.35fr) .55fr .55fr;align-items:center;background:#43a047;color:#fff;border-radius:14px;padding:18px 20px;min-height:94px;box-sizing:border-box}
-.history-date{font-size:20px;font-weight:500;line-height:1.25}
-.history-time{border-left:2px solid rgba(255,255,255,.55);padding-left:20px}
-.history-time span{display:block;font-size:16px}
-.history-time b{display:block;font-size:27px;line-height:1.15;margin-top:4px}
-.history-empty{padding:22px;text-align:center;color:#667085;border:1px dashed #d0d5dd;border-radius:14px}
-.history-item.incomplete{background:#667085}
-@media(max-width:640px){
- .history-head{align-items:flex-start}
- .history-title{font-size:20px}
- .history-filter-row{align-items:flex-start;flex-direction:column}
- .history-item{grid-template-columns:1fr .72fr .72fr;padding:15px 12px;min-height:84px}
- .history-date{font-size:16px}
- .history-time{padding-left:11px}
- .history-time span{font-size:13px}
- .history-time b{font-size:21px}
-}
-</style>
-
 </head>
 
 <script>
@@ -207,9 +145,6 @@ function isInsideAttendanceArea_(lat, lng) {
     <div class="field"><label>Password</label><input id="loginPass" type="password" placeholder="Password"></div>
     <button class="btn primary" style="width:100%" onclick="login()">Masuk</button>
     <div id="loginMsg" class="alert hidden"></div>
-    <div id="loginConnectionHint" class="muted" style="margin-top:10px;text-align:center;font-size:11px">
-      Koneksi server: <b style="color:#16834b">Google Apps Script aktif</b> · <span>LOGIN V7 · TOP POSTMESSAGE</span>
-    </div>
     <p class="muted" style="margin-top:16px">Terhubung otomatis ke Google Apps Script. Presensi dapat dilakukan di mana pun; GPS tetap dicatat untuk laporan jarak.</p>
   </div>
 </div>
@@ -242,70 +177,33 @@ function isInsideAttendanceArea_(lat, lng) {
       <div class="card">
         <div class="card-title"><div><div class="section-label">Aksi utama</div><h3 style="margin:0">Lakukan Presensi</h3></div></div>
         <div class="grid two">
-          <button id="btnMasuk" class="btn primary bigbtn" onclick="openAttendance('MASUK')"><span>📸</span><strong>Presensi Masuk</strong><small>Selfie + GPS</small></button><div id="btnMasukReason" class="presensi-lock-reason">🔒 Terkunci: menunggu GPS memenuhi syarat.</div>
-          <button id="btnPulang" class="btn bigbtn" onclick="openAttendance('PULANG')"><span>🏁</span><strong>Presensi Pulang</strong><small>Selfie + GPS</small></button><div id="btnPulangReason" class="presensi-lock-reason">🔒 Terkunci: menunggu GPS memenuhi syarat.</div>
+          <button id="btnMasuk" class="btn primary bigbtn" disabled onclick="openAttendance('MASUK')"><span>📸</span><strong>Presensi Masuk</strong><small>Selfie + GPS</small></button><div id="btnMasukReason" class="presensi-lock-reason">🔒 Terkunci: menunggu GPS memenuhi syarat.</div>
+          <button id="btnPulang" class="btn bigbtn" disabled onclick="openAttendance('PULANG')"><span>🏁</span><strong>Presensi Pulang</strong><small>Selfie + GPS</small></button><div id="btnPulangReason" class="presensi-lock-reason">🔒 Terkunci: menunggu GPS memenuhi syarat.</div>
         </div>
-        <div class="notice-info"><div>📷</div><div><strong>Foto otomatis dikompres</strong>Foto selfie diproses dengan kualitas tinggi sekitar <b>200–300 KB</b> sebelum dikirim ke server dan Drive sekolah.</div></div>
+        <div class="notice-info"><div>📷</div><div><strong>Foto otomatis dikompres</strong>Foto selfie diproses maksimal <b>300 KB</b> sebelum dikirim ke server dan Drive sekolah.</div></div>
         <div id="empNotice" class="alert">Kamera dapat digunakan di mana pun. GPS dicatat untuk membedakan lokasi dekat dan jauh.</div>
       </div>
 
-      <div class="card history-card">
-        <div class="history-head">
-          <div>
-            <div class="section-label">Aktivitas Saya</div>
-            <h3 id="historyTitle" class="history-title">Riwayat absensi</h3>
-          </div>
-          <button id="historyToggle" class="history-toggle" onclick="toggleAllHistory()">Tampilkan semua</button>
-        </div>
-        <div class="history-filter-row">
-          <select id="historyMonth" class="history-month" onchange="renderEmpHistory()"></select>
-          <div class="history-rekap"><span>Hadir <b id="rekapHadir">0</b></span><span>Lengkap <b id="rekapLengkap">0</b></span></div>
-        </div>
-        <div id="empHistory" class="history-list"></div>
+      <div class="card">
+        <div class="card-title"><div><div class="section-label">Aktivitas</div><h3 style="margin:0">Riwayat Presensi</h3></div><button class="btn" onclick="loadData()">↻ Muat ulang</button></div>
+        <div class="tablewrap"><table><thead><tr><th>Tanggal</th><th>Jam</th><th>Jenis</th><th>Status</th><th>Jarak</th></tr></thead><tbody id="empHistory"></tbody></table></div>
       </div>
     </div>
 
     <div class="side-stack">
-      <div class="card gps-simple-card">
-        <div class="card-title">
-          <div><div class="section-label">GPS</div><h3 style="margin:0">Lokasi Saya</h3></div>
-          <span id="gpsBadge" class="badge warn">Memeriksa</span>
+      <div class="card">
+        <div class="card-title"><div><div class="section-label">Validasi lokasi</div><h3 style="margin:0">Lokasi Presensi</h3></div><span id="gpsBadge" class="badge warn">Memeriksa</span></div>
+        <div class="gps-card"><div class="gps-left"><div class="gps-icon">📍</div><div><strong id="gpsStatus">GPS belum diperiksa</strong><small id="gpsAccuracy">Menunggu lokasi perangkat…</small></div></div></div>
+        <div class="gps-metrics">
+          <div class="gps-metric"><span>Akurasi</span><b id="gpsAccuracyValue">—</b></div>
+          <div class="gps-metric"><span>Kualitas GPS</span><b id="gpsQualityValue">—</b></div>
+          <div class="gps-metric"><span>Jarak ke sekolah</span><b id="gpsDistanceValue">—</b></div>
+          <div class="gps-metric"><span>Status radius</span><b id="gpsRadiusValue">—</b></div>
         </div>
-
-        <div class="gps-simple-status">
-          <div class="gps-simple-icon">📍</div>
-          <div>
-            <strong id="gpsStatus">Menunggu lokasi</strong>
-            <small id="gpsAccuracy">GPS sedang mencari lokasi perangkat</small>
-          </div>
-        </div>
-
-        <div class="gps-simple-data">
-          <div><span>Jarak</span><b id="gpsDistanceValue">—</b></div>
-          <div><span>Akurasi</span><b id="gpsAccuracyValue">—</b></div>
-        </div>
-
-        <!-- ID tetap dipertahankan agar logika GPS lama tidak berubah. -->
-        <div style="display:none">
-          <span id="gpsQualityValue">—</span>
-          <span id="gpsRadiusValue">—</span>
-        </div>
-
-        <button id="gpsReadyAction" class="gps-ready-action" onclick="getGPS()">📍 Perbarui Lokasi GPS</button>
-
-        <div class="gps-map-link">
-          <span>📍</span>
-          <div>
-            <b>Buka lokasi di aplikasi Maps</b>
-            <small>Buka hanya jika ingin melihat posisi GPS</small>
-          </div>
-          <button type="button" class="btn" onclick="openCurrentLocationMap()">Buka aplikasi Maps</button>
-        </div>
-        <div id="gpsMapHidden" style="display:none">
-          <div id="googleMapFrame" style="display:none"></div>
-          <div id="gpsDot"></div>
-        </div>
-        <div class="map-caption"><span id="distanceText">Lokasi belum terbaca.</span></div>
+<button id="gpsReadyAction" class="gps-ready-action" disabled onclick="openCameraForAttendance()">📍 Menunggu GPS memenuhi syarat</button><div class="gps-live-note">Kamera/presensi dapat digunakan di mana pun. GPS dan jarak ke sekolah tetap dicatat untuk laporan.</div>
+        <div class="mapbox" style="margin-top:14px"><iframe id="googleMapFrame" title="Lokasi GPS saat ini" style="position:absolute;inset:0;width:100%;height:100%;border:0" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe><div class="circle" style="pointer-events:none"></div><div class="pin" style="pointer-events:none">📍</div><div id="gpsDot" class="dot" style="left:50%;top:50%;pointer-events:none"></div></div>
+        <div class="map-caption"><span id="distanceText">Belum ada lokasi.</span><span>Radius 100 m dari salah satu titik</span></div>
+        <div class="progress"><i id="radiusProgress"></i></div>
       </div>
 
       <div class="card">
@@ -358,98 +256,49 @@ function isInsideAttendanceArea_(lat, lng) {
 const initialSchoolData = {"Kelas XA":[{"id":"260004","nisn":"0106148762","name":"ABDUL WAHIP","gender":"LAKI-LAKI","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=ABDUL+WAHIP&entry.201529640=HS","selected":true},{"id":"260010","nisn":"0107923109","name":"ALFON AQUINO SAKA","gender":"LAKI-LAKI","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=ALFON+AQUINO+SAKA&entry.201529640=HS","selected":false},{"id":"260012","nisn":"0105052057","name":"AMANDA PUTRI","gender":"PEREMPUAN","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=AMANDA+PUTRI&entry.201529640=HS","selected":false},{"id":"260017","nisn":"0118971241","name":"ARAYYA NUR ZAHIRA","gender":"PEREMPUAN","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=ARAYYA+NUR+ZAHIRA&entry.201529640=HS","selected":true},{"id":"260019","nisn":"0105469341","name":"ARIL SAHRUL RAMADANI","gender":"LAKI-LAKI","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=ARIL+SAHRUL+RAMADANI&entry.201529640=HS","selected":false},{"id":"260024","nisn":"3097712728","name":"ELSYA APRILIA ANTHONY","gender":"PEREMPUAN","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=ELSYA+APRILIA+ANTHONY&entry.201529640=HS","selected":false},{"id":"260030","nisn":"0111628831","name":"FITRIANI XA","gender":"PEREMPUAN","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=FITRIANI+XA&entry.201529640=HS","selected":false},{"id":"260031","nisn":"0112035176","name":"HADIR JUMANSA PUTRA","gender":"LAKI-LAKI","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=HADIR+JUMANSA+PUTRA&entry.201529640=HS","selected":false},{"id":"260037","nisn":"0101869333","name":"IMAM AMROSI","gender":"LAKI-LAKI","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=IMAM+AMROSI&entry.201529640=HS","selected":false},{"id":"260039","nisn":"0115027428","name":"INDIAN ILYANDA","gender":"PEREMPUAN","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=INDIAN+ILYANDA&entry.201529640=HS","selected":false},{"id":"260046","nisn":"0117832504","name":"KIRANA","gender":"PEREMPUAN","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=KIRANA&entry.201529640=HS","selected":false},{"id":"260049","nisn":"0101496080","name":"MHD. ISWANDI","gender":"LAKI-LAKI","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=MHD.+ISWANDI&entry.201529640=HS","selected":false},{"id":"260053","nisn":"3103877484","name":"MUH. ALBAR","gender":"LAKI-LAKI","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=MUH.+ALBAR&entry.201529640=HS","selected":true},{"id":"260057","nisn":"0102802885","name":"MUHAMMAD FADLI ADRIANO","gender":"LAKI-LAKI","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=MUHAMMAD+FADLI+ADRIANO&entry.201529640=HS","selected":false},{"id":"260061","nisn":"0118519658","name":"MUHAMMAD ISRA SYAHPUTRA","gender":"LAKI-LAKI","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=MUHAMMAD+ISRA+SYAHPUTRA&entry.201529640=HS","selected":false},{"id":"260065","nisn":"0101834198","name":"MUHAMMAD RESA SAPUTRA","gender":"LAKI-LAKI","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=MUHAMMAD+RESA+SAPUTRA&entry.201529640=HS","selected":false},{"id":"260069","nisn":"3105715277","name":"MUHAMMAD WILDAN","gender":"LAKI-LAKI","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=MUHAMMAD+WILDAN&entry.201529640=HS","selected":false},{"id":"260072","nisn":"0098401328","name":"NADA KAMELIA","gender":"PEREMPUAN","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=NADA+KAMELIA&entry.201529640=HS","selected":true},{"id":"260076","nisn":"0108527238","name":"NOVIANA","gender":"PEREMPUAN","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=NOVIANA&entry.201529640=HS","selected":true},{"id":"260080","nisn":"0111176983","name":"NUR VEBRIANI","gender":"PEREMPUAN","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=NUR+VEBRIANI&entry.201529640=HS","selected":false},{"id":"260084","nisn":"0107839346","name":"NURHIKMAH ABDI","gender":"PEREMPUAN","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=NURHIKMAH+ABDI&entry.201529640=HS","selected":true},{"id":"260090","nisn":"0104278399","name":"RASTI PRITA ANDINI","gender":"PEREMPUAN","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=RASTI+PRITA+ANDINI&entry.201529640=HS","selected":true},{"id":"260092","nisn":"0107010100","name":"REFAN","gender":"LAKI-LAKI","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=REFAN&entry.201529640=HS","selected":true},{"id":"260098","nisn":"0111191658","name":"REZKY AFANDY","gender":"LAKI-LAKI","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=REZKY+AFANDY&entry.201529640=HS","selected":false},{"id":"260101","nisn":"0109392495","name":"SAMSINAR","gender":"PEREMPUAN","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=SAMSINAR&entry.201529640=HS","selected":true},{"id":"260105","nisn":"0123968886","name":"SITI SAILAH SAPUTRI","gender":"PEREMPUAN","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=SITI+SAILAH+SAPUTRI&entry.201529640=HS","selected":true},{"id":"260109","nisn":"0104154107","name":"SYAHRUL RAMADHANI","gender":"LAKI-LAKI","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=SYAHRUL+RAMADHANI&entry.201529640=HS","selected":false},{"id":"260110","nisn":"0116564777","name":"WA ODE NURTADAHLIA","gender":"PEREMPUAN","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=WA+ODE+NURTADAHLIA&entry.201529640=HS","selected":false},{"id":"260114","nisn":"0101000649","name":"YAFFA ALENA FAAIZA","gender":"PEREMPUAN","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=YAFFA+ALENA+FAAIZA&entry.201529640=HS","selected":false},{"id":"260116","nisn":"0104888082","name":"YUNITA HALIMATUN SYA'DIAH","gender":"PEREMPUAN","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=YUNITA+HALIMATUN+SYA'DIAH&entry.201529640=HS","selected":false}],"Kelas XB":[{"id":"260005","nisn":"0102094669","name":"ADAM ALIF RAHMAN","gender":"LAKI-LAKI","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=ADAM+ALIF+RAHMAN&entry.201529640=HS","selected":true},{"id":"260011","nisn":"0116883035","name":"ALI IRSAN","gender":"LAKI-LAKI","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=ALI+IRSAN&entry.201529640=HS","selected":true},{"id":"260014","nisn":"0109930277","name":"ANDI NURHALIZAH","gender":"PEREMPUAN","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=ANDI+NURHALIZAH&entry.201529640=HS","selected":true},{"id":"260020","nisn":"0119525847","name":"BADAR IBADIN","gender":"LAKI-LAKI","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=BADAR+IBADIN&entry.201529640=HS","selected":true},{"id":"260021","nisn":"0117889037","name":"DINDA KIRANA","gender":"PEREMPUAN","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=DINDA+KIRANA&entry.201529640=HS","selected":true},{"id":"260025","nisn":"0109248575","name":"ERNI","gender":"PEREMPUAN","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=ERNI&entry.201529640=HS","selected":true},{"id":"260032","nisn":"0116390313","name":"HAJRIYANA","gender":"PEREMPUAN","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=HAJRIYANA&entry.201529640=HS","selected":false},{"id":"260033","nisn":"0103097316","name":"HERUL AGUSTIAN","gender":"LAKI-LAKI","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=HERUL+AGUSTIAN&entry.201529640=HS","selected":false},{"id":"260040","nisn":"0112728658","name":"INTAN BATRISYIA","gender":"PEREMPUAN","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=INTAN+BATRISYIA&entry.201529640=HS","selected":true},{"id":"260041","nisn":"0107422875","name":"IQBAL IRFANSA","gender":"LAKI-LAKI","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=IQBAL+IRFANSA&entry.201529640=HS","selected":true},{"id":"260047","nisn":"0106837618","name":"MARWAH SYAFITRI","gender":"PEREMPUAN","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=MARWAH+SYAFITRI&entry.201529640=HS","selected":true},{"id":"260054","nisn":"0101515411","name":"MUH. UMARSYAM","gender":"LAKI-LAKI","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=MUH.+UMARSYAM&entry.201529640=HS","selected":false},{"id":"260050","nisn":"3100506286","name":"MOHAMMAD IRWAN","gender":"LAKI-LAKI","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=MOHAMMAD+IRWAN&entry.201529640=HS","selected":false},{"id":"260058","nisn":"0111136908","name":"MUHAMMAD FHAYSAL SYUKUR AHMAD","gender":"LAKI-LAKI","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=MUHAMMAD+FHAYSAL+SYUKUR+AHMAD&entry.201529640=HS","selected":false},{"id":"260062","nisn":"0106705459","name":"MUHAMMAD KARIM","gender":"LAKI-LAKI","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=MUHAMMAD+KARIM&entry.201529640=HS","selected":true},{"id":"260066","nisn":"0104922371","name":"MUHAMMAD RIFQI","gender":"LAKI-LAKI","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=MUHAMMAD+RIFQI&entry.201529640=HS","selected":true},{"id":"260073","nisn":"0106033650","name":"NANDA ERISKA LIHU","gender":"PEREMPUAN","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=NANDA+ERISKA+LIHU&entry.201529640=HS","selected":true},{"id":"260070","nisn":"0104388826","name":"MULTAZAM NISYAM","gender":"LAKI-LAKI","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=MULTAZAM+NISYAM&entry.201529640=HS","selected":true},{"id":"260077","nisn":"0109625541","name":"NUR ANISA RAMADAN","gender":"PEREMPUAN","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=NUR+ANISA+RAMADAN&entry.201529640=HS","selected":false},{"id":"260081","nisn":"0116968436","name":"NURAIRAH","gender":"PEREMPUAN","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=NURAIRAH&entry.201529640=HS","selected":true},{"id":"260085","nisn":"0113740296","name":"NURUL SAFIKAH","gender":"PEREMPUAN","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=NURUL+SAFIKAH&entry.201529640=HS","selected":true},{"id":"260091","nisn":"0117058653","name":"RATU RAMAYANA","gender":"PEREMPUAN","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=RATU+RAMAYANA&entry.201529640=HS","selected":true},{"id":"260093","nisn":"0104116976","name":"REIVAN ARADILA","gender":"LAKI-LAKI","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=REIVAN+ARADILA&entry.201529640=HS","selected":true},{"id":"260099","nisn":"0104428616","name":"RIFALDI","gender":"LAKI-LAKI","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=RIFALDI&entry.201529640=HS","selected":false},{"id":"260102","nisn":"3114740852","name":"SASKIA AMANDA WULANDARI","gender":"PEREMPUAN","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=SASKIA+AMANDA+WULANDARI&entry.201529640=HS","selected":true},{"id":"260106","nisn":"0119225802","name":"SITY NUR CAHYA","gender":"PEREMPUAN","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=SITY+NUR+CAHYA&entry.201529640=HS","selected":true},{"id":"260111","nisn":"3112662330","name":"WAFRI THALITA ZAINUN","gender":"PEREMPUAN","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=WAFRI+THALITA+ZAINUN&entry.201529640=HS","selected":false},{"id":"260115","nisn":"0103410698","name":"YOFARNO YOSAFAI RATU LUBUR","gender":"LAKI-LAKI","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=YOFARNO+YOSAFAI+RATU+LUBUR&entry.201529640=HS","selected":false}],"Kelas XC":[{"id":"260003","nisn":"0116790414","name":"A. NURFARIDAH","gender":"PEREMPUAN","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=A.+NURFARIDAH&entry.201529640=HS","selected":false},{"id":"260006","nisn":"3111658883","name":"AFIKA ADELIA SIREGAR","gender":"PEREMPUAN","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=AFIKA+ADELIA+SIREGAR&entry.201529640=HS","selected":true},{"id":"260008","nisn":"0115123543","name":"AHMAD ANGGA","gender":"LAKI-LAKI","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=AHMAD+ANGGA&entry.201529640=HS","selected":false},{"id":"260013","nisn":"0119993291","name":"AMMAR FAIQ HAWRIEL ADNAN","gender":"LAKI-LAKI","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=AMMAR+FAIQ+HAWRIEL+ADNAN&entry.201529640=HS","selected":false},{"id":"260015","nisn":"0113593653","name":"ANDI NURUL SHAZIRAWATI","gender":"PEREMPUAN","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=ANDI+NURUL+SHAZIRAWATI&entry.201529640=HS","selected":true},{"id":"260022","nisn":"0115190109","name":"EGY DESTRI AMALIA","gender":"PEREMPUAN","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=EGY+DESTRI+AMALIA&entry.201529640=HS","selected":true},{"id":"260026","nisn":"0107565355","name":"FALDIANZAH TAUFIK NUR HIDAYAH","gender":"LAKI-LAKI","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=FALDIANZAH+TAUFIK+NUR+HIDAYAH&entry.201529640=HS","selected":true},{"id":"260027","nisn":"0107224310","name":"FAUZIAH","gender":"PEREMPUAN","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=FAUZIAH&entry.201529640=HS","selected":true},{"id":"260034","nisn":"0115714284","name":"HIJRIYANI","gender":"PEREMPUAN","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=HIJRIYANI&entry.201529640=HS","selected":false},{"id":"260035","nisn":"0118616933","name":"HIKMAL MARUDDANI","gender":"LAKI-LAKI","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=HIKMAL+MARUDDANI&entry.201529640=HS","selected":true},{"id":"260042","nisn":"0111180220","name":"IZMI AULIA ARHAM","gender":"PEREMPUAN","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=IZMI+AULIA+ARHAM&entry.201529640=HS","selected":false},{"id":"260043","nisn":"0102119722","name":"KAKA ARBI GILARDI","gender":"LAKI-LAKI","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=KAKA+ARBI+GILARDI&entry.201529640=HS","selected":true},{"id":"260048","nisn":"0105220301","name":"MARWANI","gender":"PEREMPUAN","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=MARWANI&entry.201529640=HS","selected":false},{"id":"260051","nisn":"0101797683","name":"MOHAMMAD REZA R. LIHU","gender":"LAKI-LAKI","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=MOHAMMAD+REZA+R.+LIHU&entry.201529640=HS","selected":true},{"id":"260055","nisn":"0105499299","name":"MUHAMMAD AIDIL","gender":"LAKI-LAKI","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=MUHAMMAD+AIDIL&entry.201529640=HS","selected":false},{"id":"260059","nisn":"0107742019","name":"MUHAMMAD FIKRAM","gender":"LAKI-LAKI","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=MUHAMMAD+FIKRAM&entry.201529640=HS","selected":false},{"id":"260063","nisn":"0107664477","name":"MUHAMMAD RAMADHAN","gender":"LAKI-LAKI","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=MUHAMMAD+RAMADHAN&entry.201529640=HS","selected":true},{"id":"260067","nisn":"0109751609","name":"MUHAMMAD SYAFIAN MONE","gender":"LAKI-LAKI","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=MUHAMMAD+SYAFIAN+MONE&entry.201529640=HS","selected":false},{"id":"260074","nisn":"0111950492","name":"NIDHIFAH NAYLAH SAPUTRY","gender":"PEREMPUAN","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=NIDHIFAH+NAYLAH+SAPUTRY&entry.201529640=HS","selected":false},{"id":"260078","nisn":"0111695633","name":"NUR HAFIZA","gender":"PEREMPUAN","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=NUR+HAFIZA&entry.201529640=HS","selected":true},{"id":"260082","nisn":"0103516333","name":"NURFADILA","gender":"PEREMPUAN","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=NURFADILA&entry.201529640=HS","selected":true},{"id":"260086","nisn":"0095554229","name":"PUTRI ANGRENI","gender":"PEREMPUAN","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=PUTRI+ANGRENI&entry.201529640=HS","selected":true},{"id":"260088","nisn":"0105946200","name":"RAHMAT REZKY HIDAYAT","gender":"LAKI-LAKI","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=RAHMAT+REZKY+HIDAYAT&entry.201529640=HS","selected":false},{"id":"260094","nisn":"3112122465","name":"REIZA HAMZAH","gender":"PEREMPUAN","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=REIZA+HAMZAH&entry.201529640=HS","selected":false},{"id":"260095","nisn":"0102337788","name":"RENITA","gender":"PEREMPUAN","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=RENITA&entry.201529640=HS","selected":false},{"id":"260107","nisn":"0119619702","name":"ST.RAHMAH","gender":"PEREMPUAN","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=ST.RAHMAH&entry.201529640=HS","selected":true},{"id":"260103","nisn":"0104451032","name":"SEKAR WANGI RAHMADINI","gender":"PEREMPUAN","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=SEKAR+WANGI+RAHMADINI&entry.201529640=HS","selected":true},{"id":"260112","nisn":"0107736381","name":"WANDA NOVI AULIA","gender":"PEREMPUAN","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=WANDA+NOVI+AULIA&entry.201529640=HS","selected":true}],"Kelas XD":[{"id":"260007","nisn":"0108884814","name":"AFRAH FATHANIA PRABA","gender":"PEREMPUAN","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=AFRAH+FATHANIA+PRABA&entry.201529640=HS","selected":true},{"id":"260009","nisn":"0109166563","name":"AKBAR MAULANA","gender":"LAKI-LAKI","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=AKBAR+MAULANA&entry.201529640=HS","selected":true},{"id":"260016","nisn":"0111791555","name":"ANISA PUTRI","gender":"PEREMPUAN","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=ANISA+PUTRI&entry.201529640=HS","selected":true},{"id":"260018","nisn":"0108722663","name":"ARHAM NURWAHID","gender":"LAKI-LAKI","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=ARHAM+NURWAHID&entry.201529640=HS","selected":true},{"id":"260023","nisn":"0106033839","name":"ELSA HANDAYANI","gender":"PEREMPUAN","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=ELSA+HANDAYANI&entry.201529640=HS","selected":true},{"id":"260028","nisn":"0116745293","name":"FEBRIANSYAH","gender":"LAKI-LAKI","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=FEBRIANSYAH&entry.201529640=HS","selected":true},{"id":"260029","nisn":"0108662406","name":"FITRIANI","gender":"PEREMPUAN","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=FITRIANI+X-D&entry.201529640=HS","selected":true},{"id":"260036","nisn":"0112586711","name":"ILMANSYAH","gender":"LAKI-LAKI","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=ILMANSYAH&entry.201529640=HS","selected":true},{"id":"260038","nisn":"0107462839","name":"INDAYANI","gender":"PEREMPUAN","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=INDAYANI&entry.201529640=HS","selected":true},{"id":"260044","nisn":"0106940038","name":"KAKA IBRA GILARDI","gender":"LAKI-LAKI","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=KAKA+IBRA+GILARDI&entry.201529640=HS","selected":true},{"id":"260045","nisn":"3101143313","name":"KARMILA SYAHRINA SAPUTRI","gender":"PEREMPUAN","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=KARMILA+SYAHRINA+SAPUTRI&entry.201529640=HS","selected":false},{"id":"260052","nisn":"0105410277","name":"MUH AIDIN ROIHAN AL FURQAN","gender":"LAKI-LAKI","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=MUH+AIDIN+ROIHAN+AL+FURQAN&entry.201529640=HS","selected":true},{"id":"260056","nisn":"0111414121","name":"MUHAMMAD ARDIANSYAH","gender":"LAKI-LAKI","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=MUHAMMAD+ARDIANSYAH&entry.201529640=HS","selected":true},{"id":"260060","nisn":"0118399845","name":"MUHAMMAD IQBAL MULIYADI","gender":"LAKI-LAKI","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=MUHAMMAD+IQBAL+MULIYADI&entry.201529640=HS","selected":false},{"id":"260064","nisn":"0119799802","name":"MUHAMMAD REEFAN BASTIAN","gender":"LAKI-LAKI","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=MUHAMMAD+REEFAN+BASTIAN&entry.201529640=HS","selected":true},{"id":"260068","nisn":"0108012631","name":"MUHAMMAD SYAFIQ","gender":"LAKI-LAKI","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=MUHAMMAD+SYAFIQ&entry.201529640=HS","selected":true},{"id":"260071","nisn":"0107544031","name":"MUSFIRA RAMADANI MARMAN","gender":"PEREMPUAN","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=MUSFIRA+RAMADANI+MARMAN&entry.201529640=HS","selected":true},{"id":"260075","nisn":"0108546784","name":"NOVI AMELIA","gender":"PEREMPUAN","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=NOVI+AMELIA&entry.201529640=HS","selected":true},{"id":"260079","nisn":"0105691485","name":"NUR HAISA","gender":"PEREMPUAN","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=NUR+HAISA&entry.201529640=HS","selected":true},{"id":"260083","nisn":"0103802830","name":"NURHAFIZA","gender":"PEREMPUAN","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=NURHAFIZA&entry.201529640=HS","selected":true},{"id":"260087","nisn":"0101679788","name":"PUTRI NABILA","gender":"PEREMPUAN","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=PUTRI+NABILA&entry.201529640=HS","selected":true},{"id":"260089","nisn":"3084790876","name":"RASMAN RAM","gender":"LAKI-LAKI","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=RASMAN+RAM&entry.201529640=HS","selected":true},{"id":"260096","nisn":"0107266947","name":"REVARINDI TINDA","gender":"PEREMPUAN","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=REVARINDI+TINDA&entry.201529640=HS","selected":true},{"id":"260097","nisn":"0109887410","name":"REZA AGUNGTAMA","gender":"LAKI-LAKI","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=REZA+AGUNGTAMA&entry.201529640=HS","selected":true},{"id":"260100","nisn":"3110853510","name":"RIZKI","gender":"LAKI-LAKI","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=RIZKI&entry.201529640=HS","selected":true},{"id":"260104","nisn":"0105182137","name":"SELVIA RAHMADANI","gender":"PEREMPUAN","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=SELVIA+RAHMADANI&entry.201529640=HS","selected":true},{"id":"260108","nisn":"0111290947","name":"SYAHRINI","gender":"PEREMPUAN","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=SYAHRINI&entry.201529640=HS","selected":true},{"id":"260113","nisn":"0106354045","name":"WULAN SAFITRI","gender":"PEREMPUAN","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=WULAN+SAFITRI&entry.201529640=HS","selected":true},{"id":"260117","nisn":"0104920937","name":"ZASKIA SULISTYAWATI","gender":"PEREMPUAN","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=ZASKIA+SULISTYAWATI&entry.201529640=HS","selected":true}],"Kelas XIA":[{"id":"250006","nisn":"0097492386","name":"A. ASYURA IBTISAMAH ANNUR","gender":"PEREMPUAN","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=A.+ASYURA+IBTISAMAH+ANNUR&entry.201529640=HS","selected":true},{"id":"250014","nisn":"0092443821","name":"AKGLENSIA SIMON SOLON","gender":"PEREMPUAN","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=AKGLENSIA+SIMON+SOLON&entry.201529640=HS","selected":true},{"id":"250017","nisn":"0094550813","name":"ALIF SYAFAR","gender":"LAKI-LAKI","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=ALIF+SYAFAR&entry.201529640=HS","selected":true},{"id":"250018","nisn":"0102444480","name":"ALISA LANI","gender":"PEREMPUAN","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=ALISA+LANI&entry.201529640=HS","selected":true},{"id":"250022","nisn":"0094181282","name":"ANDI ATIQAH ZYAFIRA MAWAN","gender":"PEREMPUAN","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=ANDI+ATIQAH+ZYAFIRA+MAWAN&entry.201529640=HS","selected":true},{"id":"250025","nisn":"0102988633","name":"ANDI SYIFA ROCHIDAH","gender":"PEREMPUAN","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=ANDI+SYIFA+ROCHIDAH&entry.201529640=HS","selected":true},{"id":"250028","nisn":"0104444256","name":"ANGGI ANGREINI","gender":"PEREMPUAN","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=ANGGI+ANGREINI&entry.201529640=HS","selected":true},{"id":"250031","nisn":"0084781778","name":"ARNIS RAMADANI","gender":"PEREMPUAN","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=ARNIS+RAMADANI&entry.201529640=HS","selected":true},{"id":"250032","nisn":"0109823116","name":"ASRIANA PUTRI","gender":"PEREMPUAN","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=ASRIANA+PUTRI&entry.201529640=HS","selected":true},{"id":"250033","nisn":"0104233399","name":"ASSYFA TRIQANAYA ISRA","gender":"PEREMPUAN","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=ASSYFA+TRIQANAYA+ISRA&entry.201529640=HS","selected":true},{"id":"250034","nisn":"0094891693","name":"ASTI KRISMAWATI","gender":"PEREMPUAN","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=ASTI+KRISMAWATI&entry.201529640=HS","selected":true},{"id":"250035","nisn":"0107213702","name":"BILAL PUTRA SYAWAL","gender":"LAKI-LAKI","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=BILAL+PUTRA+SYAWAL&entry.201529640=HS","selected":true},{"id":"250042","nisn":"0095736168","name":"DIHAN","gender":"LAKI-LAKI","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=DIHAN&entry.201529640=HS","selected":true},{"id":"250049","nisn":"0105716068","name":"FITRIANI","gender":"PEREMPUAN","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=FITRIANI&entry.201529640=HS","selected":true},{"id":"250050","nisn":"0107340111","name":"HANIFA","gender":"PEREMPUAN","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=HANIFA&entry.201529640=HS","selected":true},{"id":"250060","nisn":"0091637614","name":"M. AIDIL FITRA RAMADHAN","gender":"LAKI-LAKI","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=M.+AIDIL+FITRA+RAMADHAN&entry.201529640=HS","selected":true},{"id":"250063","nisn":"0106857190","name":"MEISYARA","gender":"PEREMPUAN","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=MEISYARA&entry.201529640=HS","selected":true},{"id":"250078","nisn":"0106302571","name":"MUHAMMAD ASHAR TIRO","gender":"LAKI-LAKI","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=MUHAMMAD+ASHAR+TIRO&entry.201529640=HS","selected":true},{"id":"250081","nisn":"0108959367","name":"MUHAMMAD JUMALDI","gender":"LAKI-LAKI","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=MUHAMMAD+JUMALDI&entry.201529640=HS","selected":true},{"id":"250079","nisn":"0091351028","name":"MUHAMMAD ASRAF","gender":"LAKI-LAKI","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=MUHAMMAD+ASRAF&entry.201529640=HS","selected":true},{"id":"250092","nisn":"0108275929","name":"NIKITA NURSYAFIRA","gender":"PEREMPUAN","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=NIKITA+NURSYAFIRA&entry.201529640=HS","selected":true},{"id":"250093","nisn":"0123678476","name":"NISRINA JUNIATI","gender":"PEREMPUAN","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=NISRINA+JUNIATI&entry.201529640=HS","selected":true},{"id":"250096","nisn":"0096584140","name":"NUR INTAN","gender":"PEREMPUAN","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=NUR+INTAN&entry.201529640=HS","selected":true},{"id":"250100","nisn":"0108849481","name":"NURFAHIMA RASYID","gender":"PEREMPUAN","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=NURFAHIMA+RASYID&entry.201529640=HS","selected":true},{"id":"250102","nisn":"3090573895","name":"NURHASMIDAH","gender":"PEREMPUAN","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=NURHASMIDAH&entry.201529640=HS","selected":true},{"id":"250103","nisn":"0081968270","name":"NURUL AINSYAFIKAH","gender":"PEREMPUAN","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=NURUL+AINSYAFIKAH&entry.201529640=HS","selected":true},{"id":"250104","nisn":"0102251540","name":"NURUL SUHAIMAH","gender":"PEREMPUAN","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=NURUL+SUHAIMAH&entry.201529640=HS","selected":true},{"id":"250105","nisn":"0091504500","name":"PAHRIA","gender":"PEREMPUAN","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=PAHRIA&entry.201529640=HS","selected":true},{"id":"250106","nisn":"0104153418","name":"PANCA ANDRIYANTO","gender":"LAKI-LAKI","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=PANCA+ANDRIYANTO&entry.201529640=HS","selected":true},{"id":"250112","nisn":"0102421668","name":"RAFIDA","gender":"PEREMPUAN","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=RAFIDA&entry.201529640=HS","selected":true},{"id":"250115","nisn":"0107239195","name":"RANI RINDIANI","gender":"PEREMPUAN","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=RANI+RINDIANI&entry.201529640=HS","selected":true},{"id":"250118","nisn":"0107996255","name":"RISKA FITRIA ASRYAD","gender":"PEREMPUAN","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=RISKA+FITRIA+ASRYAD&entry.201529640=HS","selected":true},{"id":"250129","nisn":"0106345602","name":"SALWA AZAHRA","gender":"PEREMPUAN","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=SALWA+AZAHRA&entry.201529640=HS","selected":true},{"id":"250140","nisn":"0099883545","name":"SYAHWALANI","gender":"PEREMPUAN","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=SYAHWALANI&entry.201529640=HS","selected":true},{"id":"250141","nisn":"0097143695","name":"SYIFA QOLBUHA MUNAWWAROH","gender":"PEREMPUAN","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=SYIFA+QOLBUHA+MUNAWWAROH&entry.201529640=HS","selected":true},{"id":"250146","nisn":"0097799545","name":"ZAKIYATUN NAFSIAH","gender":"PEREMPUAN","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=ZAKIYATUN+NAFSIAH&entry.201529640=HS","selected":true}],"Kelas XIB":[{"id":"250007","nisn":"0099344528","name":"A. ASTI PRATIWI","gender":"PEREMPUAN","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=A.+ASTI+PRATIWI&entry.201529640=HS","selected":false},{"id":"250008","nisn":"0098769202","name":"ADRIAN","gender":"LAKI-LAKI","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=ADRIAN&entry.201529640=HS","selected":false},{"id":"250010","nisn":"0098774254","name":"AGUS SABRANI LAYENDRA","gender":"LAKI-LAKI","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=AGUS+SABRANI+LAYENDRA&entry.201529640=HS","selected":false},{"id":"250020","nisn":"0103411781","name":"AMIRA MARIANI","gender":"PEREMPUAN","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=AMIRA+MARIANI&entry.201529640=HS","selected":false},{"id":"250023","nisn":"0092326306","name":"ANDI MEGAWATI","gender":"PEREMPUAN","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=ANDI+MEGAWATI&entry.201529640=HS","selected":false},{"id":"250036","nisn":"0097363626","name":"DAFA KHAIRULLAH","gender":"LAKI-LAKI","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=DAFA+KHAIRULLAH&entry.201529640=HS","selected":false},{"id":"250045","nisn":"0109985704","name":"FADHIL ADSYAR","gender":"LAKI-LAKI","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=FADHIL+ADSYAR&entry.201529640=HS","selected":false},{"id":"250057","nisn":"0105552836","name":"KHAIRUL IKHSAN","gender":"LAKI-LAKI","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=KHAIRUL+IKHSAN&entry.201529640=HS","selected":false},{"id":"250055","nisn":"3102066273","name":"INTAN NURFAUZIAH","gender":"PEREMPUAN","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=INTAN+NURFAUZIAH&entry.201529640=HS","selected":false},{"id":"250061","nisn":"0088633139","name":"MASWIN","gender":"PEREMPUAN","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=MASWIN&entry.201529640=HS","selected":false},{"id":"250062","nisn":"0107732153","name":"MAYRA ALAMANDA SALSABILA","gender":"PEREMPUAN","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=MAYRA+ALAMANDA+SALSABILA&entry.201529640=HS","selected":false},{"id":"250065","nisn":"0094537101","name":"MOHAMMAD DERMAWAN","gender":"LAKI-LAKI","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=MOHAMMAD+DERMAWAN&entry.201529640=HS","selected":false},{"id":"250066","nisn":"0095457422","name":"MOHD. FEBRIANSYAH","gender":"LAKI-LAKI","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=MOHD.+FEBRIANSYAH&entry.201529640=HS","selected":false},{"id":"250069","nisn":"0097267938","name":"MUH FADILLA FANZA","gender":"LAKI-LAKI","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=MUH+FADILLA+FANZA&entry.201529640=HS","selected":false},{"id":"250071","nisn":"0102129545","name":"MUH. ALFI SYAHRI","gender":"LAKI-LAKI","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=MUH.+ALFI+SYAHRI&entry.201529640=HS","selected":false},{"id":"250083","nisn":"0092581616","name":"MUHAMMAD PATIR","gender":"LAKI-LAKI","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=MUHAMMAD+PATIR&entry.201529640=HS","selected":false},{"id":"250089","nisn":"0108205390","name":"MUHAMMAD YUSUF DAHANIS SAPUTRA","gender":"LAKI-LAKI","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=MUHAMMAD+YUSUF+DAHANIS+SAPUTRA&entry.201529640=HS","selected":false},{"id":"250090","nisn":"0088980747","name":"MUHD NABIL AIMAN SHAH","gender":"LAKI-LAKI","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=MUHD+NABIL+AIMAN+SHAH&entry.201529640=HS","selected":false},{"id":"250094","nisn":"0093466487","name":"NUR AIN RAMADHANI","gender":"PEREMPUAN","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=NUR+AIN+RAMADHANI&entry.201529640=HS","selected":false},{"id":"250095","nisn":"0096968111","name":"NUR HAFIZA XIB","gender":"PEREMPUAN","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=NUR+HAFIZA+XIB&entry.201529640=HS","selected":false},{"id":"250098","nisn":"0094447417","name":"NUR SYAHRANI","gender":"PEREMPUAN","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=NUR+SYAHRANI&entry.201529640=HS","selected":false},{"id":"250101","nisn":"0089761491","name":"NURFIYANA","gender":"PEREMPUAN","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=NURFIYANA&entry.201529640=HS","selected":false},{"id":"250108","nisn":"0093540249","name":"PUTRI DEWI YANTI","gender":"PEREMPUAN","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=PUTRI+DEWI+YANTI&entry.201529640=HS","selected":false},{"id":"250110","nisn":"0094123531","name":"PUTRI NABILA XIB","gender":"PEREMPUAN","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=PUTRI+NABILA+XIB&entry.201529640=HS","selected":false},{"id":"250111","nisn":"0084197654","name":"PUTRI SEPTIANA RAMADHANI","gender":"PEREMPUAN","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=PUTRI+SEPTIANA+RAMADHANI&entry.201529640=HS","selected":false},{"id":"250114","nisn":"0094964080","name":"RAMADHAN","gender":"LAKI-LAKI","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=RAMADHAN&entry.201529640=HS","selected":false},{"id":"250117","nisn":"0109173719","name":"RIRIN AULIA","gender":"PEREMPUAN","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=RIRIN+AULIA&entry.201529640=HS","selected":false},{"id":"250119","nisn":"0091817765","name":"ROSMAWATI","gender":"PEREMPUAN","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=ROSMAWATI&entry.201529640=HS","selected":false},{"id":"250120","nisn":"0102319298","name":"RULIANA","gender":"PEREMPUAN","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=RULIANA&entry.201529640=HS","selected":false},{"id":"250124","nisn":"0096118493","name":"SAHRUL XI-B","gender":"LAKI-LAKI","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=SAHRUL+XIB&entry.201529640=HS","selected":false},{"id":"250130","nisn":"3108169531","name":"SAMSINAR XI-B","gender":"PEREMPUAN","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=SAMSINAR+XIB&entry.201529640=HS","selected":false},{"id":"250131","nisn":"0093062983","name":"SASKIA XI-B","gender":"PEREMPUAN","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=SASKIA+XIB&entry.201529640=HS","selected":false},{"id":"250134","nisn":"0105124428","name":"SISKA AMULFAH","gender":"PEREMPUAN","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=SISKA+AMULFAH&entry.201529640=HS","selected":false},{"id":"250135","nisn":"0092734594","name":"SITI NURHIKMAH","gender":"PEREMPUAN","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=SITI+NURHIKMAH&entry.201529640=HS","selected":false},{"id":"250136","nisn":"0096203239","name":"SRI AINUN","gender":"PEREMPUAN","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=SRI+AINUN&entry.201529640=HS","selected":false},{"id":"250142","nisn":"0101718058","name":"SYIFAH SYAFANA","gender":"PEREMPUAN","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=SYIFAH+SYAFANA&entry.201529640=HS","selected":false}],"Kelas XIC":[{"id":"250019","nisn":"0081638119","name":"AMBO UPE","gender":"LAKI-LAKI","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=AMBO+UPE&entry.201529640=HS","selected":true},{"id":"250021","nisn":"0102785603","name":"ANASTASYA","gender":"PEREMPUAN","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=ANASTASYA&entry.201529640=HS","selected":true},{"id":"250030","nisn":"0104897480","name":"ARIP PRIMA","gender":"LAKI-LAKI","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=ARIP+PRIMA&entry.201529640=HS","selected":true},{"id":"250041","nisn":"0094881878","name":"DIAN FAHIRA ZURAJNI","gender":"PEREMPUAN","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=DIAN+FAHIRA+ZURAJNI&entry.201529640=HS","selected":true},{"id":"250044","nisn":"0091322136","name":"EKAL","gender":"LAKI-LAKI","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=EKAL&entry.201529640=HS","selected":false},{"id":"250047","nisn":"0093518313","name":"FIKRI ALFIANTO","gender":"LAKI-LAKI","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=FIKRI+ALFIANTO&entry.201529640=HS","selected":true},{"id":"250048","nisn":"0091078860","name":"FITRAH","gender":"PEREMPUAN","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=FITRAH&entry.201529640=HS","selected":false},{"id":"250052","nisn":"0105364118","name":"HASNENI","gender":"PEREMPUAN","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=HASNENI&entry.201529640=HS","selected":true},{"id":"250054","nisn":"0104438363","name":"IMROATUL MUTIAH","gender":"PEREMPUAN","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=IMROATUL+MUTIAH&entry.201529640=HS","selected":false},{"id":"250056","nisn":"0101661672","name":"JEFRI ALBUKHARI","gender":"LAKI-LAKI","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=JEFRI+ALBUKHARI&entry.201529640=HS","selected":true},{"id":"250064","nisn":"0102590137","name":"MOH HAFIZUL SYAID","gender":"LAKI-LAKI","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=MOH+HAFIZUL+SYAID&entry.201529640=HS","selected":false},{"id":"250068","nisn":"0103056023","name":"MOUDY SALSYA","gender":"PEREMPUAN","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=MOUDY+SALSYA&entry.201529640=HS","selected":false},{"id":"250070","nisn":"0089272656","name":"MUH HAIKAL","gender":"LAKI-LAKI","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=MUH+HAIKAL&entry.201529640=HS","selected":false},{"id":"250072","nisn":"0093427255","name":"MUH. JIBRIL","gender":"LAKI-LAKI","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=MUH.+JIBRIL&entry.201529640=HS","selected":true},{"id":"250073","nisn":"0095050507","name":"MUHAMMAD ADNAN","gender":"LAKI-LAKI","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=MUHAMMAD+ADNAN&entry.201529640=HS","selected":false},{"id":"250074","nisn":"0094858813","name":"MUHAMMAD ADRIAN","gender":"LAKI-LAKI","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=MUHAMMAD+ADRIAN&entry.201529640=HS","selected":false},{"id":"250076","nisn":"0129770348","name":"MUHAMMAD ARFIANSYAH","gender":"LAKI-LAKI","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=MUHAMMAD+ARFIANSYAH&entry.201529640=HS","selected":true},{"id":"250077","nisn":"0091453110","name":"MUHAMMAD ARKAN","gender":"LAKI-LAKI","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=MUHAMMAD+ARKAN&entry.201529640=HS","selected":true},{"id":"250082","nisn":"0104013885","name":"MUHAMMAD NUR GANI YUSUF","gender":"LAKI-LAKI","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=MUHAMMAD+NUR+GANI+YUSUF&entry.201529640=HS","selected":true},{"id":"250085","nisn":"0103952473","name":"MUHAMMAD REZA HIDAYAT","gender":"LAKI-LAKI","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=MUHAMMAD+REZA+HIDAYAT&entry.201529640=HS","selected":true},{"id":"250086","nisn":"0081463238","name":"MUHAMMAD SYAFIQ MONE","gender":"LAKI-LAKI","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=MUHAMMAD+SYAFIQ+MONE&entry.201529640=HS","selected":true},{"id":"250087","nisn":"0098199674","name":"MUHAMMAD SYUKRI","gender":"LAKI-LAKI","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=MUHAMMAD+SYUKRI&entry.201529640=HS","selected":true},{"id":"250091","nisn":"0099045572","name":"MUTMAINNAH","gender":"PEREMPUAN","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=MUTMAINNAH&entry.201529640=HS","selected":false},{"id":"250109","nisn":"0101562884","name":"PUTRI JUPERA","gender":"PEREMPUAN","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=PUTRI+JUPERA&entry.201529640=HS","selected":true},{"id":"250121","nisn":"0107581672","name":"RUSTIANA MANDA","gender":"PEREMPUAN","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=RUSTIANA+MANDA&entry.201529640=HS","selected":false},{"id":"250122","nisn":"0107177004","name":"SAHAR","gender":"LAKI-LAKI","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=SAHAR&entry.201529640=HS","selected":true},{"id":"250127","nisn":"0099466841","name":"SALDI","gender":"LAKI-LAKI","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=SALDI&entry.201529640=HS","selected":false},{"id":"250132","nisn":"0096726908","name":"SHARIFAH ATIKAH","gender":"PEREMPUAN","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=SHARIFAH+ATIKAH&entry.201529640=HS","selected":true},{"id":"250133","nisn":"0091417345","name":"SHIIREEN","gender":"PEREMPUAN","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=SHIIREEN&entry.201529640=HS","selected":false},{"id":"250137","nisn":"0094807679","name":"SRI MULIANA","gender":"PEREMPUAN","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=SRI+MULIANA&entry.201529640=HS","selected":false},{"id":"250138","nisn":"0097534395","name":"SUSANDI","gender":"LAKI-LAKI","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=SUSANDI&entry.201529640=HS","selected":true},{"id":"250147","nisn":"0108401281","name":"ZAKY AHMAD MUSOFFAR","gender":"LAKI-LAKI","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=ZAKY+AHMAD+MUSOFFAR&entry.201529640=HS","selected":false},{"id":"250148","nisn":"0101720889","name":"ZIDAN OKTA PRANATA","gender":"LAKI-LAKI","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=ZIDAN+OKTA+PRANATA&entry.201529640=HS","selected":true},{"id":"250149","nisn":"0093186469","name":"ZUL ABADI","gender":"LAKI-LAKI","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=ZUL+ABADI&entry.201529640=HS","selected":false},{"id":"260121","nisn":"0108916727","name":"NURHALIZA","gender":"PEREMPUAN","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=NURHALIZA&entry.201529640=HS","selected":false},{"id":"260122","nisn":"0091101952","name":"ARTI AULIYA","gender":"PEREMPUAN","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=ARTI+AULIYA&entry.201529640=HS","selected":true}],"Kelas XID":[{"id":"250009","nisn":"0105508144","name":"ADRIAN AJ","gender":"LAKI-LAKI","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=ADRIAN+AJ&entry.201529640=HS","selected":true},{"id":"250011","nisn":"0108980994","name":"AHMAD FARHAN","gender":"LAKI-LAKI","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=AHMAD+FARHAN&entry.201529640=HS","selected":false},{"id":"250012","nisn":"0108831435","name":"AHMAD JUNAIDIL","gender":"LAKI-LAKI","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=AHMAD+JUNAIDIL&entry.201529640=HS","selected":false},{"id":"250013","nisn":"0103000877","name":"AIDIL SAPUTRA","gender":"LAKI-LAKI","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=AIDIL+SAPUTRA&entry.201529640=HS","selected":true},{"id":"250015","nisn":"0108954434","name":"ALFIANSYAH","gender":"LAKI-LAKI","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=ALFIANSYAH&entry.201529640=HS","selected":false},{"id":"250024","nisn":"0095452407","name":"ANDI REVI MERISKA","gender":"PEREMPUAN","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=ANDI+REVI+MERISKA&entry.201529640=HS","selected":false},{"id":"250026","nisn":"0085625536","name":"ANDIKA","gender":"LAKI-LAKI","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=ANDIKA&entry.201529640=HS","selected":true},{"id":"250027","nisn":"0084067796","name":"ANEL NOVRIZAL","gender":"LAKI-LAKI","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=ANEL+NOVRIZAL&entry.201529640=HS","selected":false},{"id":"250029","nisn":"3049396393","name":"ARIMI K GORANG","gender":"LAKI-LAKI","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=ARIMI+K+GORANG&entry.201529640=HS","selected":false},{"id":"250037","nisn":"0098875445","name":"DESTHY AULIYA RAMADANI","gender":"PEREMPUAN","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=DESTHY+AULIYA+RAMADANI&entry.201529640=HS","selected":true},{"id":"250038","nisn":"0109814677","name":"DEWI SELFIANA MUALIANI","gender":"PEREMPUAN","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=DEWI+SELFIANA+MUALIANI&entry.201529640=HS","selected":false},{"id":"250039","nisn":"0091431226","name":"DHIKA PRATAMA ARDHY","gender":"LAKI-LAKI","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=DHIKA+PRATAMA+ARDHY&entry.201529640=HS","selected":false},{"id":"250043","nisn":"0093363357","name":"DIMAS SAPUTRA","gender":"LAKI-LAKI","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=DIMAS+SAPUTRA&entry.201529640=HS","selected":true},{"id":"250051","nisn":"0099834003","name":"HASDING","gender":"LAKI-LAKI","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=HASDING&entry.201529640=HS","selected":false},{"id":"250059","nisn":"0096621921","name":"LEO NARDI","gender":"LAKI-LAKI","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=LEO+NARDI&entry.201529640=HS","selected":false},{"id":"250075","nisn":"0109828665","name":"MUHAMMAD AKBAR NOVAL","gender":"LAKI-LAKI","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=MUHAMMAD+AKBAR+NOVAL&entry.201529640=HS","selected":true},{"id":"250080","nisn":"0105190938","name":"MUHAMMAD HAIKAL","gender":"LAKI-LAKI","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=MUHAMMAD+HAIKAL&entry.201529640=HS","selected":false},{"id":"250084","nisn":"0105680915","name":"MUHAMMAD RAFFLY DWI SANTOSO","gender":"LAKI-LAKI","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=MUHAMMAD+RAFFLY+DWI+SANTOSO&entry.201529640=HS","selected":false},{"id":"250088","nisn":"3085256149","name":"MUHAMMAD YUSUF ADITYA SAPUTRA","gender":"LAKI-LAKI","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=MUHAMMAD+YUSUF+ADITYA+SAPUTRA&entry.201529640=HS","selected":true},{"id":"250097","nisn":"0095854815","name":"NUR NATASYAH","gender":"PEREMPUAN","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=NUR+NATASYAH&entry.201529640=HS","selected":false},{"id":"250116","nisn":"0095141120","name":"RIFKI HARDYANTO","gender":"LAKI-LAKI","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=RIFKI+HARDYANTO&entry.201529640=HS","selected":true},{"id":"250123","nisn":"0092651933","name":"SAHRUL","gender":"LAKI-LAKI","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=SAHRUL&entry.201529640=HS","selected":false},{"id":"250125","nisn":"0071989228","name":"SAIPUL","gender":"LAKI-LAKI","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=SAIPUL&entry.201529640=HS","selected":false},{"id":"250126","nisn":"0094209467","name":"SAKIRA","gender":"PEREMPUAN","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=SAKIRA&entry.201529640=HS","selected":true},{"id":"250128","nisn":"0101489107","name":"SALSIA PUTRI","gender":"PEREMPUAN","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=SALSIA+PUTRI&entry.201529640=HS","selected":false},{"id":"250143","nisn":"0095749423","name":"SYILA AULYA FITRI","gender":"PEREMPUAN","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=SYILA+AULYA+FITRI&entry.201529640=HS","selected":false},{"id":"250144","nisn":"0101357837","name":"TIRTA PANJI WINATA","gender":"LAKI-LAKI","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=TIRTA+PANJI+WINATA&entry.201529640=HS","selected":true},{"id":"250145","nisn":"0091788807","name":"ZAHRA AMELIA BILQIS","gender":"PEREMPUAN","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=ZAHRA+AMELIA+BILQIS&entry.201529640=HS","selected":true},{"id":"260001","nisn":"0106702229","name":"MUHAMMAD IBRAHIM ZAKARIAH","gender":"LAKI-LAKI","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=MUHAMMAD+IBRAHIM+ZAKARIAH&entry.201529640=HS","selected":false},{"id":"260118","nisn":"0107571376","name":"SASKIA","gender":"PEREMPUAN","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=SASKIA&entry.201529640=HS","selected":false},{"id":"260119","nisn":"0093530060","name":"ANDI FAZRIAN NUR","gender":"LAKI-LAKI","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=ANDI+FAZRIAN+NUR&entry.201529640=HS","selected":true},{"id":"260120","nisn":"0098057105","name":"ASTRI","gender":"PEREMPUAN","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=ASTRI&entry.201529640=HS","selected":true}],"Kelas XIIA":[{"id":"240003","nisn":"0091191496","name":"AAN SAPUTRA","gender":"LAKI-LAKI","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=AAN+SAPUTRA&entry.201529640=HS","selected":false},{"id":"240004","nisn":"0095334209","name":"ABDI PRATAMA","gender":"LAKI-LAKI","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=ABDI+PRATAMA&entry.201529640=HS","selected":false},{"id":"240009","nisn":"0084112113","name":"AGUNG DZUHRI PRATAMA","gender":"LAKI-LAKI","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=AGUNG+DZUHRI+PRATAMA&entry.201529640=HS","selected":false},{"id":"240011","nisn":"0091892645","name":"AIQAL MUHAMMAD SYAHRIL","gender":"LAKI-LAKI","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=AIQAL+MUHAMMAD+SYAHRIL&entry.201529640=HS","selected":false},{"id":"240013","nisn":"0084072548","name":"AISYAH REMBU KOBORU","gender":"PEREMPUAN","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=AISYAH+REMBU+KOBORU&entry.201529640=HS","selected":false},{"id":"240018","nisn":"0092615517","name":"ANDI KAMAL ABDILLAH","gender":"LAKI-LAKI","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=ANDI+KAMAL+ABDILLAH&entry.201529640=HS","selected":false},{"id":"240023","nisn":"0091447722","name":"APRILIA PRATIWI","gender":"PEREMPUAN","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=APRILIA+PRATIWI&entry.201529640=HS","selected":false},{"id":"240024","nisn":"3095581688","name":"APRILLIA SALSABILAH","gender":"PEREMPUAN","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=APRILLIA+SALSABILAH&entry.201529640=HS","selected":false},{"id":"240026","nisn":"0091083800","name":"ARTIKA NURSYIFA ALIA","gender":"PEREMPUAN","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=ARTIKA+NURSYIFA+ALIA&entry.201529640=HS","selected":false},{"id":"240028","nisn":"0096663453","name":"ATIKA RAHMAH","gender":"PEREMPUAN","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=ATIKA+RAHMAH&entry.201529640=HS","selected":false},{"id":"240030","nisn":"0094648701","name":"AULIA PUTRA SAJIDIN ATMAJA","gender":"PEREMPUAN","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=AULIA+PUTRA+SAJIDIN+ATMAJA&entry.201529640=HS","selected":false},{"id":"240032","nisn":"3084113291","name":"AYU RAHMA DANI","gender":"PEREMPUAN","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=AYU+RAHMA+DANI&entry.201529640=HS","selected":false},{"id":"240033","nisn":"0073285520","name":"BASRI","gender":"LAKI-LAKI","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=BASRI&entry.201529640=HS","selected":false},{"id":"240039","nisn":"0081068230","name":"DIANA","gender":"PEREMPUAN","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=DIANA&entry.201529640=HS","selected":false},{"id":"240044","nisn":"0087043362","name":"IBNU HANIF RISQI","gender":"LAKI-LAKI","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=IBNU+HANIF+RISQI&entry.201529640=HS","selected":false},{"id":"240047","nisn":"0084361059","name":"IRMISA SYABANI PUTRI","gender":"PEREMPUAN","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=IRMISA+SYABANI+PUTRI&entry.201529640=HS","selected":false},{"id":"240054","nisn":"0082403481","name":"LUTVIA NABILA","gender":"PEREMPUAN","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=LUTVIA+NABILA&entry.201529640=HS","selected":false},{"id":"240056","nisn":"0093372955","name":"M. IRWANSYA","gender":"LAKI-LAKI","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=M.+IRWANSYA&entry.201529640=HS","selected":false},{"id":"240058","nisn":"0081249862","name":"MARIAMA ULFHA","gender":"PEREMPUAN","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=MARIAMA+ULFHA&entry.201529640=HS","selected":false},{"id":"240059","nisn":"0082897538","name":"MAYLANI FERLIANA PUTRI","gender":"PEREMPUAN","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=MAYLANI+FERLIANA+PUTRI&entry.201529640=HS","selected":false},{"id":"240068","nisn":"3099613275","name":"MUH. RAHMAN","gender":"LAKI-LAKI","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=MUH.+RAHMAN&entry.201529640=HS","selected":false},{"id":"240076","nisn":"0091840588","name":"MUHAMMAD HAFIZ RAMADHAN","gender":"LAKI-LAKI","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=MUHAMMAD+HAFIZ+RAMADHAN&entry.201529640=HS","selected":false},{"id":"240080","nisn":"0093459172","name":"MUHAMMAD RAFLI","gender":"LAKI-LAKI","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=MUHAMMAD+RAFLI&entry.201529640=HS","selected":false},{"id":"240083","nisn":"0082810406","name":"MUHAMMAD TAQWA ALFATIHA","gender":"LAKI-LAKI","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=MUHAMMAD+TAQWA+ALFATIHA&entry.201529640=HS","selected":false},{"id":"240086","nisn":"0085160184","name":"MUSLINDA","gender":"PEREMPUAN","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=MUSLINDA&entry.201529640=HS","selected":false},{"id":"240096","nisn":"0086218744","name":"NUR LAILAH","gender":"PEREMPUAN","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=NUR+LAILAH&entry.201529640=HS","selected":false},{"id":"240106","nisn":"3088994773","name":"RESKY ADITYA","gender":"LAKI-LAKI","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=RESKY+ADITYA&entry.201529640=HS","selected":false},{"id":"240109","nisn":"0091153356","name":"RIANA","gender":"PEREMPUAN","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=RIANA&entry.201529640=HS","selected":false},{"id":"240110","nisn":"0087067554","name":"RIFALDY AZANIL ALAM KALLA","gender":"LAKI-LAKI","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=RIFALDY+AZANIL+ALAM+KALLA&entry.201529640=HS","selected":false},{"id":"240127","nisn":"0085915382","name":"SULAIMAN","gender":"LAKI-LAKI","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=SULAIMAN&entry.201529640=HS","selected":false},{"id":"240132","nisn":"0092859675","name":"TRANITA DIRYAWATI","gender":"PEREMPUAN","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=TRANITA+DIRYAWATI&entry.201529640=HS","selected":false},{"id":"260002","nisn":"0097480772","name":"RAIHAN TRI BAGASKARA","gender":"LAKI-LAKI","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=RAIHAN+TRI+BAGASKARA&entry.201529640=HS","selected":false}],"Kelas XIIB":[{"id":"240010","nisn":"0084436280","name":"AHMAD DANI","gender":"LAKI-LAKI","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=AHMAD+DANI&entry.201529640=HS","selected":true},{"id":"240012","nisn":"0097963943","name":"AISYAH","gender":"PEREMPUAN","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=AISYAH&entry.201529640=HS","selected":true},{"id":"240029","nisn":"0081935080","name":"ATTILA WANA RAYA","gender":"PEREMPUAN","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=ATTILA+WANA+RAYA&entry.201529640=HS","selected":true},{"id":"240031","nisn":"0083398087","name":"AUREL ANGGRAENY RAMADHANI","gender":"PEREMPUAN","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=AUREL+ANGGRAENY+RAMADHANI&entry.201529640=HS","selected":true},{"id":"240040","nisn":"0091974486","name":"DWI PRASEDTYO SUPRAMTO","gender":"LAKI-LAKI","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=DWI+PRASEDTYO+SUPRAMTO&entry.201529640=HS","selected":true},{"id":"240041","nisn":"0085574612","name":"EDWARD NUGROHO PUTRA TEFBANA","gender":"LAKI-LAKI","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=EDWARD+NUGROHO+PUTRA+TEFBANA&entry.201529640=HS","selected":true},{"id":"240042","nisn":"0096335920","name":"EGI HIDAYAT","gender":"LAKI-LAKI","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=EGI+HIDAYAT&entry.201529640=HS","selected":true},{"id":"250004","nisn":"0094900328","name":"FARAMASTI ADRIANI","gender":"PEREMPUAN","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=FARAMASTI+ADRIANI&entry.201529640=HS","selected":true},{"id":"240049","nisn":"0099402937","name":"JUSRIYANSA","gender":"LAKI-LAKI","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=JUSRIYANSA&entry.201529640=HS","selected":true},{"id":"240052","nisn":"0086322970","name":"KIKI RISKI AMANDA","gender":"PEREMPUAN","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=KIKI+RISKI+AMANDA&entry.201529640=HS","selected":false},{"id":"240053","nisn":"0091488219","name":"LEDY HERWINDA","gender":"PEREMPUAN","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=LEDY+HERWINDA&entry.201529640=HS","selected":true},{"id":"240060","nisn":"0082442156","name":"MEGA RISKIA","gender":"PEREMPUAN","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=MEGA+RISKIA&entry.201529640=HS","selected":true},{"id":"240067","nisn":"0087299320","name":"MUH. FADHIL PANDHITA UGHI","gender":"LAKI-LAKI","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=MUH.+FADHIL+PANDHITA+UGHI&entry.201529640=HS","selected":true},{"id":"240072","nisn":"0089505979","name":"MUHAMMAD BAAITS","gender":"LAKI-LAKI","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=MUHAMMAD+BAAITS&entry.201529640=HS","selected":false},{"id":"240075","nisn":"0098166977","name":"M. FAZRI","gender":"LAKI-LAKI","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=M.+FAZRI&entry.201529640=HS","selected":true},{"id":"240078","nisn":"0108050952","name":"MUHAMMAD ILHAM AHMI","gender":"LAKI-LAKI","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=MUHAMMAD+ILHAM+AHMI&entry.201529640=HS","selected":true},{"id":"240092","nisn":"0083732636","name":"NUR AGUS MARLIYANI","gender":"PEREMPUAN","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=NUR+AGUS+MARLIYANI&entry.201529640=HS","selected":true},{"id":"240095","nisn":"0085973638","name":"NUR ASMARANI SYAFITRI","gender":"PEREMPUAN","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=NUR+ASMARANI+SYAFITRI&entry.201529640=HS","selected":true},{"id":"240100","nisn":"0086506528","name":"PERA YUNITA","gender":"PEREMPUAN","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=PERA+YUNITA&entry.201529640=HS","selected":true},{"id":"240103","nisn":"0095066598","name":"RABHIEL ARNANDO","gender":"LAKI-LAKI","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=RABHIEL+ARNANDO&entry.201529640=HS","selected":true},{"id":"240108","nisn":"0097626825","name":"RHEFAYA NUR SYAFIQAH","gender":"PEREMPUAN","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=RHEFAYA+NUR+SYAFIQAH&entry.201529640=HS","selected":true},{"id":"240112","nisn":"0099655102","name":"RIFKY ALFIDIANSYAH","gender":"LAKI-LAKI","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=RIFKY+ALFIDIANSYAH&entry.201529640=HS","selected":true},{"id":"240114","nisn":"0093361901","name":"RINA PUTRI","gender":"PEREMPUAN","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=RINA+PUTRI&entry.201529640=HS","selected":false},{"id":"240115","nisn":"0088494586","name":"RISMA","gender":"PEREMPUAN","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=RISMA&entry.201529640=HS","selected":true},{"id":"240118","nisn":"0082130561","name":"RYO RAMADHAN HABIBURAHMAN","gender":"LAKI-LAKI","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=RYO+RAMADHAN+HABIBURAHMAN&entry.201529640=HS","selected":false},{"id":"240119","nisn":"0093307504","name":"SALSABIL ZAHRA ADILLAH","gender":"PEREMPUAN","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=SALSABIL+ZAHRA+ADILLAH&entry.201529640=HS","selected":true},{"id":"240120","nisn":"0082073606","name":"SAMSUL","gender":"LAKI-LAKI","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=SAMSUL&entry.201529640=HS","selected":true},{"id":"240124","nisn":"0097754934","name":"SHASTA FRIANY MARANNU","gender":"PEREMPUAN","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=SHASTA+FRIANY+MARANNU&entry.201529640=HS","selected":true},{"id":"240125","nisn":"0089144010","name":"SILFIA RIEKA SHOLEHA","gender":"PEREMPUAN","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=SILFIA+RIEKA+SHOLEHA&entry.201529640=HS","selected":false},{"id":"240130","nisn":"0099604495","name":"SYARFIKAH","gender":"PEREMPUAN","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=SYARFIKAH&entry.201529640=HS","selected":true},{"id":"240134","nisn":"3089520864","name":"WAHYU RISKY ARYO SAPUTRA","gender":"LAKI-LAKI","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=WAHYU+RISKY+ARYO+SAPUTRA&entry.201529640=HS","selected":true},{"id":"240137","nisn":"3159684046","name":"WULAN SYAFIRAH NUGRAHA","gender":"PEREMPUAN","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=WULAN+SYAFIRAH+NUGRAHA&entry.201529640=HS","selected":true},{"id":"240139","nisn":"0099792794","name":"YULIA NINSI","gender":"PEREMPUAN","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=YULIA+NINSI&entry.201529640=HS","selected":true}],"Kelas XIIC":[{"id":"240001","nisn":"0096593916","name":"A. NIA RAMADANI JIHAN P","gender":"PEREMPUAN","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=A.+NIA+RAMADANI+JIHAN+P&entry.201529640=HS","selected":false},{"id":"240005","nisn":"0094422699","name":"ADELLIA RAHMAN","gender":"PEREMPUAN","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=ADELLIA+RAHMAN&entry.201529640=HS","selected":false},{"id":"240006","nisn":"0086034186","name":"ADICA PUTRI","gender":"PEREMPUAN","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=ADICA+PUTRI&entry.201529640=HS","selected":false},{"id":"240008","nisn":"0095751661","name":"ADRIAN FIRANSYAH","gender":"LAKI-LAKI","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=ADRIAN+FIRANSYAH&entry.201529640=HS","selected":false},{"id":"240014","nisn":"0081069242","name":"ALDIASMIN","gender":"LAKI-LAKI","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=ALDIASMIN&entry.201529640=HS","selected":false},{"id":"240016","nisn":"0097846898","name":"AMALIA ZAHRA","gender":"PEREMPUAN","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=AMALIA+ZAHRA&entry.201529640=HS","selected":false},{"id":"240017","nisn":"0084954211","name":"AMNUR GUNAWAN","gender":"LAKI-LAKI","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=AMNUR+GUNAWAN&entry.201529640=HS","selected":false},{"id":"240022","nisn":"0084333309","name":"ANISA","gender":"PEREMPUAN","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=ANISA&entry.201529640=HS","selected":false},{"id":"240035","nisn":"0084592653","name":"CACA APRILIYANTI","gender":"PEREMPUAN","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=CACA+APRILIYANTI&entry.201529640=HS","selected":false},{"id":"240036","nisn":"0085322415","name":"CINTA LAURA","gender":"PEREMPUAN","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=CINTA+LAURA&entry.201529640=HS","selected":false},{"id":"240037","nisn":"0097365585","name":"DANI AHMAD SYARIZAL","gender":"LAKI-LAKI","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=DANI+AHMAD+SYARIZAL&entry.201529640=HS","selected":false},{"id":"240043","nisn":"0099456718","name":"FAREZZY AHMAD","gender":"LAKI-LAKI","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=FAREZZY+AHMAD&entry.201529640=HS","selected":false},{"id":"240045","nisn":"0096431600","name":"IBRAHIM SURYADINATA","gender":"LAKI-LAKI","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=IBRAHIM+SURYADINATA&entry.201529640=HS","selected":false},{"id":"240055","nisn":"0082339379","name":"M. ARFAN","gender":"LAKI-LAKI","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=M.+ARFAN&entry.201529640=HS","selected":false},{"id":"240070","nisn":"0081214726","name":"MUHAMMAD ARDI","gender":"LAKI-LAKI","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=MUHAMMAD+ARDI&entry.201529640=HS","selected":false},{"id":"240073","nisn":"0097585759","name":"MUHAMMAD BENI WIJAYA","gender":"LAKI-LAKI","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=MUHAMMAD+BENI+WIJAYA&entry.201529640=HS","selected":false},{"id":"240074","nisn":"0088635463","name":"MUHAMMAD FAJRI","gender":"LAKI-LAKI","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=MUHAMMAD+FAJRI&entry.201529640=HS","selected":false},{"id":"240079","nisn":"0094448545","name":"MUHAMMAD RAFI","gender":"LAKI-LAKI","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=MUHAMMAD+RAFI&entry.201529640=HS","selected":false},{"id":"240084","nisn":"0086125154","name":"MUHAMMAD YUSUF FADLAN HASTA","gender":"LAKI-LAKI","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=MUHAMMAD+YUSUF+FADLAN+HASTA&entry.201529640=HS","selected":false},{"id":"240094","nisn":"0094729569","name":"NUR ALFIAH","gender":"PEREMPUAN","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=NUR+ALFIAH&entry.201529640=HS","selected":false},{"id":"240102","nisn":"0085747707","name":"PUTRI KIRANA SYAFRIDA","gender":"PEREMPUAN","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=PUTRI+KIRANA+SYAFRIDA&entry.201529640=HS","selected":false},{"id":"240104","nisn":"0098604279","name":"RAIHAN SAMJAYA","gender":"LAKI-LAKI","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=RAIHAN+SAMJAYA&entry.201529640=HS","selected":false},{"id":"240121","nisn":"0097681348","name":"SAVI NAMANDASI NIRA","gender":"PEREMPUAN","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=SAVI+NAMANDASI+NIRA&entry.201529640=HS","selected":false},{"id":"240126","nisn":"0099544572","name":"ST GHADIA UMMAYYAH SUPRATMAN","gender":"PEREMPUAN","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=ST+GHADIA+UMMAYYAH+SUPRATMAN&entry.201529640=HS","selected":false},{"id":"240128","nisn":"0086896744","name":"SULTAN HASANUDDIN","gender":"LAKI-LAKI","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=SULTAN+HASANUDDIN&entry.201529640=HS","selected":false},{"id":"240131","nisn":"0081910122","name":"TASYAH PUTRI LESTARI","gender":"PEREMPUAN","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=TASYAH+PUTRI+LESTARI&entry.201529640=HS","selected":false},{"id":"240133","nisn":"0087635902","name":"VICTOPER","gender":"LAKI-LAKI","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=VICTOPER&entry.201529640=HS","selected":false},{"id":"240140","nisn":"0074574294","name":"ZULKIFLI SYAHRIL","gender":"LAKI-LAKI","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=ZULKIFLI+SYAHRIL&entry.201529640=HS","selected":false}],"Kelas XIID":[{"id":"240007","nisn":"0087368234","name":"ADIT SAPUTRA","gender":"LAKI-LAKI","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=ADIT+SAPUTRA&entry.201529640=HS","selected":false},{"id":"240002","nisn":"0062254988","name":"ANGGA","gender":"LAKI-LAKI","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=ANGGA&entry.201529640=HS","selected":false},{"id":"240149","nisn":"0083094561","name":"ANDINI","gender":"PEREMPUAN","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=ANDINI&entry.201529640=HS","selected":false},{"id":"240020","nisn":"0096983283","name":"ANDI MUHAMMAD SYAHBAN","gender":"LAKI-LAKI","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=ANDI+MUHAMMAD+SYAHBAN&entry.201529640=HS","selected":false},{"id":"240046","nisn":"0081730404","name":"IRENA RAHMADHANI","gender":"PEREMPUAN","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=IRENA+RAHMADHANI&entry.201529640=HS","selected":false},{"id":"240048","nisn":"0082167044","name":"JOVAN OCTAVIAN","gender":"LAKI-LAKI","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=JOVAN+OCTAVIAN&entry.201529640=HS","selected":false},{"id":"240057","nisn":"3081176359","name":"M. RAHMAT","gender":"LAKI-LAKI","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=M.+RAHMAT&entry.201529640=HS","selected":false},{"id":"240061","nisn":"0099652380","name":"MIZWAR","gender":"LAKI-LAKI","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=MIZWAR&entry.201529640=HS","selected":false},{"id":"240062","nisn":"0089825314","name":"MOH. FAIZ","gender":"LAKI-LAKI","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=MOH.+FAIZ&entry.201529640=HS","selected":false},{"id":"240063","nisn":"0085419928","name":"MOH. AQIL FAHREZA","gender":"LAKI-LAKI","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=MOH.+AQIL+FAHREZA&entry.201529640=HS","selected":false},{"id":"240064","nisn":"0099475207","name":"MUCKLAS SAPUTRA","gender":"LAKI-LAKI","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=MUCKLAS+SAPUTRA&entry.201529640=HS","selected":false},{"id":"240066","nisn":"3093166298","name":"MUH RIZKI APRIANSYAH","gender":"LAKI-LAKI","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=MUH+RIZKI+APRIANSYAH&entry.201529640=HS","selected":false},{"id":"240069","nisn":"0076440891","name":"MUHAMMAD ALDO","gender":"LAKI-LAKI","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=MUHAMMAD+ALDO&entry.201529640=HS","selected":false},{"id":"240081","nisn":"0083944002","name":"MUHAMMAD RIFAI","gender":"LAKI-LAKI","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=MUHAMMAD+RIFAI&entry.201529640=HS","selected":false},{"id":"240082","nisn":"0883591832","name":"MUHAMMAD SAYID YASIN","gender":"LAKI-LAKI","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=MUHAMMAD+SAYID+YASIN&entry.201529640=HS","selected":false},{"id":"240088","nisn":"0082145228","name":"NIRMALA DEWI","gender":"PEREMPUAN","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=NIRMALA+DEWI&entry.201529640=HS","selected":false},{"id":"240089","nisn":"0084704907","name":"NISRINA SIFA","gender":"PEREMPUAN","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=NISRINA+SIFA&entry.201529640=HS","selected":false},{"id":"240090","nisn":"3099019837","name":"NIZAM","gender":"LAKI-LAKI","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=NIZAM&entry.201529640=HS","selected":false},{"id":"240091","nisn":"0075969238","name":"NOR IMAN","gender":"LAKI-LAKI","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=NOR+IMAN&entry.201529640=HS","selected":false},{"id":"240097","nisn":"0087572371","name":"NUR SYAFIKA","gender":"PEREMPUAN","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=NUR+SYAFIKA&entry.201529640=HS","selected":false},{"id":"240098","nisn":"0096003172","name":"NURFIKA AMANDA","gender":"PEREMPUAN","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=NURFIKA+AMANDA&entry.201529640=HS","selected":false},{"id":"240101","nisn":"0096067615","name":"PUTRI DESI","gender":"PEREMPUAN","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=PUTRI+DESI&entry.201529640=HS","selected":false},{"id":"240105","nisn":"0089937399","name":"RENDY SAHAM","gender":"LAKI-LAKI","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=RENDY+SAHAM&entry.201529640=HS","selected":false},{"id":"240107","nisn":"0087945982","name":"REZA RAMADHAN","gender":"LAKI-LAKI","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=REZA+RAMADHAN&entry.201529640=HS","selected":false},{"id":"240111","nisn":"0088469002","name":"RIFAT NABIHAN","gender":"LAKI-LAKI","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=RIFAT+NABIHAN&entry.201529640=HS","selected":false},{"id":"240116","nisn":"0099650589","name":"RIZKY TRI PUTRA","gender":"LAKI-LAKI","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=RIZKY+TRI+PUTRA&entry.201529640=HS","selected":false},{"id":"240117","nisn":"0095704016","name":"ROSDIANA","gender":"PEREMPUAN","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=ROSDIANA&entry.201529640=HS","selected":false},{"id":"240122","nisn":"0079557028","name":"SELVIANA","gender":"PEREMPUAN","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=SELVIANA&entry.201529640=HS","selected":false},{"id":"240129","nisn":"0083157960","name":"SURNIATI","gender":"PEREMPUAN","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=SURNIATI&entry.201529640=HS","selected":false},{"id":"240136","nisn":"0058340828","name":"WANDI","gender":"LAKI-LAKI","link":"https://docs.google.com/forms/d/e/1FAIpQLSdnsta25s_bhWUMKMcf86QdHcAT1zAOFqKdB6GkKlLyaFErcw/formResponse?usp=pp_url&entry.1687779044=WANDI&entry.201529640=HS","selected":false}]};
 const CLASS_ORDER=["Kelas XA", "Kelas XB", "Kelas XC", "Kelas XD", "Kelas XIA", "Kelas XIB", "Kelas XIC", "Kelas XID", "Kelas XIIA", "Kelas XIIB", "Kelas XIIC", "Kelas XIID"];
 const INITIAL_STUDENTS=Object.entries(initialSchoolData).flatMap(([kelas,arr])=>arr.map(x=>({...x,kelas,sekolah:'SMAN 2 Nunukan Selatan',active:true})));
-const DEFAULT_API_URL='https://script.google.com/macros/s/AKfycbw7LaeFoZWZzasyUASLEGTpuFkMC14OmyONf_9-17HSxiaaZ8_F5jeP74uKH4cYMIzE/exec';
-const SAVED_API_URL=localStorage.getItem('sidet_api')||'';
+const DEFAULT_API_URL='https://script.google.com/macros/s/AKfycbw3QH8q6W3HrkK9O4XUK91c7Q8y1iBnIn3AGwq8vGmhlqWrpUKy8bIZggxMR18xdrg1/exec';
+// Endpoint final dikunci ke Web App yang diberikan pengguna.
 const API_URL=DEFAULT_API_URL;
-localStorage.setItem('sidet_api', DEFAULT_API_URL);
 const state={role:'siswa',user:null,api:API_URL,data:{attendance:[],users:INITIAL_STUDENTS,leave:[],settings:{}}};
 const $=id=>document.getElementById(id);
 function setRole(r){state.role=r;$('rPeg').classList.toggle('active',r==='siswa');$('rAdm').classList.toggle('active',r==='admin')}
 function toast(t,ok=false){$('toast').textContent=t;$('toast').classList.remove('hidden');setTimeout(()=>$('toast').classList.add('hidden'),3000)}
-function saveApi(v){const u=v.trim();state.api=/^https:\/\//i.test(u)?u:DEFAULT_API_URL;localStorage.setItem('sidet_api',state.api)}
+function saveApi(v){state.api=DEFAULT_API_URL;localStorage.setItem('sidet_api',DEFAULT_API_URL);}
 function apiReady(){return /^https:\/\//i.test(state.api)}
-function api(action,payload={}){
-  return new Promise((resolve,reject)=>{
-    const requestId='sidet_api_'+Date.now()+'_'+Math.random().toString(36).slice(2);
-    let frame=document.getElementById('sidetApiFrame');
-
-    if(!frame){
-      frame=document.createElement('iframe');
-      frame.id='sidetApiFrame';
-      frame.name='sidetApiFrame';
-      frame.style.display='none';
-      frame.setAttribute('aria-hidden','true');
-      document.body.appendChild(frame);
+async function api(action,payload={}){
+  if(!apiReady()) throw Error('URL Google Apps Script belum dikonfigurasi.');
+  const body=JSON.stringify({action,...payload});
+  try{
+    const r=await fetch(state.api,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body});
+    const j=await r.json();
+    if(!j.ok)throw Error(j.message||'Permintaan gagal');
+    return j;
+  }catch(e){
+    const msg=String(e?.message||e||'');
+    if(/failed to fetch|networkerror|load failed/i.test(msg)){
+      throw Error('Koneksi browser ke Google Apps Script ditolak. Login memakai jalur aman form POST, tetapi fitur setelah login membutuhkan Web App yang dapat diakses publik (Anyone).');
     }
-
-    const timeout=setTimeout(()=>{
-      cleanup();
-      reject(Error('Server tidak mengirim respons dalam 30 detik. Silakan coba lagi.'));
-    },30000);
-
-    function cleanup(){
-      clearTimeout(timeout);
-      window.removeEventListener('message',onMessage);
-      if(form && form.parentNode)form.parentNode.removeChild(form);
-    }
-
-    function onMessage(ev){
-      const d=ev.data;
-      if(!d || d.type!=='SIDET_API_RESULT' || d.requestId!==requestId)return;
-      cleanup();
-      if(d.ok) resolve(d);
-      else reject(Error(d.message||'Permintaan ke server gagal.'));
-    }
-
-    window.addEventListener('message',onMessage);
-
-    const form=document.createElement('form');
-    form.method='POST';
-    form.action=state.api;
-    form.target='sidetApiFrame';
-    form.style.display='none';
-
-    const add=(name,value)=>{
-      const input=document.createElement('input');
-      input.type='hidden';
-      input.name=name;
-      input.value=String(value??'');
-      form.appendChild(input);
-    };
-
-    add('transport','iframe_api');
-    add('action',action);
-    add('requestId',requestId);
-
-    Object.keys(payload||{}).forEach(key=>{
-      const value=payload[key];
-      if(value!==undefined && value!==null){
-        add(key, typeof value==='object' ? JSON.stringify(value) : value);
-      }
-    });
-
-    document.body.appendChild(form);
-    form.submit();
-  });
+    throw e;
+  }
 }
 
+// Login siswa/admin tidak memakai fetch() agar tidak terkena CORS/NetworkError.
 function loginViaForm_(username,password){
   return new Promise((resolve,reject)=>{
-    const requestId='sidet_'+Date.now()+'_'+Math.random().toString(36).slice(2);
-
+    const requestId='sidet_login_'+Date.now()+'_'+Math.random().toString(36).slice(2);
     let frame=document.getElementById('sidetLoginFrame');
     if(!frame){
       frame=document.createElement('iframe');
       frame.id='sidetLoginFrame';
       frame.name='sidetLoginFrame';
-      frame.style.display='none';
+      frame.hidden=true;
       frame.setAttribute('aria-hidden','true');
       document.body.appendChild(frame);
     }
 
     const timeout=setTimeout(()=>{
       cleanup();
-      reject(Error('Server login tidak mengirim respons dalam 30 detik. Silakan coba lagi.'));
+      reject(Error('Server login tidak mengirim respons dalam 30 detik. Pastikan Web App menggunakan URL /exec dan aksesnya Anyone.'));
     },30000);
 
     function cleanup(){
@@ -462,15 +311,11 @@ function loginViaForm_(username,password){
       const d=ev.data;
       if(!d || d.type!=='SIDET_LOGIN_RESULT' || d.requestId!==requestId)return;
       cleanup();
-
-      if(d.ok && d.user){
-        resolve(d);
-      }else{
-        reject(Error(d.message||'NISN/username atau password siswa salah'));
-      }
+      if(d.ok && d.user)resolve(d);
+      else reject(Error(d.message||'NISN/username atau password salah.'));
     }
 
-    window.addEventListener('message',onMessage);
+    window.addEventListener('message',onMessage,false);
 
     const form=document.createElement('form');
     form.method='POST';
@@ -485,7 +330,6 @@ function loginViaForm_(username,password){
       input.value=String(value??'');
       form.appendChild(input);
     };
-
     add('transport','iframe');
     add('action','login');
     add('role',state.role);
@@ -500,69 +344,22 @@ function loginViaForm_(username,password){
 
 async function login(){
   const u=$('loginUser').value.trim(),p=$('loginPass').value;
-  if(!u||!p){
-    return showLogin('Username dan password wajib diisi.',true);
-  }
-
-  const btn=document.querySelector('#loginView button[onclick="login()"]');
-  const oldText=btn?.textContent;
-  if(btn){
-    btn.disabled=true;
-    btn.textContent='Memeriksa akun...';
-  }
-
+  if(!u||!p){return showLogin(state.role==='siswa'?'NISN dan password wajib diisi.':'Username dan password wajib diisi.',true)}
+  const btn=document.querySelector('#loginView button[onclick=\"login()\"]');
+  if(btn){btn.disabled=true;btn.textContent='Memeriksa akun...';}
   try{
-    if(apiReady()){
-      /*
-        LOGIN V7:
-        Login menggunakan POST form tersembunyi ke Apps Script.
-        Hasil login dikembalikan melalui postMessage().
-        Password tetap dikirim sebagai POST body, bukan URL.
-      */
-      const j=await loginViaForm_(u,p);
-
-      if(!j?.user){
-        throw Error('Server tidak mengirim data pengguna.');
-      }
-
-      state.user={
-        ...j.user,
-        link:(INITIAL_STUDENTS.find(
-          x=>String(x.nisn)===String(j.user.nisn) ||
-             ((String(x.nisn).replace(/^0+/,'')||'0')===((String(j.user.nisn).replace(/^0+/,'')||'0')))
-        )||{}).link||''
-      };
-
-      startApp();
-    }else{
-      if(state.role==='admin'&&u==='admin'&&p==='admin123'){
-        state.user={id:'ADMIN',name:'Administrator',role:'admin'};
-        startApp();
-      }else if(state.role==='siswa'){
-        const st=INITIAL_STUDENTS.find(x=>String(x.nisn)===String(u));
-        if(st && p==='0123SMAN2Nusa'){
-          state.user={
-            id:st.id,nisn:st.nisn,name:st.name,sekolah:st.sekolah,
-            kelas:st.kelas,gender:st.gender,link:st.link||'',role:'siswa'
-          };
-          startApp();
-        }else{
-          showLogin(st?'Password siswa salah.':'NISN tidak ditemukan pada data siswa.',true);
-        }
-      }else{
-        showLogin('Login siswa menggunakan NISN yang terdaftar. Admin: admin/admin123.',true);
-      }
-    }
+    const j=await loginViaForm_(u,p);
+    if(!j?.user)throw Error('Server tidak mengirim data pengguna.');
+    state.user={...j.user,link:(INITIAL_STUDENTS.find(x=>String(x.nisn)===String(j.user.nisn))||{}).link||''};
+    startApp();
   }catch(e){
-    console.error('SiDEt LOGIN ERROR:',e);
-    showLogin(e?.message||'Login gagal. Silakan coba lagi.',true);
+    showLogin(e.message||'Login gagal.',true);
   }finally{
-    if(btn){
-      btn.disabled=false;
-      btn.textContent=oldText||'Masuk';
-    }
+    if(btn){btn.disabled=false;btn.textContent='Masuk';}
   }
 }
+
+
 function showLocationPermissionPrompt_(){
   const modal=$('locationPermissionModal');
   if(!modal){
@@ -621,7 +418,7 @@ function showLocationPermissionPrompt_(){
 function closeLocationPermission(){
   const modal=$('locationPermissionModal');
   if(modal)modal.classList.add('hidden');
-  updateAttendanceButtons_(true);
+  updateAttendanceButtons_(false);
   setGPSVisual_(
     'permission',
     'Izin lokasi diperlukan',
@@ -654,7 +451,6 @@ function requestLocationPermission(){
     return;
   }
 
-  setSimpleGPSStatus_('waiting','Menunggu lokasi','GPS sedang mencari lokasi perangkat…');
   setGPSVisual_(
     'search',
     'Membaca GPS perangkat…',
@@ -751,28 +547,27 @@ function showGPSDiagnostic_(code,message){
 function resumeGPSAfterReturn_(){
   if(!state.user || state.user.role!=='siswa')return;
   if(document.visibilityState!=='visible')return;
+  if(state.gps)return;
 
-  // Saat kembali dari aplikasi Maps, langsung minta pembacaan GPS lagi.
-  // Tidak perlu menunggu user menekan tombol dan tidak mengunci kamera.
+  // Hanya mengecek status izin. Tidak memulai request GPS secara otomatis
+  // agar Android tetap menganggap pembacaan berasal dari tindakan pengguna.
   try{
-    if(navigator.geolocation){
-      if(navigator.permissions && navigator.permissions.query){
-        navigator.permissions.query({name:'geolocation'}).then(p=>{
-          if(p.state==='granted'){
-            beginGPSAcquisition_();
-            // Pertahankan tombol presensi tetap aktif selama GPS diperbarui.
-            updateAttendanceButtons_(!!state.gps);
-          }
-        }).catch(()=>{ if(state.gps) updateGPSUI_(state.gps); });
-      }else{
-        beginGPSAcquisition_();
-      }
+    if(navigator.permissions && navigator.permissions.query){
+      navigator.permissions.query({name:'geolocation'}).then(p=>{
+        if(p.state==='granted'){
+          showGPSDiagnostic_(
+            'READY',
+            'Izin lokasi sudah aktif. Tekan tombol Coba GPS Lagi untuk membaca posisi perangkat.'
+          );
+        }
+      }).catch(()=>{});
     }
-  }catch(e){ console.warn('resume GPS:',e); }
+  }catch(e){}
 }
 
 document.addEventListener('visibilitychange',resumeGPSAfterReturn_);
 window.addEventListener('focus',resumeGPSAfterReturn_);
+
 
 function showLogin(t,bad=false){$('loginMsg').textContent=t;$('loginMsg').className='alert '+(bad?'bad':'ok')}
 function resumeGPSAfterReturn_(){
@@ -812,37 +607,10 @@ function renderStudentProfile(){
  $('profileAvatar').textContent=name.trim().split(/\s+/).slice(0,2).map(x=>x[0]).join('').toUpperCase();
 }
 const GEOFENCE_DEFAULT={...ATTENDANCE_LOCATIONS[0],radius:GPS_RADIUS_METERS};
-const GPS_MAX_ACCURACY=50;
+const GPS_MAX_ACCURACY=100;
 let gpsWatchId=null;
 let gpsCountdownTimer=null;
 let gpsCountdownEndsAt=0;
-function openCurrentLocationMap() {
-  // Tidak ada peta di dalam aplikasi. Selalu buka aplikasi Maps eksternal.
-  // Jika GPS sudah tersedia, gunakan koordinat terakhir; jika belum, buka Maps umum.
-  const lat = Number(state?.gps?.latitude);
-  const lng = Number(state?.gps?.longitude);
-  const hasCoord = Number.isFinite(lat) && Number.isFinite(lng);
-  const query = hasCoord ? (lat + ',' + lng) : '';
-
-  try {
-    if (hasCoord) {
-      // geo: lebih berpeluang diteruskan Android ke aplikasi Maps yang terpasang.
-      window.location.href = 'geo:' + lat + ',' + lng + '?q=' + encodeURIComponent(query);
-      // Cadangan jika geo: tidak ditangani browser.
-      setTimeout(() => {
-        window.open('https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(query), '_blank');
-      }, 900);
-    } else {
-      window.location.href = 'geo:0,0?q=Google%20Maps';
-      setTimeout(() => window.open('https://www.google.com/maps', '_blank'), 900);
-    }
-  } catch (e) {
-    window.open(hasCoord ?
-      'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(query) :
-      'https://www.google.com/maps', '_blank');
-  }
-}
-
 function distanceMeters_(lat1,lng1,lat2,lng2){
  const R=6371000,rad=x=>x*Math.PI/180,dLat=rad(lat2-lat1),dLng=rad(lng2-lng1);
  const a=Math.sin(dLat/2)**2+Math.cos(rad(lat1))*Math.cos(rad(lat2))*Math.sin(dLng/2)**2;
@@ -862,7 +630,6 @@ function openCameraForAttendance(){
 }
 
 function updateAttendanceButtons_(gpsReady){
-  // gpsReady sengaja diabaikan: GPS bukan syarat presensi.
   const today=state.today||{};
   const masukDone=!!today.masuk;
   const pulangDone=!!today.pulang;
@@ -963,11 +730,13 @@ function updateGPSUI_(coords){
   setGpsMetric_('gpsDistanceValue',Number.isFinite(d)?Math.round(d)+' m':'—',nearSchool?'ok':'warn');
   setGpsMetric_('gpsRadiusValue',nearSchool?'DEKAT':'JAUH',nearSchool?'ok':'warn');
 
-  setSimpleGPSStatus_(
-    'active',
-    'GPS aktif',
-    'Lokasi terbaca · akurasi ±'+Math.round(accuracy)+' m'
-  );
+  $('gpsStatus').textContent=!q.acceptable
+    ?'GPS terbaca · akurasi rendah'
+    :(nearSchool?'GPS aktif · dekat sekolah':'GPS aktif · lokasi jauh');
+
+  $('gpsStatus').className=!q.acceptable
+    ?'badge warn'
+    :(nearSchool?'badge ok':'badge warn');
 
   if($('gpsBadge')){
     $('gpsBadge').textContent=nearSchool?'Lokasi dekat sekolah':'Lokasi jauh';
@@ -976,13 +745,18 @@ function updateGPSUI_(coords){
 
   if($('gpsAccuracy')){
     $('gpsAccuracy').textContent=
-      'Akurasi ±'+Math.round(accuracy)+' m'+(nearest?' · '+nearest.name:'');
+      'Akurasi ±'+Math.round(accuracy)+' m · '+q.label+
+      ' · Jarak '+(Number.isFinite(d)?Math.round(d):'—')+
+      ' m / radius '+GPS_RADIUS_METERS+' m'+
+      (nearest?' · '+nearest.name:'');
   }
 
   if($('distanceText')){
     $('distanceText').textContent=
-      (Number.isFinite(d)?'Jarak ke sekolah: '+Math.round(d)+' meter':'Jarak ke sekolah: —')+
-      (nearSchool?' · DEKAT':' · JAUH');
+      'Koordinat: '+coords.latitude.toFixed(6)+', '+coords.longitude.toFixed(6)+
+      ' · Jarak '+(Number.isFinite(d)?Math.round(d):'—')+' meter'+
+      ' · '+(nearSchool?'DEKAT SEKOLAH':'JAUH DARI SEKOLAH')+
+      (nearest?' · '+nearest.name:'');
   }
 
   if($('radiusProgress')){
@@ -1046,24 +820,13 @@ function setGPSVisual_(mode,title,text){
   notice.innerHTML='<div class="gps-visual '+cls+'"><div class="gps-visual-head">'+indicator+'<span>'+title+'</span></div><div class="gps-visual-text">'+text+'</div><div class="gps-progress"><div class="gps-progress-bar"></div></div></div>';
 }
 
-function setSimpleGPSStatus_(type,title,detail){
- const box=document.querySelector('.gps-simple-status');
- const el=$('gpsStatus');
- const sub=$('gpsAccuracy');
- if(!el)return;
- const cls=type==='active'?'gps-active':type==='unavailable'?'gps-unavailable':'gps-waiting';
- if(box)box.className='gps-simple-status '+cls;
- el.textContent=title;
- if(sub)sub.textContent=detail||'';
-}
-
 function gpsBrowserReady_(){
   if(!window.isSecureContext){
-    setSimpleGPSStatus_('unavailable','Lokasi belum terbaca','Buka aplikasi melalui HTTPS.'); showGPSRetryState_('GPS browser memerlukan halaman HTTPS. Buka aplikasi melalui alamat HTTPS.');
+    showGPSRetryState_('GPS browser memerlukan halaman HTTPS. Buka aplikasi melalui alamat HTTPS.');
     return false;
   }
   if(!navigator.geolocation){
-    setSimpleGPSStatus_('unavailable','Lokasi belum terbaca','Browser tidak menyediakan layanan lokasi.'); showGPSRetryState_('Perangkat/browser ini tidak menyediakan layanan lokasi.');
+    showGPSRetryState_('Perangkat/browser ini tidak menyediakan layanan lokasi.');
     return false;
   }
   return true;
@@ -1084,61 +847,43 @@ function clearGPSWatch_(){
   gpsWatchId=null;
 }
 
-function getCurrentPositionBestEffort_(onSuccess, onError) {
-  // GPS adalah pelengkap, BUKAN syarat mutlak presensi.
-  // Coba beberapa kali secara non-blocking. Presensi tidak menunggu fungsi ini selesai.
-  if (!navigator.geolocation) {
-    if (typeof onError === 'function') onError(new Error('Geolocation tidak tersedia'));
-    return;
-  }
+function getCurrentPositionBestEffort_(onSuccess,onFailure){
+  if(!gpsBrowserReady_())return;
 
-  let finished = false;
-  let attempt = 0;
-  let bestPosition = null;
-  const maxAttempts = 4;
-
-  const finishSuccess = (pos) => {
-    if (finished) return;
-    finished = true;
-    if (typeof onSuccess === 'function') onSuccess(pos);
+  let finished=false;
+  const finishSuccess=pos=>{
+    if(finished)return;
+    finished=true;
+    onSuccess(pos);
+  };
+  const finishFailure=err=>{
+    if(finished)return;
+    finished=true;
+    onFailure(err);
   };
 
-  const tryAgain = () => {
-    if (finished || attempt >= maxAttempts) {
-      if (bestPosition) finishSuccess(bestPosition);
-      else if (typeof onError === 'function') onError(new Error('Lokasi belum terbaca'));
-      return;
-    }
-
-    attempt++;
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        const acc = Number(pos?.coords?.accuracy);
-        if (!bestPosition ||
-            (!Number.isNaN(acc) && Number(acc) < Number(bestPosition.coords.accuracy))) {
-          bestPosition = pos;
-        }
-
-        // Jika sudah cukup baik, langsung gunakan.
-        if (Number.isFinite(acc) && acc <= GPS_MAX_ACCURACY) {
-          finishSuccess(pos);
-        } else {
-          setTimeout(tryAgain, 700);
-        }
-      },
-      () => {
-        setTimeout(tryAgain, 700);
-      },
-      gpsOptions_(true, 8000, 0)
-    );
-  };
-
-  tryAgain();
+  // Percobaan 1: GPS presisi tinggi.
+  navigator.geolocation.getCurrentPosition(
+    finishSuccess,
+    err=>{
+      // TIMEOUT / POSITION_UNAVAILABLE sering terjadi pada Android saat
+      // pencarian satelit pertama. Jangan langsung menyatakan GPS gagal.
+      if(err && (err.code===2 || err.code===3)){
+        navigator.geolocation.getCurrentPosition(
+          finishSuccess,
+          finishFailure,
+          gpsOptions_(false,20000,10000)
+        );
+      }else{
+        finishFailure(err);
+      }
+    },
+    gpsOptions_(true,25000,0)
+  );
 }
 
 function beginGPSAcquisition_(){
   if(!gpsBrowserReady_())return;
-  setSimpleGPSStatus_('waiting','Menunggu lokasi','GPS sedang membaca lokasi perangkat…');
 
   updateAttendanceButtons_(false);
   setGPSVisual_(
@@ -1338,7 +1083,7 @@ function retryGPS(){
 function validateGPS_(coords){
  if(!coords||!Number.isFinite(Number(coords.latitude))||!Number.isFinite(Number(coords.longitude)))throw Error('Koordinat GPS tidak valid.');
  if(!Number.isFinite(Number(coords.accuracy)))throw Error('Akurasi GPS tidak tersedia.');
- if(Number(coords.accuracy)>GPS_MAX_ACCURACY)throw Error('Kualitas GPS buruk (±'+Math.round(coords.accuracy)+' m). Tunggu hingga akurasi ≤'+GPS_MAX_ACCURACY+' m.');
+ if(Number(coords.accuracy)>50)throw Error('Kualitas GPS buruk (±'+Math.round(coords.accuracy)+' m). Tunggu hingga akurasi ≤50 m.');
  const nearest=getNearestAttendanceLocation_(Number(coords.latitude),Number(coords.longitude));
  const distance=nearest?Number(nearest.distance):Infinity;
  return {
@@ -1368,7 +1113,7 @@ async function openAttendance(type){
       <video id="cam" autoplay playsinline muted style="width:100%;max-height:60vh;object-fit:cover;border-radius:16px;background:#111"></video>
     </div>
     <div id="attInfo" class="alert" style="margin-top:12px">
-      Menyiapkan kamera. GPS hanya data pelengkap dan tidak mengunci presensi…
+      Menyiapkan kamera dan mengambil lokasi perangkat…
     </div>
     <div class="actions" style="margin-top:12px">
       <button class="btn" onclick="closeModal()">Batal</button>
@@ -1434,139 +1179,44 @@ async function openAttendance(type){
 }
 
 async function compressCanvasMax300KB(canvas){
- const MIN_BYTES=200*1024;
  const MAX_BYTES=300*1024;
  const ctx=canvas.getContext('2d',{alpha:false});
- let srcW=canvas.width,srcH=canvas.height;
- let width=srcW,height=srcH;
-
- // Naikkan resolusi foto agar hasil tidak terlalu kecil (target 200–300 KB).
- const maxW=1920,maxH=1920;
- if(width>maxW||height>maxH){
-   const scale=Math.min(maxW/width,maxH/height);
-   width=Math.round(width*scale);height=Math.round(height*scale);
+ let width=canvas.width,height=canvas.height;
+ const maxW=1280,maxH=1280;
+ if(width>maxW||height>maxH){const scale=Math.min(maxW/width,maxH/height);width=Math.round(width*scale);height=Math.round(height*scale);}
+ canvas.width=width;canvas.height=height;
+ ctx.imageSmoothingEnabled=true;ctx.imageSmoothingQuality='high';
+ let quality=.82;
+ const toBlob=()=>new Promise((resolve,reject)=>canvas.toBlob(b=>b?resolve(b):reject(new Error('Gagal membuat foto.')),'image/jpeg',quality));
+ let blob=await toBlob();
+ while(blob.size>MAX_BYTES&&quality>.22){quality-=.05;blob=await toBlob();}
+ while(blob.size>MAX_BYTES&&width>640&&height>640){
+   width=Math.round(width*.85);height=Math.round(height*.85);
+   const src=canvas.toDataURL('image/jpeg',.7);
+   const img=await new Promise((resolve,reject)=>{const im=new Image();im.onload=()=>resolve(im);im.onerror=reject;im.src=src;});
+   canvas.width=width;canvas.height=height;ctx.fillStyle='#fff';ctx.fillRect(0,0,width,height);ctx.drawImage(img,0,0,width,height);
+   quality=.72;blob=await toBlob();
+   while(blob.size>MAX_BYTES&&quality>.20){quality-=.05;blob=await toBlob();}
  }
- if(width<1280 && height<1280){
-   const scale=Math.min(1280/width,1280/height);
-   width=Math.round(width*scale);height=Math.round(height*scale);
- }
-
- const drawAtSize=async(w,h,q)=>{
-   canvas.width=w;canvas.height=h;
-   ctx.imageSmoothingEnabled=true;
-   ctx.imageSmoothingQuality='high';
-   // Gambar ulang dari frame yang sudah ada melalui temporary canvas.
-   const src=document.createElement('canvas');
-   src.width=srcW;src.height=srcH;
-   const sctx=src.getContext('2d',{alpha:false});
-   sctx.drawImage(canvas,0,0,srcW,srcH);
-   ctx.fillStyle='#fff';
-   ctx.fillRect(0,0,w,h);
-   ctx.drawImage(src,0,0,w,h);
-   return new Promise((resolve,reject)=>{
-     canvas.toBlob(b=>b?resolve(b):reject(new Error('Gagal membuat foto.')),'image/jpeg',q);
-   });
- };
-
- // Simpan frame asli sebelum canvas diubah ukurannya.
- const original=document.createElement('canvas');
- original.width=srcW;original.height=srcH;
- original.getContext('2d',{alpha:false}).drawImage(canvas,0,0,srcW,srcH);
-
- const render=async(w,h,q)=>{
-   canvas.width=w;canvas.height=h;
-   ctx.imageSmoothingEnabled=true;
-   ctx.imageSmoothingQuality='high';
-   ctx.fillStyle='#fff';
-   ctx.fillRect(0,0,w,h);
-   ctx.drawImage(original,0,0,w,h);
-   return new Promise((resolve,reject)=>{
-     canvas.toBlob(b=>b?resolve(b):reject(new Error('Gagal membuat foto.')),'image/jpeg',q);
-   });
- };
-
- let blob=await render(width,height,.92);
-
- // Jika terlalu besar, turunkan kualitas secara bertahap sampai <=300 KB.
- let quality=.92;
- while(blob.size>MAX_BYTES && quality>.35){
-   quality-=.05;
-   blob=await render(width,height,quality);
- }
-
- // Jika masih >300 KB, kecilkan resolusi bertahap.
- while(blob.size>MAX_BYTES && width>960 && height>540){
-   width=Math.round(width*.88);
-   height=Math.round(height*.88);
-   quality=.82;
-   blob=await render(width,height,quality);
-   while(blob.size>MAX_BYTES && quality>.30){
-     quality-=.05;
-     blob=await render(width,height,quality);
-   }
- }
-
- // Jika <200 KB, naikkan kualitas/resolusi agar foto lebih tajam dan ukuran minimal mendekati 200 KB.
- if(blob.size<MIN_BYTES){
-   quality=.98;
-   blob=await render(width,height,quality);
- }
-
- while(blob.size<MIN_BYTES && width<1920 && height<1920){
-   const scale=Math.min(1.15,1920/width,1920/height);
-   width=Math.min(1920,Math.round(width*scale));
-   height=Math.min(1920,Math.round(height*scale));
-   blob=await render(width,height,.98);
- }
-
- // Jika foto sangat sederhana sehingga tetap <200 KB, tambahkan padding JPEG
- // yang tidak mengubah tampilan gambar agar ukuran file tetap minimal 200 KB.
- if(blob.size<MIN_BYTES){
-   const bytes=new Uint8Array(await blob.arrayBuffer());
-   const padded=new Uint8Array(MIN_BYTES);
-   padded.set(bytes);
-   blob=new Blob([padded],{type:'image/jpeg'});
- }
-
- if(blob.size>MAX_BYTES)throw new Error('Foto tidak dapat diproses pada ukuran maksimal 300 KB. Silakan ambil foto kembali.');
-
- const dataUrl=await new Promise((resolve,reject)=>{
-   const r=new FileReader();
-   r.onload=()=>resolve(r.result);
-   r.onerror=reject;
-   r.readAsDataURL(blob);
- });
+ if(blob.size>MAX_BYTES)throw new Error('Foto tidak dapat dikompres hingga maksimal 300 KB. Silakan ambil foto kembali.');
+ const dataUrl=await new Promise((resolve,reject)=>{const r=new FileReader();r.onload=()=>resolve(r.result);r.onerror=reject;r.readAsDataURL(blob);});
  return {blob,dataUrl,size:blob.size,sizeKB:Math.ceil(blob.size/1024)};
 }
 
 async function captureAttendance(type){
  const video=$('cam');if(!video.videoWidth)return toast('Kamera belum siap.');
 
- // GPS adalah pelengkap. Jangan pernah mengunci pengambilan foto/presensi.
- // Gunakan koordinat yang sudah ada. Jika belum ada, kirim nilai kosong/null.
- let gps = state.gps ? {
-   latitude:Number(state.gps.latitude),
-   longitude:Number(state.gps.longitude),
-   accuracy:Number(state.gps.accuracy)
- } : null;
- let gpsCheck = {distance:Infinity, nearestPoint:'', lat:null, lng:null};
- let nearSchool = false;
- let locationClass = 'LOKASI_BELUM_TERBACA';
-
- // Coba ambil posisi terbaru secara paralel, tetapi jangan menunggu hasilnya.
- if(navigator.geolocation){
-   getCurrentPositionBestEffort_(pos=>{
-     if(pos && pos.coords) updateGPSUI_(pos.coords);
-   }, ()=>{});
+ // Ambil lokasi TERBARU. Radius tidak pernah menolak presensi.
+ let gps;
+ try{
+   gps=await getFreshGPS_();
+ }catch(e){
+   return toast(e.message||'Lokasi GPS belum tersedia. Aktifkan Lokasi/GPS lalu coba lagi.');
  }
 
- if(gps && Number.isFinite(gps.latitude) && Number.isFinite(gps.longitude)){
-   const nearest=getNearestAttendanceLocation_(gps.latitude,gps.longitude);
-   const distance=nearest ? Number(nearest.distance) : Infinity;
-   gpsCheck={distance,nearestPoint:nearest?.name||'',lat:gps.latitude,lng:gps.longitude};
-   nearSchool=Number.isFinite(distance) && distance<=GPS_RADIUS_METERS;
-   locationClass=nearSchool?'DEKAT_SEKOLAH':'JAUH_DARI_SEKOLAH';
- }
+ const gpsCheck=validateGPS_(gps);
+ const nearSchool=Number.isFinite(Number(gpsCheck.distance)) && Number(gpsCheck.distance)<=GPS_RADIUS_METERS;
+ const locationClass=nearSchool?'DEKAT_SEKOLAH':'JAUH_DARI_SEKOLAH';
 
  const c=document.createElement('canvas');c.width=video.videoWidth;c.height=video.videoHeight;
  c.getContext('2d').drawImage(video,0,0,c.width,c.height);
@@ -1581,14 +1231,14 @@ async function captureAttendance(type){
   const record={
     userId:state.user.id,
     type,
-    lat:gpsCheck.lat,
-    lng:gpsCheck.lng,
-    accuracy:(gps && Number.isFinite(gps.accuracy))?gps.accuracy:null,
+    lat:gps.latitude,
+    lng:gps.longitude,
+    accuracy:gps.accuracy,
     distance:gpsCheck.distance,
     jarak:gpsCheck.distance,
     nearestPoint:gpsCheck.nearestPoint,
     locationClass,
-    locationStatus:locationClass==='LOKASI_BELUM_TERBACA'?'LOKASI BELUM TERBACA':(nearSchool?'DEKAT SEKOLAH':'JAUH DARI SEKOLAH'),
+    locationStatus:nearSchool?'DEKAT SEKOLAH':'JAUH DARI SEKOLAH',
     withinRadius:nearSchool,
     radius:GPS_RADIUS_METERS,
     photo,
@@ -1606,7 +1256,7 @@ async function captureAttendance(type){
   }else{
     let a=JSON.parse(localStorage.getItem('sidet_att')||'[]');
     a.push(record);localStorage.setItem('sidet_att',JSON.stringify(a));
-    toast('Presensi tersimpan lokal. Hubungkan API untuk upload foto ke Drive.',true);
+    toast('Presensi tersimpan lokal. Hubungkan ke server untuk mengunggah foto ke Drive.',true);
   }
   closeModal();loadData();
  }catch(e){
@@ -1620,156 +1270,28 @@ function closeModal(){if(state.stream)state.stream.getTracks().forEach(x=>x.stop
 
 async function loadData(){
  try{
-  if(apiReady()){
-   const j=await api('dashboard',{userId:state.user?.id});
-   state.data=j.data||state.data;
-   if(state.user?.role==='siswa'){
-    try{
-     const h=await api('attendanceHistory',{userId:state.user?.id,nisn:state.user?.nisn});
-     if(h && Array.isArray(h.attendance)) state.data.attendance=h.attendance;
-    }catch(historyErr){
-     console.warn('Riwayat presensi:',historyErr);
-    }
-   }
-  }else{
-   state.data.users=INITIAL_STUDENTS;
-   state.data.attendance=JSON.parse(localStorage.getItem('sidet_att')||'[]');
-   if(state.user?.role==='siswa') updateAttendanceButtons_(!!state.gps);
-  }
+  if(apiReady()){const j=await api('dashboard',{userId:state.user?.id});state.data=j.data||state.data}
+  else {state.data.users=INITIAL_STUDENTS; state.data.attendance=JSON.parse(localStorage.getItem('sidet_att')||'[]');}
  }catch(e){toast(e.message)}
  if(state.user?.role==='siswa')renderEmpHistory();else renderAdminDashboard()
 }
-let showAllHistory=false;
-
-function toggleAllHistory(){
- showAllHistory=!showAllHistory;
- const btn=$('historyToggle');
- if(btn)btn.textContent=showAllHistory?'Tampilkan bulan ini':'Tampilkan semua';
- renderEmpHistory();
-}
-
 function renderEmpHistory(){
- // Gunakan tanggal lokal perangkat, bukan UTC. Ini penting untuk Indonesia (UTC+8),
- // agar presensi yang sudah tercatat hari ini langsung muncul di kartu "Kehadiran hari ini".
- const localDateKey_ = (d)=>{
-   const y=d.getFullYear(), m=String(d.getMonth()+1).padStart(2,'0'), day=String(d.getDate()).padStart(2,'0');
-   return `${y}-${m}-${day}`;
- };
- const todayKey = localDateKey_(new Date());
- const allAttendance = state.data.attendance||[];
- const userAttendance = allAttendance.filter(x=>
-   String(x.userId??x.UserID??'')===String(state.user?.id??'') ||
-   String(x.nisn??x.NISN??'')===String(state.user?.nisn??'')
- );
- const getRecordDate_ = (x)=>{
-   const raw=String(x?.tanggal??x?.Tanggal??'').trim();
-   if(/^\d{4}-\d{2}-\d{2}/.test(raw)) return raw.slice(0,10);
-   if(x?.timestamp || x?.Timestamp){
-     const d=new Date(x.timestamp??x.Timestamp);
-     if(!isNaN(d.getTime())) return localDateKey_(d);
-   }
-   return '';
- };
- const todayRows = userAttendance.filter(x=>getRecordDate_(x)===todayKey);
- const masukToday = todayRows.filter(x=>String(x.type??x.jenis??x.Type??x.Jenis??'').toUpperCase()==='MASUK')
-   .sort((a,b)=>String(a.jam??a.Jam??a.timestamp??'').localeCompare(String(b.jam??b.Jam??b.timestamp??'')))[0];
- const pulangToday = todayRows.filter(x=>String(x.type??x.jenis??x.Type??x.Jenis??'').toUpperCase()==='PULANG')
-   .sort((a,b)=>String(a.jam??a.Jam??a.timestamp??'').localeCompare(String(b.jam??b.Jam??b.timestamp??'')))[0];
- const timeToday_ = (x)=>{
-   if(!x) return '—';
-   const raw=String(x.jam??x.Jam??'').trim();
-   if(raw) return raw.slice(0,8);
-   const ts=x.timestamp??x.Timestamp;
-   if(ts){
-     const d=new Date(ts);
-     if(!isNaN(d.getTime())) return d.toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'});
-   }
-   return '—';
- };
- const masukEl=$('masukTime'), pulangEl=$('pulangTime');
- if(masukEl) masukEl.textContent=timeToday_(masukToday);
- if(pulangEl) pulangEl.textContent=timeToday_(pulangToday);
- const masukSub=$('masukSub'), pulangSub=$('pulangSub');
- if(masukSub) masukSub.textContent=masukToday?'Presensi masuk tercatat':'Belum melakukan presensi masuk';
- if(pulangSub) pulangSub.textContent=pulangToday?'Presensi pulang tercatat':'Belum melakukan presensi pulang';
- const masukBadge=$('masukBadge'), pulangBadge=$('pulangBadge'), todayStatus=$('todayStatus');
- if(masukBadge){ masukBadge.textContent=masukToday?'✓ Tercatat':'Belum'; masukBadge.className='badge '+(masukToday?'ok':'warn'); }
- if(pulangBadge){ pulangBadge.textContent=pulangToday?'✓ Tercatat':'Belum'; pulangBadge.className='badge '+(pulangToday?'ok':'warn'); }
- if(todayStatus){
-   todayStatus.textContent=masukToday&&pulangToday?'Lengkap':masukToday?'Masuk tercatat':'Belum lengkap';
-   todayStatus.className='badge '+(masukToday&&pulangToday?'ok':masukToday?'info':'warn');
- }
-
- const all=userAttendance;
-   .filter(x=>String(x.userId??x.UserID??'')===String(state.user?.id??'')||String(x.nisn??x.NISN??''));
-
- const monthNames=['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
- const dayNames=['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'];
- const getDate=x=>String(x.tanggal||String(x.timestamp||'').slice(0,10)).slice(0,10);
- const getMonth=x=>getDate(x).slice(0,7);
- const labelMonth=k=>{
-   const p=String(k).split('-');
-   return p.length===2?`${monthNames[Number(p[1])-1]||p[1]} ${p[0]}`:k;
- };
- const formatDate=k=>{
-   const d=new Date(`${k}T00:00:00`);
-   return isNaN(d.getTime())?k:`${dayNames[d.getDay()]}, ${String(d.getDate()).padStart(2,'0')} ${monthNames[d.getMonth()]} ${d.getFullYear()}`;
- };
- const getTime=x=>{
-   if(!x)return '—';
-   if(x.jam)return String(x.jam).slice(0,8);
-   if(x.timestamp){
-     const d=new Date(x.timestamp);
-     if(!isNaN(d.getTime()))return d.toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'});
-   }
-   return '—';
- };
-
- const monthSet=[...new Set(all.map(getMonth).filter(k=>/^\d{4}-\d{2}$/.test(k)))].sort((a,b)=>b.localeCompare(a));
- const nowLocal=new Date();
- const currentMonth=`${nowLocal.getFullYear()}-${String(nowLocal.getMonth()+1).padStart(2,'0')}`;
- const sel=$('historyMonth');
- if(sel){
-   const old=sel.value;
-   sel.innerHTML=monthSet.map(k=>`<option value="${k}">${labelMonth(k)}</option>`).join('');
-   if(monthSet.length){
-     sel.value=monthSet.includes(old)?old:(monthSet.includes(currentMonth)?currentMonth:monthSet[0]);
-   }else{
-     sel.innerHTML=`<option value="${currentMonth}">${labelMonth(currentMonth)}</option>`;
-     sel.value=currentMonth;
-   }
- }
-
- const selected=sel?.value||currentMonth;
- const source=showAllHistory?all:all.filter(x=>getMonth(x)===selected);
-
- // Gabungkan MASUK dan PULANG pada tanggal yang sama.
- const byDate={};
- source.forEach(x=>{
-   const tanggal=getDate(x);
-   if(!tanggal)return;
-   if(!byDate[tanggal])byDate[tanggal]={tanggal,masuk:null,pulang:null};
-   const jenis=String(x.type||x.jenis||'').toUpperCase();
-   if(jenis==='MASUK' && !byDate[tanggal].masuk)byDate[tanggal].masuk=x;
-   if(jenis==='PULANG' && !byDate[tanggal].pulang)byDate[tanggal].pulang=x;
- });
-
- const rows=Object.values(byDate).sort((a,b)=>b.tanggal.localeCompare(a.tanggal));
- const hadir=rows.filter(r=>r.masuk).length;
- const lengkap=rows.filter(r=>r.masuk&&r.pulang).length;
-
- $('rekapHadir').textContent=hadir;
- $('rekapLengkap').textContent=lengkap;
- $('historyTitle').textContent=showAllHistory?'Riwayat absensi — Semua':'Riwayat absensi '+labelMonth(selected);
- $('historyToggle').textContent=showAllHistory?'Tampilkan bulan ini':'Tampilkan semua';
-
- $('empHistory').innerHTML=rows.map(r=>`
-   <div class="history-item ${r.masuk&&r.pulang?'':'incomplete'}">
-     <div class="history-date">${formatDate(r.tanggal)}</div>
-     <div class="history-time"><span>Masuk</span><b>${getTime(r.masuk)}</b></div>
-     <div class="history-time"><span>Pulang</span><b>${getTime(r.pulang)}</b></div>
-   </div>
- `).join('')||'<div class="history-empty">Belum ada riwayat presensi pada periode ini.</div>';
+ const rows=state.data.attendance.filter(x=>x.userId===state.user.id||x.nisn===state.user.nisn).slice(-30).reverse();
+ const today=new Date().toISOString().slice(0,10);
+ const todayRows=state.data.attendance.filter(x=>(x.userId===state.user.id||x.nisn===state.user.nisn)&&(x.tanggal||String(x.timestamp||'').slice(0,10))===today);
+ const masuk=todayRows.find(x=>(x.type||x.jenis)==='MASUK'), pulang=todayRows.find(x=>(x.type||x.jenis)==='PULANG');
+ $('masukTime').textContent=masuk?(masuk.jam||new Date(masuk.timestamp).toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'})):'—';
+ $('pulangTime').textContent=pulang?(pulang.jam||new Date(pulang.timestamp).toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'})):'—';
+ $('masukSub').textContent=masuk?'Presensi masuk tercatat':'Belum melakukan presensi masuk';
+ $('pulangSub').textContent=pulang?'Presensi pulang tercatat':'Belum melakukan presensi pulang';
+ $('masukBadge').textContent=masuk?'✓ Tercatat':'Belum';$('masukBadge').className='badge '+(masuk?'ok':'warn');
+ $('pulangBadge').textContent=pulang?'✓ Tercatat':'Belum';$('pulangBadge').className='badge '+(pulang?'ok':'warn');
+ $('todayStatus').textContent=masuk&&pulang?'Lengkap':masuk?'Masuk tercatat':'Belum lengkap';$('todayStatus').className='badge '+(masuk&&pulang?'ok':masuk?'info':'warn');
+ $('btnMasuk').disabled=!!masuk;$('btnPulang').disabled=!!pulang;
+ $('btnMasuk').classList.toggle('disabled',!!masuk);$('btnPulang').classList.toggle('disabled',!!pulang);
+ $('empNotice').textContent=masuk&&pulang?'Presensi hari ini sudah lengkap. Terima kasih.':masuk?'Presensi masuk sudah tercatat. Jangan lupa presensi pulang.':'Kamera dapat digunakan di mana pun. GPS dicatat untuk membedakan lokasi dekat dan jauh.';
+ $('empNotice').className='alert '+(masuk&&pulang?'ok':'');
+ $('empHistory').innerHTML=rows.map(x=>`<tr><td>${x.tanggal||new Date(x.timestamp).toLocaleDateString('id-ID')}</td><td>${x.jam||new Date(x.timestamp).toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'})}</td><td><span class="badge info">${x.type||x.jenis||'-'}</span></td><td><span class="badge ${x.status==='VALID'||x.status==='HADIR'?'ok':'warn'}">${x.status||'VALID'}</span></td><td>${x.jarak!=null?Math.round(x.jarak)+' m':'-'}</td></tr>`).join('')||'<tr><td colspan="5" class="empty-history">Belum ada riwayat presensi.</td></tr>';
 }
 
 function renderAdminDashboard(){
@@ -1782,7 +1304,7 @@ function adminTab(tab){
  if(tab==='users') c.innerHTML=`<div class="card"><div class="hero"><h3>Kelola Siswa</h3><button class="btn primary" onclick="userForm()">+ Tambah</button></div><div class="tablewrap"><table><thead><tr><th>NISN</th><th>Nama</th><th>Sekolah</th><th>Kelas</th><th>Status</th></tr></thead><tbody>${(state.data.users||[]).map(u=>`<tr><td>${u.nisn||u.id}</td><td>${u.name}</td><td>${u.sekolah||'-'}</td><td>${u.kelas||'-'}</td><td>${u.active===false?'Nonaktif':'Aktif'}</td></tr>`).join('')||'<tr><td colspan="5">Belum ada data.</td></tr>'}</tbody></table></div></div>`;
  if(tab==='attendance') c.innerHTML=`<div class="card"><div class="hero"><h3>Data Presensi</h3><button class="btn ok" onclick="exportExcel()">Ekspor</button></div><div class="tablewrap"><table><thead><tr><th>Tanggal</th><th>NISN</th><th>Nama</th><th>Jenis</th><th>Jam</th><th>Status</th><th>Jarak</th></tr></thead><tbody>${(state.data.attendance||[]).slice().reverse().map(x=>`<tr><td>${x.tanggal||'-'}</td><td>${x.nip||'-'}</td><td>${x.name||'-'}</td><td>${x.type||x.jenis||'-'}</td><td>${x.jam||'-'}</td><td><span class="badge ok">${x.status||'VALID'}</span></td><td>${x.jarak?Math.round(x.jarak)+' m':'-'}</td></tr>`).join('')||'<tr><td colspan="7">Belum ada data.</td></tr>'}</tbody></table></div></div>`;
  if(tab==='leave') c.innerHTML=`<div class="card"><h3>Persetujuan Izin</h3><div class="tablewrap"><table><thead><tr><th>Nama</th><th>Jenis</th><th>Tanggal</th><th>Alasan</th><th>Status</th><th>Aksi</th></tr></thead><tbody>${(state.data.leave||[]).map(x=>`<tr><td>${x.name||x.nip}</td><td>${x.type}</td><td>${x.tanggalMulai||''} s/d ${x.tanggalSelesai||''}</td><td>${x.alasan||'-'}</td><td>${x.status}</td><td>${x.status==='MENUNGGU'?`<button class="btn ok" onclick="approveLeave('${x.id}','DISETUJUI')">Setujui</button> <button class="btn danger" onclick="approveLeave('${x.id}','DITOLAK')">Tolak</button>`:'-'}</td></tr>`).join('')||'<tr><td colspan="6">Belum ada pengajuan.</td></tr>'}</tbody></table></div></div>`;
- if(tab==='settings') c.innerHTML=`<div class="card"><h3>Pengaturan Sistem</h3><div class="field"><label>URL Google Apps Script Web App</label><input id="apiInput" value="${state.api}" placeholder="https://script.google.com/macros/s/.../exec"></div><div class="grid two"><div class="field"><label>Radius Geofence (meter)</label><input id="radius" type="number" min="10" value="${state.data.settings?.radius||100}"></div><div class="field"><label>Jam Masuk</label><input id="jamMasuk" type="time" value="${state.data.settings?.jamMasuk||'07:30'}"></div></div><div class="actions"><button class="btn primary" onclick="saveSettings()">Simpan Pengaturan</button><button class="btn" onclick="testApi()">Tes Koneksi</button><button class="btn warn" onclick="setCenter()">Ambil Titik Geofence dari GPS</button></div><div id="setMsg" class="alert">Pastikan URL Web App menggunakan deployment /exec.</div></div>`;
+ if(tab==='settings') c.innerHTML=`<div class="card"><h3>Pengaturan Sistem</h3><div class="field"><label>URL Google Apps Script Web App</label><input id="apiInput" value="${DEFAULT_API_URL}" readonly></div><div class="grid two"><div class="field"><label>Radius Geofence (meter)</label><input id="radius" type="number" min="10" value="${state.data.settings?.radius||100}"></div><div class="field"><label>Jam Masuk</label><input id="jamMasuk" type="time" value="${state.data.settings?.jamMasuk||'07:30'}"></div></div><div class="actions"><button class="btn primary" onclick="saveSettings()">Simpan Pengaturan</button><button class="btn" onclick="testApi()">Tes Koneksi</button><button class="btn warn" onclick="setCenter()">Ambil Titik Geofence dari GPS</button></div><div id="setMsg" class="alert">Endpoint Web App sudah dikunci ke server SiDEt.</div></div>`;
 }
 function userForm(){
  $('modal').classList.remove('hidden');$('modalBox').innerHTML=`<h3>Tambah Siswa</h3><div class="field"><label>NISN / Username</label><input id="uNisn"></div><div class="field"><label>Nama Lengkap</label><input id="uName"></div><div class="grid two"><div class="field"><label>Sekolah</label><input id="uSekolah" value="Sekolah"></div><div class="field"><label>Kelas</label><input id="uKelas" value="Siswa"></div></div><div class="field"><label>Password</label><input id="uPass" value="123456"></div><div class="actions"><button class="btn" onclick="closeModal()">Batal</button><button class="btn primary" onclick="addUser()">Simpan</button></div>`
@@ -1804,27 +1326,6 @@ function exportSummary(){const a=state.data.attendance||[],m={};a.forEach(x=>{co
 </script>
 
 <script>
-/* Password awal seluruh siswa: 0123SMAN2Nusa */
-</script>
-
-<script>
-/* GPS OPTIONAL MODE
-   Lokasi hanya melengkapi data presensi. Presensi tetap dapat dikirim
-   ketika GPS belum terbaca / perangkat menolak lokasi / akurasi kurang baik.
-*/
-window.GPS_OPTIONAL_MODE = true;
-
-function gpsOptionalStatus_(title, detail) {
-  try {
-    const el = document.getElementById('gpsStatus');
-    if (el) {
-      el.textContent = title || 'Lokasi belum terbaca';
-      el.className = 'gps-status waiting';
-    }
-    const d = document.getElementById('gpsStatusDetail');
-    if (d) d.textContent = detail || 'Lokasi adalah data pelengkap. Presensi tetap dapat dilakukan.';
-  } catch(e) {}
-}
 </script>
 </body></html>
 <script>
