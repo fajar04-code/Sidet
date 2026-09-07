@@ -102,11 +102,26 @@ table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:10px 8px;
 
 </style>
 <style>
+.gps-map-link{display:flex;align-items:center;gap:12px;margin-top:11px;padding:12px 13px;border:1px solid #e3e8ef;border-radius:13px;background:#fff}
+.gps-map-link>span{font-size:22px}
+.gps-map-link>div{flex:1;min-width:0}
+.gps-map-link b{display:block;font-size:13px}
+.gps-map-link small{display:block;color:#667085;font-size:10px;margin-top:2px}
+.gps-map-link .btn{padding:8px 12px;white-space:nowrap}
+</style>
+
+<style>
 .gps-simple-card{padding-bottom:16px}
-.gps-simple-status{display:flex;align-items:center;gap:12px;padding:13px 14px;border:1px solid #e3eaf1;border-radius:15px;background:#f8fbff;margin-top:10px}
-.gps-simple-icon{width:42px;height:42px;border-radius:13px;background:#e8f7ef;display:grid;place-items:center;font-size:21px;flex:0 0 auto}
-.gps-simple-status strong{display:block;font-size:15px;line-height:1.25}
-.gps-simple-status small{display:block;color:#667085;margin-top:3px;font-size:11px}
+.gps-simple-status{display:flex;align-items:center;gap:14px;padding:16px 17px;border:1px solid #e3eaf1;border-radius:15px;background:#f8fbff;margin-top:10px}
+.gps-simple-icon{width:48px;height:48px;border-radius:14px;background:#e8f7ef;display:grid;place-items:center;font-size:24px;flex:0 0 auto}
+.gps-simple-status strong{display:block;font-size:20px;font-weight:800;line-height:1.2}
+.gps-simple-status small{display:block;color:#667085;margin-top:4px;font-size:11px}
+.gps-simple-status.gps-active{background:#effaf3;border-color:#b7e4c7}
+.gps-simple-status.gps-active strong{color:#16834b}
+.gps-simple-status.gps-waiting{background:#fff9ed;border-color:#f1d69a}
+.gps-simple-status.gps-waiting strong{color:#9a6500}
+.gps-simple-status.gps-unavailable{background:#fff3f3;border-color:#f0c5c5}
+.gps-simple-status.gps-unavailable strong{color:#b42318}
 .gps-simple-data{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:10px}
 .gps-simple-data>div{border:1px solid #e5eaf0;border-radius:13px;padding:11px 12px;background:#fff}
 .gps-simple-data span{display:block;color:#667085;font-size:10px;margin-bottom:4px}
@@ -260,8 +275,8 @@ function isInsideAttendanceArea_(lat, lng) {
         <div class="gps-simple-status">
           <div class="gps-simple-icon">📍</div>
           <div>
-            <strong id="gpsStatus">Mencari lokasi…</strong>
-            <small id="gpsAccuracy">Menunggu GPS perangkat</small>
+            <strong id="gpsStatus">Menunggu lokasi</strong>
+            <small id="gpsAccuracy">GPS sedang mencari lokasi perangkat</small>
           </div>
         </div>
 
@@ -278,11 +293,17 @@ function isInsideAttendanceArea_(lat, lng) {
 
         <button id="gpsReadyAction" class="gps-ready-action" disabled onclick="openCameraForAttendance()">📍 Menunggu GPS</button>
 
-        <div class="mapbox" style="margin-top:12px">
-          <iframe id="googleMapFrame" title="Lokasi GPS saat ini" style="position:absolute;inset:0;width:100%;height:100%;border:0" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
-          <div class="circle" style="pointer-events:none"></div>
-          <div class="pin" style="pointer-events:none">📍</div>
-          <div id="gpsDot" class="dot" style="left:50%;top:50%;pointer-events:none"></div>
+        <div class="gps-map-link">
+          <span>📍</span>
+          <div>
+            <b>Lihat lokasi di Google Maps</b>
+            <small>Buka hanya jika ingin melihat posisi GPS</small>
+          </div>
+          <button type="button" class="btn" onclick="openCurrentLocationMap()">Buka Maps</button>
+        </div>
+        <div id="gpsMapHidden" style="display:none">
+          <iframe id="googleMapFrame" title="Lokasi GPS saat ini"></iframe>
+          <div id="gpsDot"></div>
         </div>
         <div class="map-caption"><span id="distanceText">Lokasi belum terbaca.</span></div>
       </div>
@@ -633,6 +654,7 @@ function requestLocationPermission(){
     return;
   }
 
+  setSimpleGPSStatus_('waiting','Menunggu lokasi','GPS sedang mencari lokasi perangkat…');
   setGPSVisual_(
     'search',
     'Membaca GPS perangkat…',
@@ -793,6 +815,17 @@ const GPS_MAX_ACCURACY=50;
 let gpsWatchId=null;
 let gpsCountdownTimer=null;
 let gpsCountdownEndsAt=0;
+function openCurrentLocationMap(){
+ const lat=Number(state.gps?.latitude);
+ const lng=Number(state.gps?.longitude);
+ if(!Number.isFinite(lat)||!Number.isFinite(lng)){
+   toast('Lokasi GPS belum terbaca. Tunggu sampai status GPS aktif.');
+   return;
+ }
+ const url='https://www.google.com/maps?q='+encodeURIComponent(lat+','+lng);
+ window.open(url,'_blank','noopener,noreferrer');
+}
+
 function distanceMeters_(lat1,lng1,lat2,lng2){
  const R=6371000,rad=x=>x*Math.PI/180,dLat=rad(lat2-lat1),dLng=rad(lng2-lng1);
  const a=Math.sin(dLat/2)**2+Math.cos(rad(lat1))*Math.cos(rad(lat2))*Math.sin(dLng/2)**2;
@@ -912,13 +945,11 @@ function updateGPSUI_(coords){
   setGpsMetric_('gpsDistanceValue',Number.isFinite(d)?Math.round(d)+' m':'—',nearSchool?'ok':'warn');
   setGpsMetric_('gpsRadiusValue',nearSchool?'DEKAT':'JAUH',nearSchool?'ok':'warn');
 
-  $('gpsStatus').textContent=!q.acceptable
-    ?'GPS terbaca · akurasi rendah'
-    :(nearSchool?'GPS aktif · dekat sekolah':'GPS aktif · lokasi jauh');
-
-  $('gpsStatus').className=!q.acceptable
-    ?'badge warn'
-    :(nearSchool?'badge ok':'badge warn');
+  setSimpleGPSStatus_(
+    'active',
+    'GPS aktif',
+    'Lokasi terbaca · akurasi ±'+Math.round(accuracy)+' m'
+  );
 
   if($('gpsBadge')){
     $('gpsBadge').textContent=nearSchool?'Lokasi dekat sekolah':'Lokasi jauh';
@@ -997,13 +1028,24 @@ function setGPSVisual_(mode,title,text){
   notice.innerHTML='<div class="gps-visual '+cls+'"><div class="gps-visual-head">'+indicator+'<span>'+title+'</span></div><div class="gps-visual-text">'+text+'</div><div class="gps-progress"><div class="gps-progress-bar"></div></div></div>';
 }
 
+function setSimpleGPSStatus_(type,title,detail){
+ const box=document.querySelector('.gps-simple-status');
+ const el=$('gpsStatus');
+ const sub=$('gpsAccuracy');
+ if(!el)return;
+ const cls=type==='active'?'gps-active':type==='unavailable'?'gps-unavailable':'gps-waiting';
+ if(box)box.className='gps-simple-status '+cls;
+ el.textContent=title;
+ if(sub)sub.textContent=detail||'';
+}
+
 function gpsBrowserReady_(){
   if(!window.isSecureContext){
-    showGPSRetryState_('GPS browser memerlukan halaman HTTPS. Buka aplikasi melalui alamat HTTPS.');
+    setSimpleGPSStatus_('unavailable','Lokasi belum terbaca','Buka aplikasi melalui HTTPS.'); showGPSRetryState_('GPS browser memerlukan halaman HTTPS. Buka aplikasi melalui alamat HTTPS.');
     return false;
   }
   if(!navigator.geolocation){
-    showGPSRetryState_('Perangkat/browser ini tidak menyediakan layanan lokasi.');
+    setSimpleGPSStatus_('unavailable','Lokasi belum terbaca','Browser tidak menyediakan layanan lokasi.'); showGPSRetryState_('Perangkat/browser ini tidak menyediakan layanan lokasi.');
     return false;
   }
   return true;
@@ -1028,39 +1070,56 @@ function getCurrentPositionBestEffort_(onSuccess,onFailure){
   if(!gpsBrowserReady_())return;
 
   let finished=false;
-  const finishSuccess=pos=>{
+  let attempts=0;
+  const maxAttempts=4;
+
+  const success=pos=>{
     if(finished)return;
-    finished=true;
-    onSuccess(pos);
-  };
-  const finishFailure=err=>{
-    if(finished)return;
-    finished=true;
-    onFailure(err);
+    const acc=Number(pos?.coords?.accuracy);
+    // Posisi pertama yang masuk tetap disimpan agar aplikasi tidak terasa macet.
+    // Jika akurasinya <= 50 m, langsung dianggap memenuhi syarat.
+    if(Number.isFinite(acc) && acc<=GPS_MAX_ACCURACY){
+      finished=true;
+      onSuccess(pos);
+      return;
+    }
+
+    attempts++;
+    if(attempts<maxAttempts){
+      setSimpleGPSStatus_('waiting','Menunggu lokasi','Mencari GPS yang lebih akurat…');
+      setTimeout(()=>request(true),1200);
+    }else{
+      finished=true;
+      onSuccess(pos);
+    }
   };
 
-  // Percobaan 1: GPS presisi tinggi.
-  navigator.geolocation.getCurrentPosition(
-    finishSuccess,
-    err=>{
-      // TIMEOUT / POSITION_UNAVAILABLE sering terjadi pada Android saat
-      // pencarian satelit pertama. Jangan langsung menyatakan GPS gagal.
-      if(err && (err.code===2 || err.code===3)){
-        navigator.geolocation.getCurrentPosition(
-          finishSuccess,
-          finishFailure,
-          gpsOptions_(false,20000,10000)
-        );
-      }else{
-        finishFailure(err);
-      }
-    },
-    gpsOptions_(true,25000,0)
-  );
+  const failure=err=>{
+    if(finished)return;
+    attempts++;
+    if(attempts<maxAttempts && err && (err.code===2||err.code===3)){
+      setSimpleGPSStatus_('waiting','Menunggu lokasi','GPS sedang mencari sinyal…');
+      setTimeout(()=>request(attempts<=2),1200);
+    }else{
+      finished=true;
+      onFailure(err);
+    }
+  };
+
+  const request=high=>{
+    navigator.geolocation.getCurrentPosition(
+      success,
+      failure,
+      high ? gpsOptions_(true,20000,0) : gpsOptions_(false,15000,0)
+    );
+  };
+
+  request(true);
 }
 
 function beginGPSAcquisition_(){
   if(!gpsBrowserReady_())return;
+  setSimpleGPSStatus_('waiting','Menunggu lokasi','GPS sedang membaca lokasi perangkat…');
 
   updateAttendanceButtons_(false);
   setGPSVisual_(
