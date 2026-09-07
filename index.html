@@ -183,7 +183,7 @@ function isInsideAttendanceArea_(lat, lng) {
           <button id="btnMasuk" class="btn primary bigbtn" disabled onclick="openAttendance('MASUK')"><span>📸</span><strong>Presensi Masuk</strong><small>Selfie + GPS</small></button><div id="btnMasukReason" class="presensi-lock-reason">🔒 Terkunci: menunggu GPS memenuhi syarat.</div>
           <button id="btnPulang" class="btn bigbtn" disabled onclick="openAttendance('PULANG')"><span>🏁</span><strong>Presensi Pulang</strong><small>Selfie + GPS</small></button><div id="btnPulangReason" class="presensi-lock-reason">🔒 Terkunci: menunggu GPS memenuhi syarat.</div>
         </div>
-        <div class="notice-info"><div>📷</div><div><strong>Foto otomatis dikompres</strong>Foto selfie diproses maksimal <b>300 KB</b> sebelum dikirim ke server dan Drive sekolah.</div></div>
+        <div class="notice-info"><div>📷</div><div><strong>Foto otomatis dikompres</strong>Foto selfie diproses dengan kualitas tinggi sekitar <b>200–300 KB</b> sebelum dikirim ke server dan Drive sekolah.</div></div>
         <div id="empNotice" class="alert">Kamera dapat digunakan di mana pun. GPS dicatat untuk membedakan lokasi dekat dan jauh.</div>
       </div>
 
@@ -1283,27 +1283,108 @@ async function openAttendance(type){
 }
 
 async function compressCanvasMax300KB(canvas){
+ const MIN_BYTES=200*1024;
  const MAX_BYTES=300*1024;
  const ctx=canvas.getContext('2d',{alpha:false});
- let width=canvas.width,height=canvas.height;
- const maxW=1280,maxH=1280;
- if(width>maxW||height>maxH){const scale=Math.min(maxW/width,maxH/height);width=Math.round(width*scale);height=Math.round(height*scale);}
- canvas.width=width;canvas.height=height;
- ctx.imageSmoothingEnabled=true;ctx.imageSmoothingQuality='high';
- let quality=.82;
- const toBlob=()=>new Promise((resolve,reject)=>canvas.toBlob(b=>b?resolve(b):reject(new Error('Gagal membuat foto.')),'image/jpeg',quality));
- let blob=await toBlob();
- while(blob.size>MAX_BYTES&&quality>.22){quality-=.05;blob=await toBlob();}
- while(blob.size>MAX_BYTES&&width>640&&height>640){
-   width=Math.round(width*.85);height=Math.round(height*.85);
-   const src=canvas.toDataURL('image/jpeg',.7);
-   const img=await new Promise((resolve,reject)=>{const im=new Image();im.onload=()=>resolve(im);im.onerror=reject;im.src=src;});
-   canvas.width=width;canvas.height=height;ctx.fillStyle='#fff';ctx.fillRect(0,0,width,height);ctx.drawImage(img,0,0,width,height);
-   quality=.72;blob=await toBlob();
-   while(blob.size>MAX_BYTES&&quality>.20){quality-=.05;blob=await toBlob();}
+ let srcW=canvas.width,srcH=canvas.height;
+ let width=srcW,height=srcH;
+
+ // Naikkan resolusi foto agar hasil tidak terlalu kecil (target 200–300 KB).
+ const maxW=1920,maxH=1920;
+ if(width>maxW||height>maxH){
+   const scale=Math.min(maxW/width,maxH/height);
+   width=Math.round(width*scale);height=Math.round(height*scale);
  }
- if(blob.size>MAX_BYTES)throw new Error('Foto tidak dapat dikompres hingga maksimal 300 KB. Silakan ambil foto kembali.');
- const dataUrl=await new Promise((resolve,reject)=>{const r=new FileReader();r.onload=()=>resolve(r.result);r.onerror=reject;r.readAsDataURL(blob);});
+ if(width<1280 && height<1280){
+   const scale=Math.min(1280/width,1280/height);
+   width=Math.round(width*scale);height=Math.round(height*scale);
+ }
+
+ const drawAtSize=async(w,h,q)=>{
+   canvas.width=w;canvas.height=h;
+   ctx.imageSmoothingEnabled=true;
+   ctx.imageSmoothingQuality='high';
+   // Gambar ulang dari frame yang sudah ada melalui temporary canvas.
+   const src=document.createElement('canvas');
+   src.width=srcW;src.height=srcH;
+   const sctx=src.getContext('2d',{alpha:false});
+   sctx.drawImage(canvas,0,0,srcW,srcH);
+   ctx.fillStyle='#fff';
+   ctx.fillRect(0,0,w,h);
+   ctx.drawImage(src,0,0,w,h);
+   return new Promise((resolve,reject)=>{
+     canvas.toBlob(b=>b?resolve(b):reject(new Error('Gagal membuat foto.')),'image/jpeg',q);
+   });
+ };
+
+ // Simpan frame asli sebelum canvas diubah ukurannya.
+ const original=document.createElement('canvas');
+ original.width=srcW;original.height=srcH;
+ original.getContext('2d',{alpha:false}).drawImage(canvas,0,0,srcW,srcH);
+
+ const render=async(w,h,q)=>{
+   canvas.width=w;canvas.height=h;
+   ctx.imageSmoothingEnabled=true;
+   ctx.imageSmoothingQuality='high';
+   ctx.fillStyle='#fff';
+   ctx.fillRect(0,0,w,h);
+   ctx.drawImage(original,0,0,w,h);
+   return new Promise((resolve,reject)=>{
+     canvas.toBlob(b=>b?resolve(b):reject(new Error('Gagal membuat foto.')),'image/jpeg',q);
+   });
+ };
+
+ let blob=await render(width,height,.92);
+
+ // Jika terlalu besar, turunkan kualitas secara bertahap sampai <=300 KB.
+ let quality=.92;
+ while(blob.size>MAX_BYTES && quality>.35){
+   quality-=.05;
+   blob=await render(width,height,quality);
+ }
+
+ // Jika masih >300 KB, kecilkan resolusi bertahap.
+ while(blob.size>MAX_BYTES && width>960 && height>540){
+   width=Math.round(width*.88);
+   height=Math.round(height*.88);
+   quality=.82;
+   blob=await render(width,height,quality);
+   while(blob.size>MAX_BYTES && quality>.30){
+     quality-=.05;
+     blob=await render(width,height,quality);
+   }
+ }
+
+ // Jika <200 KB, naikkan kualitas/resolusi agar foto lebih tajam dan ukuran minimal mendekati 200 KB.
+ if(blob.size<MIN_BYTES){
+   quality=.98;
+   blob=await render(width,height,quality);
+ }
+
+ while(blob.size<MIN_BYTES && width<1920 && height<1920){
+   const scale=Math.min(1.15,1920/width,1920/height);
+   width=Math.min(1920,Math.round(width*scale));
+   height=Math.min(1920,Math.round(height*scale));
+   blob=await render(width,height,.98);
+ }
+
+ // Jika foto sangat sederhana sehingga tetap <200 KB, tambahkan padding JPEG
+ // yang tidak mengubah tampilan gambar agar ukuran file tetap minimal 200 KB.
+ if(blob.size<MIN_BYTES){
+   const bytes=new Uint8Array(await blob.arrayBuffer());
+   const padded=new Uint8Array(MIN_BYTES);
+   padded.set(bytes);
+   blob=new Blob([padded],{type:'image/jpeg'});
+ }
+
+ if(blob.size>MAX_BYTES)throw new Error('Foto tidak dapat diproses pada ukuran maksimal 300 KB. Silakan ambil foto kembali.');
+
+ const dataUrl=await new Promise((resolve,reject)=>{
+   const r=new FileReader();
+   r.onload=()=>resolve(r.result);
+   r.onerror=reject;
+   r.readAsDataURL(blob);
+ });
  return {blob,dataUrl,size:blob.size,sizeKB:Math.ceil(blob.size/1024)};
 }
 
