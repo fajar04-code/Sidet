@@ -110,6 +110,10 @@ table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:10px 8px;
 
 #gpsDeviceDiagnostic{line-height:1.45}
 .current-location-maps iframe{background:#eaf2f8}
+
+.gps-retry{display:inline-block;margin-top:7px;padding:8px 12px;border:0;border-radius:9px;cursor:pointer;font-weight:700}
+.gps-error-title{font-weight:800;margin-bottom:4px}
+.gps-steps{margin:7px 0 0 18px;padding:0}
 </style>
 </head>
 
@@ -237,7 +241,7 @@ function isInsideAttendanceArea_(lat, lng) {
     </div>
     <button id="refreshCurrentLocationBtn" class="btn secondary" type="button" onclick="refreshCurrentLocation()">🔄 Baca Lokasi</button>
   </div>
-  <div id="currentLocationStatus" style="margin-top:8px;padding:7px 9px;border-radius:8px;background:#f3f7fa;font-size:11px;color:#526273">
+  <div id="currentLocationStatus" style="margin-top:8px;padding:9px 10px;border-radius:9px;background:#f3f7fa;font-size:11px;color:#526273">
     Meminta lokasi akurat dari perangkat…
   </div>
   <div id="gpsDeviceDiagnostic" style="margin-top:8px;padding:8px 10px;border-radius:9px;background:#f5f8fb;font-size:11px;color:#526273">
@@ -812,30 +816,89 @@ function startGPSWatch_(){
   );
 }
 
-function refreshGPS(){
+async function refreshGPS(){
+  resetGPSDisplay_();
+
+  const btn=$("refreshGPSBtn");
+  if(btn){
+    btn.disabled=true;
+    btn.textContent="⏳ Meminta lokasi…";
+  }
+
   if(!navigator.geolocation){
-    toast("Perangkat/browser tidak menyediakan GPS.");
+    showGPSRetryState_(gpsErrorMessage_({code:2,message:"Geolocation tidak tersedia."}));
+    if(btn){btn.disabled=false;btn.textContent="🔄 Perbarui GPS";}
+    return;
+  }
+
+  let permissionState="prompt";
+  try{
+    if(navigator.permissions && navigator.permissions.query){
+      const p=await navigator.permissions.query({name:"geolocation"});
+      permissionState=p.state;
+    }
+  }catch(e){}
+
+  if(permissionState==="denied"){
+    showGPSRetryState_({
+      title:"Izin lokasi diblokir oleh Chrome",
+      text:"Situs ini belum boleh membaca lokasi perangkat.",
+      steps:[
+        "Tekan ikon 🔒 di sebelah alamat situs.",
+        "Pilih Izin/Permissions.",
+        "Pada Lokasi pilih Izinkan/Allow.",
+        "Aktifkan Lokasi Akurat/Precise.",
+        "Tutup panel izin, lalu tekan Perbarui GPS lagi."
+      ]
+    });
+    diagnoseDeviceLocation_();
+    if(btn){btn.disabled=false;btn.textContent="🔄 Perbarui GPS";}
     return;
   }
 
   setGPSVisual_(
     "search",
-    "🔄 Memperbarui GPS…",
-    "Mengambil koordinat terbaru dengan mode akurasi tinggi."
+    "📍 Meminta lokasi perangkat…",
+    "Chrome sedang mengambil lokasi langsung dari HP. Jika muncul dialog izin, pilih Izinkan/Allow."
   );
 
-  if($("gpsStatus")){
-    $("gpsStatus").textContent="Memperbarui GPS…";
-    $("gpsStatus").className="badge warn";
-  }
+  let finished=false;
+  const finish=()=>{
+    if(finished)return;
+    finished=true;
+    if(btn){btn.disabled=false;btn.textContent="🔄 Perbarui GPS";}
+    diagnoseDeviceLocation_();
+  };
+
+  const timer=setTimeout(()=>{
+    if(finished)return;
+    finish();
+    showGPSRetryState_({
+      title:"Lokasi perangkat belum memberikan respons",
+      text:"Tidak ada koordinat yang diterima dalam 30 detik.",
+      steps:[
+        "Pastikan ikon Lokasi/GPS di HP aktif.",
+        "Pastikan Chrome memiliki izin Lokasi.",
+        "Pilih Lokasi Akurat/Precise.",
+        "Coba di area terbuka.",
+        "Tekan Perbarui GPS kembali."
+      ]
+    });
+  },31000);
 
   navigator.geolocation.getCurrentPosition(
     pos=>{
+      clearTimeout(timer);
+      if(finished)return;
       updateGPSUI_(pos.coords);
+      updateLiveLocationLink_(pos.coords);
       startGPSWatch_();
+      finish();
     },
     err=>{
-      updateAttendanceButtons_(false);
+      clearTimeout(timer);
+      if(finished)return;
+      finish();
       showGPSRetryState_(gpsErrorMessage_(err));
     },
     {
@@ -881,34 +944,66 @@ async function diagnoseDeviceLocation_(){
 
 diagnoseDeviceLocation_();
 
-function refreshCurrentLocation(){
+async function refreshCurrentLocation(){
   const status=$("currentLocationStatus");
   const btn=$("refreshCurrentLocationBtn");
 
+  if(btn){
+    btn.disabled=true;
+    btn.textContent="⏳ Membaca…";
+  }
+  if(status){
+    status.innerHTML="🔄 <b>Meminta lokasi langsung dari perangkat…</b> Jika Chrome meminta izin, pilih Izinkan/Allow.";
+  }
+
   if(!navigator.geolocation){
-    if(status) status.innerHTML="❌ Browser/perangkat ini tidak menyediakan Geolocation.";
+    if(status)status.innerHTML="❌ Perangkat/browser tidak menyediakan Geolocation.";
+    if(btn){btn.disabled=false;btn.textContent="🔄 Baca Lokasi";}
     return;
   }
 
-  if(status) status.innerHTML="🔄 <b>Membaca lokasi perangkat…</b> Pastikan Lokasi/GPS HP aktif dan izinkan lokasi akurat.";
-  if(btn){btn.disabled=true;btn.textContent="⏳ Membaca…";}
+  let permissionState="prompt";
+  try{
+    if(navigator.permissions && navigator.permissions.query){
+      const p=await navigator.permissions.query({name:"geolocation"});
+      permissionState=p.state;
+    }
+  }catch(e){}
+
+  if(permissionState==="denied"){
+    if(status){
+      status.innerHTML="❌ <b>Izin lokasi diblokir.</b> Tekan 🔒 pada alamat situs → Izin/Permissions → Lokasi → Izinkan.";
+    }
+    showGPSRetryState_({
+      title:"Izin lokasi diblokir oleh Chrome",
+      text:"Chrome tidak akan memberikan koordinat sampai izin situs diubah.",
+      steps:["Tekan 🔒 di alamat situs.","Pilih Izin/Permissions.","Lokasi → Izinkan/Allow.","Aktifkan Lokasi Akurat/Precise.","Kembali lalu tekan Baca Lokasi."]
+    });
+    if(btn){btn.disabled=false;btn.textContent="🔄 Baca Lokasi";}
+    diagnoseDeviceLocation_();
+    return;
+  }
 
   navigator.geolocation.getCurrentPosition(
     pos=>{
       updateGPSUI_(pos.coords);
       updateLiveLocationLink_(pos.coords);
+      if(status){
+        status.innerHTML="🟢 <b>Lokasi perangkat berhasil terbaca.</b> "+
+          Number(pos.coords.latitude).toFixed(6)+", "+
+          Number(pos.coords.longitude).toFixed(6)+
+          " · Akurasi ±"+Math.round(Number(pos.coords.accuracy))+" m";
+      }
       if(btn){btn.disabled=false;btn.textContent="🔄 Baca Lokasi";}
+      startGPSWatch_();
+      diagnoseDeviceLocation_();
     },
     err=>{
       if(btn){btn.disabled=false;btn.textContent="🔄 Baca Lokasi";}
-      if(status){
-        let msg="❌ Lokasi belum dapat dibaca.";
-        if(err.code===1) msg+=" Izin lokasi ditolak. Aktifkan izin Lokasi untuk browser.";
-        else if(err.code===2) msg+=" Posisi tidak tersedia. Aktifkan GPS/Lokasi dan coba lagi.";
-        else if(err.code===3) msg+=" GPS terlalu lama merespons. Coba lagi di area terbuka.";
-        status.innerHTML=msg;
-      }
-      showGPSRetryState_(gpsErrorMessage_(err));
+      const info=gpsErrorMessage_(err);
+      if(status)status.innerHTML="❌ <b>"+info.title+"</b> — "+info.text;
+      showGPSRetryState_(info);
+      diagnoseDeviceLocation_();
     },
     {enableHighAccuracy:true, timeout:30000, maximumAge:0}
   );
@@ -1186,32 +1281,69 @@ function startGPSWatch_(){
   );
 }
 
-function getGPS(){
+async function getGPS(){
   resetGPSDisplay_();
 
-  if(!window.isSecureContext && location.hostname!=="localhost"){
+  if(!navigator.geolocation){
+    showGPSRetryState_(gpsErrorMessage_({
+      code:2,
+      message:"Geolocation tidak tersedia pada perangkat/browser."
+    }));
+    return;
+  }
+
+  const secure=window.isSecureContext || location.hostname==="localhost";
+  if(!secure){
     showGPSRetryState_(gpsErrorMessage_({
       code:0,
-      message:"Akses lokasi browser biasanya membutuhkan HTTPS. Halaman saat ini bukan secure context."
+      message:"Akses lokasi membutuhkan HTTPS."
     }));
+    return;
+  }
+
+  // Periksa status izin terlebih dahulu.
+  let permissionState="prompt";
+  try{
+    if(navigator.permissions && navigator.permissions.query){
+      const p=await navigator.permissions.query({name:"geolocation"});
+      permissionState=p.state;
+    }
+  }catch(e){}
+
+  if(permissionState==="denied"){
+    showGPSRetryState_({
+      title:"Izin lokasi diblokir",
+      text:"Chrome sudah menyimpan izin lokasi sebagai Ditolak untuk situs ini.",
+      steps:[
+        "Tekan ikon 🔒 di samping alamat ajar04-code.github.io.",
+        "Buka Izin/Permissions → Lokasi.",
+        "Ubah menjadi Izinkan/Allow.",
+        "Pastikan Lokasi Akurat/Precise aktif.",
+        "Muat ulang halaman lalu tekan Perbarui GPS."
+      ]
+    });
+    diagnoseDeviceLocation_();
     return;
   }
 
   setGPSVisual_(
     "permission",
-    "Menghubungkan ke lokasi perangkat…",
-    "Tekan Izinkan/Allow jika browser menampilkan permintaan lokasi."
+    "📍 Siap menghubungkan ke lokasi perangkat",
+    permissionState==="granted"
+      ? "Izin lokasi sudah aktif. Tekan tombol Perbarui GPS untuk membaca posisi perangkat."
+      : "Tekan tombol Perbarui GPS agar Chrome menampilkan permintaan izin lokasi."
   );
 
-  getDeviceLocationOnce_(
-    pos=>{
-      updateGPSUI_(pos.coords);
-      startGPSWatch_();
-    },
-    err=>{
-      showGPSRetryState_(gpsErrorMessage_(err));
-    }
-  );
+  if($("empNotice")){
+    $("empNotice").innerHTML=
+      '<div class="gps-visual">'+
+      '<div class="gps-visual-head"><span>📍 Menghubungkan ke GPS perangkat…</span></div>'+
+      '<div class="gps-visual-text">Jika kotak izin lokasi tidak muncul, tekan <b>Perbarui GPS</b> di sebelah kanan atau pada bagian Lokasi Saya Saat Ini.</div>'+
+      '<button type="button" class="gps-retry" onclick="refreshGPS()">🔄 Perbarui GPS Sekarang</button>'+
+      '</div>';
+  }
+
+  diagnoseDeviceLocation_();
 }
 
 function refreshGPS(){
