@@ -102,15 +102,32 @@ table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:10px 8px;
 
 </style>
 <style>
-#empHistory td:nth-child(2),#empHistory td:nth-child(3){white-space:nowrap}
-#empHistory .badge{display:inline-flex;align-items:center;justify-content:center;white-space:nowrap}
-.history-toolbar{display:flex;gap:12px;align-items:end;margin:14px 0}
-.history-toolbar select{width:100%;padding:11px 12px;border:1px solid #dbe2ea;border-radius:12px;background:#fff;font:inherit}
-.history-summary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:12px 0 16px}
-.history-stat{padding:13px 14px;border:1px solid #e6ebf0;border-radius:14px;background:#fafbfc}
-.history-stat span,.history-stat small{display:block;color:#667085;font-size:11px}
-.history-stat b{display:block;font-size:23px;line-height:1.2;margin:4px 0}
-@media(max-width:720px){.history-summary{grid-template-columns:repeat(2,minmax(0,1fr))}.history-toolbar{display:block}}
+.history-card{overflow:hidden}
+.history-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px}
+.history-title{margin:0;font-size:22px;line-height:1.25}
+.history-toggle{border:0;background:none;color:#3976d3;font:inherit;font-weight:700;cursor:pointer;padding:6px 0}
+.history-filter-row{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:4px 0 14px}
+.history-month{border:1px solid #e1e7ee;background:#fff;border-radius:10px;padding:8px 11px;font:inherit;color:#344054}
+.history-rekap{display:flex;gap:12px;color:#667085;font-size:12px;white-space:nowrap}
+.history-rekap b{color:#1d2939;font-size:14px}
+.history-list{display:flex;flex-direction:column;gap:12px}
+.history-item{display:grid;grid-template-columns:minmax(0,1.35fr) .55fr .55fr;align-items:center;background:#43a047;color:#fff;border-radius:14px;padding:18px 20px;min-height:94px;box-sizing:border-box}
+.history-date{font-size:20px;font-weight:500;line-height:1.25}
+.history-time{border-left:2px solid rgba(255,255,255,.55);padding-left:20px}
+.history-time span{display:block;font-size:16px}
+.history-time b{display:block;font-size:27px;line-height:1.15;margin-top:4px}
+.history-empty{padding:22px;text-align:center;color:#667085;border:1px dashed #d0d5dd;border-radius:14px}
+.history-item.incomplete{background:#667085}
+@media(max-width:640px){
+ .history-head{align-items:flex-start}
+ .history-title{font-size:20px}
+ .history-filter-row{align-items:flex-start;flex-direction:column}
+ .history-item{grid-template-columns:1fr .72fr .72fr;padding:15px 12px;min-height:84px}
+ .history-date{font-size:16px}
+ .history-time{padding-left:11px}
+ .history-time span{font-size:13px}
+ .history-time b{font-size:21px}
+}
 </style>
 
 </head>
@@ -199,36 +216,19 @@ function isInsideAttendanceArea_(lat, lng) {
         <div id="empNotice" class="alert">Kamera dapat digunakan di mana pun. GPS dicatat untuk membedakan lokasi dekat dan jauh.</div>
       </div>
 
-      <div class="card">
-        <div class="card-title">
+      <div class="card history-card">
+        <div class="history-head">
           <div>
             <div class="section-label">Aktivitas Saya</div>
-            <h3 style="margin:0">Rekap & Riwayat Presensi</h3>
-            <div class="muted" style="font-size:11px;margin-top:4px">Pilih bulan untuk melihat rekap dan riwayat presensi Anda.</div>
+            <h3 id="historyTitle" class="history-title">Riwayat absensi</h3>
           </div>
-          <button class="btn" onclick="loadData()">↻ Muat ulang</button>
+          <button id="historyToggle" class="history-toggle" onclick="toggleAllHistory()">Tampilkan semua</button>
         </div>
-
-        <div class="history-toolbar">
-          <div class="field" style="margin:0;flex:1;min-width:190px">
-            <label for="historyMonth">Periode Bulan</label>
-            <select id="historyMonth" onchange="renderEmpHistory()"></select>
-          </div>
+        <div class="history-filter-row">
+          <select id="historyMonth" class="history-month" onchange="renderEmpHistory()"></select>
+          <div class="history-rekap"><span>Hadir <b id="rekapHadir">0</b></span><span>Lengkap <b id="rekapLengkap">0</b></span></div>
         </div>
-
-        <div class="history-summary">
-          <div class="history-stat"><span>Total Hari</span><b id="rekapTotalHari">0</b><small>ada presensi</small></div>
-          <div class="history-stat"><span>Hadir</span><b id="rekapHadir">0</b><small>presensi masuk</small></div>
-          <div class="history-stat"><span>Lengkap</span><b id="rekapLengkap">0</b><small>masuk + pulang</small></div>
-          <div class="history-stat"><span>Belum Pulang</span><b id="rekapBelumPulang">0</b><small>masuk tanpa pulang</small></div>
-        </div>
-
-        <div class="tablewrap">
-          <table>
-            <thead><tr><th>Tanggal</th><th>Jam Datang</th><th>Jam Pulang</th><th>Status</th></tr></thead>
-            <tbody id="empHistory"></tbody>
-          </table>
-        </div>
+        <div id="empHistory" class="history-list"></div>
       </div>
     </div>
 
@@ -1512,74 +1512,85 @@ async function loadData(){
  }catch(e){toast(e.message)}
  if(state.user?.role==='siswa')renderEmpHistory();else renderAdminDashboard()
 }
+let showAllHistory=false;
+
+function toggleAllHistory(){
+ showAllHistory=!showAllHistory;
+ const btn=$('historyToggle');
+ if(btn)btn.textContent=showAllHistory?'Tampilkan bulan ini':'Tampilkan semua';
+ renderEmpHistory();
+}
+
 function renderEmpHistory(){
  const all=(state.data.attendance||[])
    .filter(x=>String(x.userId??x.UserID??'')===String(state.user?.id??'')||String(x.nisn??x.NISN??''));
 
- const monthName=['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
- const monthKey=x=>String(x.tanggal||String(x.timestamp||'').slice(0,10)).slice(0,7);
- const monthLabel=k=>{
-   const p=String(k||'').split('-');
-   return p.length===2 && p[0] && p[1] ? `${monthName[Number(p[1])-1]||p[1]} ${p[0]}` : k;
+ const monthNames=['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
+ const dayNames=['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'];
+ const getDate=x=>String(x.tanggal||String(x.timestamp||'').slice(0,10)).slice(0,10);
+ const getMonth=x=>getDate(x).slice(0,7);
+ const labelMonth=k=>{
+   const p=String(k).split('-');
+   return p.length===2?`${monthNames[Number(p[1])-1]||p[1]} ${p[0]}`:k;
+ };
+ const formatDate=k=>{
+   const d=new Date(`${k}T00:00:00`);
+   return isNaN(d.getTime())?k:`${dayNames[d.getDay()]}, ${String(d.getDate()).padStart(2,'0')} ${monthNames[d.getMonth()]} ${d.getFullYear()}`;
+ };
+ const getTime=x=>{
+   if(!x)return '—';
+   if(x.jam)return String(x.jam).slice(0,8);
+   if(x.timestamp){
+     const d=new Date(x.timestamp);
+     if(!isNaN(d.getTime()))return d.toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'});
+   }
+   return '—';
  };
 
- const monthSet=new Set(all.map(monthKey).filter(k=>/^\d{4}-\d{2}$/.test(k)));
- const todayKey=new Date().toISOString().slice(0,7);
- if(!monthSet.size) monthSet.add(todayKey);
-
- const select=$('historyMonth');
- if(select){
-   const current=select.value;
-   const months=[...monthSet].sort((a,b)=>b.localeCompare(a));
-   select.innerHTML=months.map(k=>`<option value="${k}">${monthLabel(k)}</option>`).join('');
-   select.value=monthSet.has(current)?current:(monthSet.has(todayKey)?todayKey:months[0]);
+ const monthSet=[...new Set(all.map(getMonth).filter(k=>/^\d{4}-\d{2}$/.test(k)))].sort((a,b)=>b.localeCompare(a));
+ const currentMonth=new Date().toISOString().slice(0,7);
+ const sel=$('historyMonth');
+ if(sel){
+   const old=sel.value;
+   sel.innerHTML=monthSet.map(k=>`<option value="${k}">${labelMonth(k)}</option>`).join('');
+   if(monthSet.length){
+     sel.value=monthSet.includes(old)?old:(monthSet.includes(currentMonth)?currentMonth:monthSet[0]);
+   }else{
+     sel.innerHTML=`<option value="${currentMonth}">${labelMonth(currentMonth)}</option>`;
+     sel.value=currentMonth;
+   }
  }
 
- const selected=select?.value||todayKey;
- const filtered=all.filter(x=>monthKey(x)===selected);
+ const selected=sel?.value||currentMonth;
+ const source=showAllHistory?all:all.filter(x=>getMonth(x)===selected);
 
- // Ringkas MASUK dan PULANG menjadi satu baris per tanggal.
+ // Gabungkan MASUK dan PULANG pada tanggal yang sama.
  const byDate={};
- filtered.forEach(x=>{
-   const tanggal=x.tanggal||String(x.timestamp||'').slice(0,10)||'-';
-   if(!byDate[tanggal]) byDate[tanggal]={tanggal,masuk:null,pulang:null};
+ source.forEach(x=>{
+   const tanggal=getDate(x);
+   if(!tanggal)return;
+   if(!byDate[tanggal])byDate[tanggal]={tanggal,masuk:null,pulang:null};
    const jenis=String(x.type||x.jenis||'').toUpperCase();
-   if(jenis==='MASUK' && !byDate[tanggal].masuk) byDate[tanggal].masuk=x;
-   if(jenis==='PULANG' && !byDate[tanggal].pulang) byDate[tanggal].pulang=x;
+   if(jenis==='MASUK' && !byDate[tanggal].masuk)byDate[tanggal].masuk=x;
+   if(jenis==='PULANG' && !byDate[tanggal].pulang)byDate[tanggal].pulang=x;
  });
 
- const rows=Object.values(byDate).sort((a,b)=>String(b.tanggal).localeCompare(String(a.tanggal)));
+ const rows=Object.values(byDate).sort((a,b)=>b.tanggal.localeCompare(a.tanggal));
+ const hadir=rows.filter(r=>r.masuk).length;
+ const lengkap=rows.filter(r=>r.masuk&&r.pulang).length;
 
- const totalHari=rows.length;
- const hadir=rows.filter(r=>!!r.masuk).length;
- const lengkap=rows.filter(r=>!!r.masuk&&!!r.pulang).length;
- const belumPulang=rows.filter(r=>!!r.masuk&&!r.pulang).length;
-
- $('rekapTotalHari').textContent=totalHari;
  $('rekapHadir').textContent=hadir;
  $('rekapLengkap').textContent=lengkap;
- $('rekapBelumPulang').textContent=belumPulang;
+ $('historyTitle').textContent=showAllHistory?'Riwayat absensi — Semua':'Riwayat absensi '+labelMonth(selected);
+ $('historyToggle').textContent=showAllHistory?'Tampilkan bulan ini':'Tampilkan semua';
 
- const jam=x=>x?(x.jam||'-'):'—';
- const statusRow=r=>{
-   if(r.masuk && r.pulang){
-     const mOk=r.masuk.status==='VALID'||r.masuk.status==='HADIR'||!r.masuk.status;
-     const pOk=r.pulang.status==='VALID'||r.pulang.status==='HADIR'||!r.pulang.status;
-     return mOk&&pOk
-       ? '<span class="badge ok">✓ Lengkap</span>'
-       : '<span class="badge warn">Periksa</span>';
-   }
-   if(r.masuk) return '<span class="badge info">Masuk tercatat</span>';
-   if(r.pulang) return '<span class="badge warn">Pulang saja</span>';
-   return '<span class="badge warn">Belum lengkap</span>';
- };
-
- $('empHistory').innerHTML=rows.map(r=>`<tr>
-   <td><b>${r.tanggal}</b></td>
-   <td>${r.masuk?`<span class="badge info">🕐 ${jam(r.masuk)}</span>`:'—'}</td>
-   <td>${r.pulang?`<span class="badge ok">🕐 ${jam(r.pulang)}</span>`:'—'}</td>
-   <td>${statusRow(r)}</td>
- </tr>`).join('')||'<tr><td colspan="4" class="empty-history">Belum ada riwayat presensi pada bulan ini.</td></tr>';
+ $('empHistory').innerHTML=rows.map(r=>`
+   <div class="history-item ${r.masuk&&r.pulang?'':'incomplete'}">
+     <div class="history-date">${formatDate(r.tanggal)}</div>
+     <div class="history-time"><span>Masuk</span><b>${getTime(r.masuk)}</b></div>
+     <div class="history-time"><span>Pulang</span><b>${getTime(r.pulang)}</b></div>
+   </div>
+ `).join('')||'<div class="history-empty">Belum ada riwayat presensi pada periode ini.</div>';
 }
 
 function renderAdminDashboard(){
