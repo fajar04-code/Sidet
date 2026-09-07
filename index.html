@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>SiDEt Siswa v2 — FIX LOGIN</title>
+<title>SiDEt Siswa v2 — FIX LOGIN V2</title>
 <script>
 const ATTENDANCE_LOCATIONS = [
   { lat: 4.048999, lng: 117.726480, name: "Titik 1" },
@@ -348,20 +348,59 @@ async function login(){
 
   try{
     if(apiReady()){
-      const j=await api('login',{
-        role:state.role,
-        username:u,
-        password:p
-      });
+      /*
+        Percobaan 1: NISN persis seperti yang diketik.
+        Percobaan 2: NISN dinormalisasi tanpa nol di depan.
+        Ini mengatasi kondisi kolom NISN Google Sheets terbaca sebagai ANGKA,
+        sehingga 0106148762 dapat terbaca sebagai 106148762.
+        Password tetap diperiksa oleh server; tidak ada bypass password.
+      */
+      const attempts=[u];
 
-      if(!j.user){
-        throw Error('Server tidak mengirim data pengguna.');
+      if(/^\d+$/.test(u)){
+        const normalized=u.replace(/^0+/,'')||'0';
+        if(normalized!==u) attempts.push(normalized);
+      }
+
+      // Jika username adalah NISN, tambahkan ID siswa sebagai percobaan
+      // kedua/ketiga. Password tetap wajib benar di server.
+      const localStudent=INITIAL_STUDENTS.find(
+        x=>String(x.nisn)===u || (String(x.nisn).replace(/^0+/,'')||'0')===((u.replace(/^0+/,'')||'0'))
+      );
+      if(localStudent && localStudent.id && !attempts.includes(String(localStudent.id))){
+        attempts.push(String(localStudent.id));
+      }
+
+      let j=null;
+      let lastError=null;
+
+      for(const usernameAttempt of attempts){
+        try{
+          j=await api('login',{
+            role:state.role,
+            username:usernameAttempt,
+            password:p
+          });
+          if(j?.ok && j?.user) break;
+        }catch(err){
+          lastError=err;
+          // Hanya lanjut mencoba username alternatif bila server menyatakan
+          // kredensial tidak cocok. Error jaringan/HTTP tidak ditutupi.
+          if(!/NISN\/username atau password siswa salah|password siswa salah|NISN tidak ditemukan/i.test(String(err?.message||''))){
+            throw err;
+          }
+        }
+      }
+
+      if(!j?.user){
+        throw lastError || Error('NISN/username atau password siswa salah');
       }
 
       state.user={
         ...j.user,
         link:(INITIAL_STUDENTS.find(
-          x=>String(x.nisn)===String(j.user.nisn)
+          x=>String(x.nisn)===String(j.user.nisn) ||
+             ((String(x.nisn).replace(/^0+/,'')||'0')===((String(j.user.nisn).replace(/^0+/,'')||'0')))
         )||{}).link||''
       };
 
@@ -395,7 +434,6 @@ async function login(){
     }
   }
 }
-
 
 function showLocationPermissionPrompt_(){
   const modal=$('locationPermissionModal');
