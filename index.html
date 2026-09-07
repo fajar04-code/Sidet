@@ -5,6 +5,13 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>SiDEt Siswa v2 — Sistem Digital Presensi Siswa</title>
 <script>
+const ATTENDANCE_LOCATIONS = [
+  { lat: 4.048999, lng: 117.726480, name: "Titik 1" },
+  { lat: 4.048987, lng: 117.726179, name: "Titik 2" },
+  { lat: 4.049306, lng: 117.726132, name: "Titik 3" },
+  { lat: 4.049390, lng: 117.727064, name: "Titik 4" }
+];
+const GPS_RADIUS_METERS = 100;
 </script>
 <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
 <style>
@@ -93,27 +100,6 @@ table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:10px 8px;
 .gps-ready-action:disabled{opacity:.55;cursor:not-allowed}
 .gps-live-note{margin-top:8px;font-size:11px;color:#66788a;line-height:1.5}
 
-
-.live-location-panel{box-shadow:0 4px 14px rgba(30,80,120,.06)}
-#liveLocationBtn:disabled{opacity:.55;cursor:not-allowed}
-
-.nearest-location{padding:7px 9px;border-radius:8px;background:#eef3f7;color:#526273}
-.nearest-location.ok{background:#e9f7ef;color:#176b3a}
-
-.nearest-location{padding:8px 10px;border-radius:9px;background:#eef3f7;color:#526273;line-height:1.45}
-.nearest-location.ok{background:#e9f7ef;color:#176b3a}
-.all-locations{padding:7px 10px;border-radius:9px;background:#f5f8fb;color:#526273;line-height:1.5}
-#refreshGPSBtn{margin-left:5px}
-
-.current-location-maps{box-shadow:0 5px 18px rgba(30,80,120,.07)}
-#currentLocationMap{min-height:280px}
-
-#gpsDeviceDiagnostic{line-height:1.45}
-.current-location-maps iframe{background:#eaf2f8}
-
-.gps-retry{display:inline-block;margin-top:7px;padding:8px 12px;border:0;border-radius:9px;cursor:pointer;font-weight:700}
-.gps-error-title{font-weight:800;margin-bottom:4px}
-.gps-steps{margin:7px 0 0 18px;padding:0}
 </style>
 </head>
 
@@ -214,52 +200,13 @@ function isInsideAttendanceArea_(lat, lng) {
           <div class="gps-metric"><span>Jarak ke sekolah</span><b id="gpsDistanceValue">—</b></div>
           <div class="gps-metric"><span>Status radius</span><b id="gpsRadiusValue">—</b></div>
         </div>
-<button id="gpsReadyAction" class="gps-ready-action" disabled onclick="openCameraForAttendance()">📍 Menunggu GPS memenuhi syarat</button><div class="gps-live-note">Kamera/presensi aktif setelah lokasi terdeteksi, akurasi ≤90 m, dan jarak ≤100 m dari salah satu titik.</div>
-        <div class="mapbox" style="margin-top:14px"><div class="mapgrid"></div><div class="circle"></div><div class="pin">📍</div><div id="gpsDot" class="dot" style="left:50%;top:50%"></div></div>
+<button id="gpsReadyAction" class="gps-ready-action" disabled onclick="openCameraForAttendance()">📍 Menunggu GPS memenuhi syarat</button><div class="gps-live-note">Kamera/presensi akan aktif setelah lokasi terdeteksi, akurasi ≤50 m, dan jarak ≤100 m.</div>
+        <div class="mapbox" style="margin-top:14px"><iframe id="googleMapFrame" title="Lokasi GPS saat ini" style="position:absolute;inset:0;width:100%;height:100%;border:0" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe><div class="circle" style="pointer-events:none"></div><div class="pin" style="pointer-events:none">📍</div><div id="gpsDot" class="dot" style="left:50%;top:50%;pointer-events:none"></div></div>
         <div class="map-caption"><span id="distanceText">Belum ada lokasi.</span><span>Radius 100 m dari salah satu titik</span></div>
-        <div class="progress"><i id="radiusProgress"></i></div><div class="live-location-panel" style="margin-top:12px;padding:12px;border:1px solid #dbe7f0;border-radius:12px;background:#f8fbfd">
-  <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap">
-    <div>
-      <b>📍 Live Location</b>
-      <div id="liveLocationInfo" class="muted" style="font-size:11px;margin-top:3px">Menunggu koordinat GPS…</div>
-      <div id="nearestLocationInfo" class="nearest-location" style="font-size:11px;margin-top:5px">📍 Titik lokasi terdekat: —</div>
-      <div id="allLocationsInfo" class="all-locations" style="font-size:11px;margin-top:7px">Jarak ke 4 titik: —</div>
-    </div>
-    <button id="liveLocationBtn" class="btn primary" disabled onclick="openLiveLocation()">🗺️ Buka GPS Terbaru di Google Maps</button>
-    <button id="refreshGPSBtn" class="btn secondary" onclick="refreshGPS()">🔄 Perbarui GPS</button>
-  </div>
-  <div style="font-size:11px;color:#66788a;margin-top:8px">Posisi pada Google Maps diperbarui setiap kali GPS perangkat memberikan koordinat terbaru.</div>
-</div>
+        <div class="progress"><i id="radiusProgress"></i></div>
       </div>
 
-      
-<div id="currentLocationMapsPanel" class="current-location-maps" style="margin-top:12px;padding:12px;border:1px solid #d8e4ee;border-radius:14px;background:#fff">
-  <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap">
-    <div>
-      <b>📍 Lokasi Saya Saat Ini</b>
-      <div id="currentLocationText" style="font-size:11px;color:#637587;margin-top:4px">Menunggu lokasi perangkat…</div>
-    </div>
-    <button id="refreshCurrentLocationBtn" class="btn secondary" type="button" onclick="refreshCurrentLocation()">🔄 Baca Lokasi</button>
-  </div>
-  <div id="currentLocationStatus" style="margin-top:8px;padding:9px 10px;border-radius:9px;background:#f3f7fa;font-size:11px;color:#526273">
-    Meminta lokasi akurat dari perangkat…
-  </div>
-  <div id="gpsDeviceDiagnostic" style="margin-top:8px;padding:8px 10px;border-radius:9px;background:#f5f8fb;font-size:11px;color:#526273">
-    🔎 Status perangkat: memeriksa izin dan koneksi lokasi…
-  </div>
-  <div id="currentLocationMapWrap" style="display:none;margin-top:9px;border-radius:12px;overflow:hidden;border:1px solid #d8e4ee;background:#eef4f8">
-    <iframe id="currentLocationMap" title="Lokasi saya saat ini di Google Maps"
-      style="width:100%;height:300px;border:0;display:block"
-      loading="lazy" referrerpolicy="no-referrer-when-downgrade"
-      allowfullscreen></iframe>
-  </div>
-  <div id="currentLocationMapActions" style="display:none;margin-top:8px;display:flex;gap:7px;flex-wrap:wrap">
-    <button id="openCurrentGoogleMapsBtn" class="btn primary" type="button">🗺️ Buka di Google Maps</button>
-    <button id="copyCurrentCoordsBtn" class="btn secondary" type="button">📋 Salin Koordinat</button>
-  </div>
-</div>
-
-<div class="card">
+      <div class="card">
         <div class="section-label">Profil siswa</div>
         <div class="profile-row"><div class="profile-avatar" id="profileAvatar">S</div><div class="profile-lines"><strong id="profileName">Siswa</strong><small id="profileDetail">NISN — · Kelas —</small></div></div>
         <div style="margin-top:16px;font-size:13px;line-height:1.9"><div><span class="muted">Sekolah</span><br><b>SMAN 2 Nunukan Selatan</b></div><div><span class="muted">Status akun</span><br><span class="badge ok">Aktif</span></div></div>
@@ -432,603 +379,18 @@ function renderStudentProfile(){
  $('profileName').textContent=name; $('profileDetail').textContent='NISN '+(u.nisn||'—')+' · Kelas '+(u.kelas||'—');
  $('profileAvatar').textContent=name.trim().split(/\s+/).slice(0,2).map(x=>x[0]).join('').toUpperCase();
 }
+const GEOFENCE_DEFAULT={...ATTENDANCE_LOCATIONS[0],radius:GPS_RADIUS_METERS};
+const GPS_MAX_ACCURACY=100;
 let gpsWatchId=null;
 let gpsCountdownTimer=null;
 let gpsCountdownEndsAt=0;
-let gpsBestCoords=null;
-let gpsSamples=[];
-
-/* === KONFIGURASI GPS PRESENSI === */
-
-
-
-const ATTENDANCE_LOCATIONS = [
-  { lat: 4.048999, lng: 117.726480, name: "Titik 1" },
-  { lat: 4.048987, lng: 117.726179, name: "Titik 2" },
-  { lat: 4.049306, lng: 117.726132, name: "Titik 3" },
-  { lat: 4.049390, lng: 117.727064, name: "Titik 4" }
-];
-const GPS_RADIUS_METERS = 100;
-const GPS_MAX_ACCURACY = 90;
-const GPS_TARGET_ACCURACY = 30;
-
 function distanceMeters_(lat1,lng1,lat2,lng2){
-  const R=6371000;
-  const p=Math.PI/180;
-  const a=Math.sin((lat2-lat1)*p/2)**2+
-    Math.cos(lat1*p)*Math.cos(lat2*p)*Math.sin((lng2-lng1)*p/2)**2;
-  return 2*R*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
+ const R=6371000,rad=x=>x*Math.PI/180,dLat=rad(lat2-lat1),dLng=rad(lng2-lng1);
+ const a=Math.sin(dLat/2)**2+Math.cos(rad(lat1))*Math.cos(rad(lat2))*Math.sin(dLng/2)**2;
+ return 2*R*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
 }
+function setGpsMetric_(id,text,cls){const el=$(id);if(!el)return;el.textContent=text;el.className=cls||''}
 
-function getNearestAttendanceLocation_(lat,lng){
-  let nearest=null;
-  for(const point of ATTENDANCE_LOCATIONS){
-    const distance=distanceMeters_(lat,lng,point.lat,point.lng);
-    if(!nearest || distance<nearest.distance){
-      nearest={...point,distance};
-    }
-  }
-  return nearest;
-}
-
-function getAllAttendanceDistances_(lat,lng){
-  return ATTENDANCE_LOCATIONS.map(point=>({
-    ...point,
-    distance:distanceMeters_(lat,lng,point.lat,point.lng)
-  })).sort((a,b)=>a.distance-b.distance);
-}
-
-function gpsQuality_(accuracy){
-  const a=Number(accuracy);
-  if(!Number.isFinite(a)) return {label:"TIDAK TERSEDIA",cls:"bad",valid:false};
-  if(a<=30) return {label:"SANGAT BAIK",cls:"ok",valid:true};
-  if(a<=90) return {label:"BAIK",cls:"ok",valid:true};
-  if(a<=150) return {label:"KURANG",cls:"warn",valid:false};
-  return {label:"BURUK",cls:"bad",valid:false};
-}
-
-function updateLiveLocationLink_(coords){
-  const el=$("liveLocationBtn");
-  const info=$("liveLocationInfo");
-  const nearestEl=$("nearestLocationInfo");
-  const allInfo=$("allLocationsInfo");
-
-  const currentText=$("currentLocationText");
-  const currentStatus=$("currentLocationStatus");
-  const mapWrap=$("currentLocationMapWrap");
-  const map=$("currentLocationMap");
-  const mapsBtn=$("openCurrentGoogleMapsBtn");
-  const copyBtn=$("copyCurrentCoordsBtn");
-  const actions=$("currentLocationMapActions");
-
-  if(!coords) return;
-
-  const lat=Number(coords.latitude);
-  const lng=Number(coords.longitude);
-  const accuracy=Number(coords.accuracy);
-
-  if(!Number.isFinite(lat)||!Number.isFinite(lng)) return;
-
-  const nearest=getNearestAttendanceLocation_(lat,lng);
-  const all=getAllAttendanceDistances_(lat,lng);
-  const coord=lat.toFixed(6)+", "+lng.toFixed(6);
-
-  // Google Maps: posisi aktual perangkat.
-  const mapsUrl="https://www.google.com/maps?q="+encodeURIComponent(coord);
-  const embedUrl="https://www.google.com/maps?q="+encodeURIComponent(coord)+"&z=18&output=embed";
-
-  if(el){
-    el.disabled=false;
-    el.onclick=()=>window.open(mapsUrl,"_blank","noopener,noreferrer");
-  }
-
-  if(info){
-    info.innerHTML="Koordinat GPS terbaru: <b>"+coord+
-      "</b> · Akurasi ±"+Math.round(accuracy)+" m · diperbarui "+
-      new Date().toLocaleTimeString("id-ID");
-  }
-
-  if(nearestEl && nearest){
-    const valid=nearest.distance<=GPS_RADIUS_METERS;
-    nearestEl.innerHTML="📍 <b>Titik terdekat: "+nearest.name+
-      "</b> · Jarak <b>"+Math.round(nearest.distance)+" m</b> · "+
-      (valid?"<b>DALAM radius 100 m</b>":"<b>DI LUAR radius 100 m</b>")+
-      "<br>Koordinat titik: "+Number(nearest.lat).toFixed(6)+", "+Number(nearest.lng).toFixed(6);
-    nearestEl.className="nearest-location "+(valid?"ok":"");
-  }
-
-  if(allInfo){
-    allInfo.innerHTML="<b>Jarak ke 4 titik:</b><br>"+
-      all.map(x=>"• "+x.name+": <b>"+Math.round(x.distance)+" m</b>").join("<br>");
-  }
-
-  // Tampilkan lokasi saat ini di dalam aplikasi menggunakan Google Maps.
-  if(currentText){
-    currentText.innerHTML="<b>"+coord+"</b> · Akurasi ±"+Math.round(accuracy)+" m";
-  }
-  if(currentStatus){
-    currentStatus.innerHTML="🟢 <b>Lokasi perangkat terbaca.</b> "+
-      "Koordinat di atas adalah posisi yang diberikan GPS/browser. "+
-      (nearest ? "Titik terdekat: <b>"+nearest.name+"</b> ("+Math.round(nearest.distance)+" m)." : "");
-    currentStatus.style.background=nearest && nearest.distance<=GPS_RADIUS_METERS ? "#eaf8ef" : "#fff7e8";
-    currentStatus.style.color=nearest && nearest.distance<=GPS_RADIUS_METERS ? "#176b3a" : "#7a5a13";
-  }
-  if(map){
-    map.src=embedUrl;
-    mapWrap.style.display="block";
-  }
-  if(actions) actions.style.display="flex";
-
-  if(mapsBtn){
-    mapsBtn.onclick=()=>window.open(mapsUrl,"_blank","noopener,noreferrer");
-  }
-  if(copyBtn){
-    copyBtn.onclick=async()=>{
-      try{
-        await navigator.clipboard.writeText(coord);
-        toast("Koordinat berhasil disalin: "+coord);
-      }catch(e){
-        toast("Koordinat: "+coord);
-      }
-    };
-  }
-}
-
-function updateGPSUI_(coords){
-  try{
-    const lat=Number(coords.latitude);
-    const lng=Number(coords.longitude);
-    const accuracy=Number(coords.accuracy);
-
-    if(!Number.isFinite(lat)||!Number.isFinite(lng))
-      throw Error("Koordinat GPS tidak valid.");
-    if(!Number.isFinite(accuracy))
-      throw Error("Akurasi GPS tidak tersedia.");
-
-    const nearest=getNearestAttendanceLocation_(lat,lng);
-    if(!nearest) throw Error("Empat titik lokasi presensi belum tersedia.");
-
-    const quality=gpsQuality_(accuracy);
-    const insideRadius=nearest.distance<=GPS_RADIUS_METERS;
-    const gpsReady=quality.valid && insideRadius;
-
-    const enriched={
-      ...coords,
-      distance:nearest.distance,
-      nearestLocation:nearest.name,
-      nearestLat:nearest.lat,
-      nearestLng:nearest.lng,
-      insideRadius,
-      gpsReady
-    };
-
-    state.gps=enriched;
-    updateLiveLocationLink_(enriched);
-
-    if($("gpsAccuracyValue")){
-      $("gpsAccuracyValue").textContent="±"+Math.round(accuracy)+" m";
-      $("gpsAccuracyValue").className=quality.cls;
-    }
-    if($("gpsQualityValue")){
-      $("gpsQualityValue").textContent=quality.label;
-      $("gpsQualityValue").className=quality.cls;
-    }
-    if($("gpsDistanceValue")){
-      $("gpsDistanceValue").textContent=Math.round(nearest.distance)+" m";
-      $("gpsDistanceValue").className=insideRadius?"ok":"bad";
-    }
-    if($("gpsRadiusValue")){
-      $("gpsRadiusValue").textContent=insideRadius?"DI DALAM":"DI LUAR";
-      $("gpsRadiusValue").className=insideRadius?"ok":"bad";
-    }
-
-    if($("gpsStatus")){
-      $("gpsStatus").textContent=gpsReady?"GPS SIAP":"GPS BELUM MEMENUHI SYARAT";
-      $("gpsStatus").className="badge "+(gpsReady?"ok":"bad");
-    }
-
-    if($("gpsBadge")){
-      $("gpsBadge").textContent=gpsReady?"Lokasi valid":"Belum memenuhi syarat";
-      $("gpsBadge").className="badge "+(gpsReady?"ok":"bad");
-    }
-
-    if($("gpsAccuracy")){
-      $("gpsAccuracy").textContent=
-        "Akurasi ±"+Math.round(accuracy)+" m · "+quality.label+
-        " · Jarak "+Math.round(nearest.distance)+" m / 100 m";
-    }
-
-    if($("distanceText")){
-      $("distanceText").textContent=
-        "Koordinat: "+lat.toFixed(6)+", "+lng.toFixed(6)+
-        " · "+nearest.name+" · Jarak "+Math.round(nearest.distance)+" meter";
-    }
-
-    if($("radiusProgress")){
-      const percent=Math.max(0,Math.min(100,(nearest.distance/GPS_RADIUS_METERS)*100));
-      $("radiusProgress").style.width=percent+"%";
-    }
-
-    if(gpsReady){
-      setGPSVisual_(
-        "good",
-        "GPS memenuhi syarat",
-        "Akurasi ±"+Math.round(accuracy)+" m dan berada "+Math.round(nearest.distance)+
-        " m dari "+nearest.name+". Presensi dapat dilakukan."
-      );
-      if($("empNotice")){
-        $("empNotice").textContent=
-          "✓ GPS valid. Akurasi maksimal yang diizinkan adalah 90 m dan jarak maksimal 100 m dari salah satu titik.";
-        $("empNotice").className="alert ok";
-      }
-    }else if(!quality.valid){
-      setGPSVisual_(
-        "waiting",
-        "⚠ Akurasi GPS belum memenuhi syarat",
-        "Akurasi saat ini ±"+Math.round(accuracy)+
-        " m. Presensi hanya aktif jika akurasi GPS ≤90 m. Tunggu pembacaan GPS lebih presisi."
-      );
-      if($("empNotice")){
-        $("empNotice").textContent=
-          "⚠ GPS belum cukup presisi. Akurasi saat ini ±"+Math.round(accuracy)+
-          " m. Syarat presensi: akurasi ≤90 m.";
-        $("empNotice").className="alert bad";
-      }
-    }else{
-      setGPSVisual_(
-        "waiting",
-        "⚠ Di luar radius presensi",
-        "Akurasi GPS sudah memenuhi syarat, tetapi jarak ke titik terdekat "+
-        Math.round(nearest.distance)+" m. Maksimal 100 m."
-      );
-      if($("empNotice")){
-        $("empNotice").textContent=
-          "⚠ GPS sudah cukup presisi, tetapi Anda berada di luar radius 100 m dari keempat titik presensi.";
-        $("empNotice").className="alert bad";
-      }
-    }
-
-    updateAttendanceButtons_(gpsReady);
-  }catch(e){
-    state.gps=null;
-    updateAttendanceButtons_(false);
-    if($("gpsStatus")){
-      $("gpsStatus").textContent="GPS BELUM VALID";
-      $("gpsStatus").className="badge bad";
-    }
-    if($("gpsBadge")){
-      $("gpsBadge").textContent="Belum valid";
-      $("gpsBadge").className="badge bad";
-    }
-    if($("empNotice")){
-      $("empNotice").textContent=e.message;
-      $("empNotice").className="alert bad";
-    }
-  }
-}
-
-function validateGPS_(coords){
-  const lat=Number(coords.latitude);
-  const lng=Number(coords.longitude);
-  const accuracy=Number(coords.accuracy);
-
-  if(!Number.isFinite(lat)||!Number.isFinite(lng))
-    throw Error("Koordinat GPS tidak valid.");
-  if(!Number.isFinite(accuracy))
-    throw Error("Akurasi GPS tidak tersedia.");
-
-  if(accuracy>GPS_MAX_ACCURACY){
-    throw Error(
-      "Akurasi GPS belum memenuhi syarat. Saat ini ±"+Math.round(accuracy)+
-      " m. Presensi hanya aktif jika akurasi GPS ≤90 m."
-    );
-  }
-
-  const nearest=getNearestAttendanceLocation_(lat,lng);
-  if(!nearest) throw Error("Titik lokasi presensi belum tersedia.");
-
-  if(nearest.distance>GPS_RADIUS_METERS){
-    throw Error(
-      "Lokasi berada "+Math.round(nearest.distance)+
-      " m dari titik terdekat ("+nearest.name+"). Radius maksimal 100 m."
-    );
-  }
-
-  return {
-    distance:nearest.distance,
-    inside:true,
-    nearestLocation:nearest.name,
-    nearestLat:nearest.lat,
-    nearestLng:nearest.lng
-  };
-}
-
-function getFreshGPS_(){
-  return new Promise((resolve,reject)=>{
-    if(!navigator.geolocation){
-      reject(Error("GPS tidak tersedia pada perangkat ini."));
-      return;
-    }
-
-    navigator.geolocation.getCurrentPosition(
-      pos=>{
-        try{
-          validateGPS_(pos.coords);
-          resolve({
-            ...pos.coords,
-            distance:getNearestAttendanceLocation_(
-              Number(pos.coords.latitude),
-              Number(pos.coords.longitude)
-            ).distance
-          });
-        }catch(e){
-          reject(e);
-        }
-      },
-      err=>{
-        reject(Error(gpsErrorMessage_(err)));
-      },
-      {
-        enableHighAccuracy:true,
-        timeout:30000,
-        maximumAge:0
-      }
-    );
-  });
-}
-
-function startGPSWatch_(){
-  if(!navigator.geolocation) return;
-
-  setGPSVisual_(
-    "search",
-    "Mencari GPS presisi…",
-    "Sistem meminta lokasi akurat dari perangkat. Tekan Perbarui GPS jika posisi belum sesuai."
-  );
-
-  if($("gpsStatus")){
-    $("gpsStatus").textContent="Mencari GPS…";
-    $("gpsStatus").className="badge warn";
-  }
-
-  if(gpsWatchId!==null){
-    navigator.geolocation.clearWatch(gpsWatchId);
-    gpsWatchId=null;
-  }
-
-  gpsWatchId=navigator.geolocation.watchPosition(
-    pos=>{
-      updateGPSUI_(pos.coords);
-    },
-    err=>{
-      showGPSRetryState_(gpsErrorMessage_(err));
-      if($("gpsStatus")){
-        $("gpsStatus").textContent="GPS GAGAL";
-        $("gpsStatus").className="badge bad";
-      }
-      updateAttendanceButtons_(false);
-    },
-    {
-      enableHighAccuracy:true,
-      timeout:30000,
-      maximumAge:0
-    }
-  );
-}
-
-async function refreshGPS(){
-  resetGPSDisplay_();
-
-  const btn=$("refreshGPSBtn");
-  if(btn){
-    btn.disabled=true;
-    btn.textContent="⏳ Meminta lokasi…";
-  }
-
-  if(!navigator.geolocation){
-    showGPSRetryState_(gpsErrorMessage_({code:2,message:"Geolocation tidak tersedia."}));
-    if(btn){btn.disabled=false;btn.textContent="🔄 Perbarui GPS";}
-    return;
-  }
-
-  let permissionState="prompt";
-  try{
-    if(navigator.permissions && navigator.permissions.query){
-      const p=await navigator.permissions.query({name:"geolocation"});
-      permissionState=p.state;
-    }
-  }catch(e){}
-
-  if(permissionState==="denied"){
-    showGPSRetryState_({
-      title:"Izin lokasi diblokir oleh Chrome",
-      text:"Situs ini belum boleh membaca lokasi perangkat.",
-      steps:[
-        "Tekan ikon 🔒 di sebelah alamat situs.",
-        "Pilih Izin/Permissions.",
-        "Pada Lokasi pilih Izinkan/Allow.",
-        "Aktifkan Lokasi Akurat/Precise.",
-        "Tutup panel izin, lalu tekan Perbarui GPS lagi."
-      ]
-    });
-    diagnoseDeviceLocation_();
-    if(btn){btn.disabled=false;btn.textContent="🔄 Perbarui GPS";}
-    return;
-  }
-
-  setGPSVisual_(
-    "search",
-    "📍 Meminta lokasi perangkat…",
-    "Chrome sedang mengambil lokasi langsung dari HP. Jika muncul dialog izin, pilih Izinkan/Allow."
-  );
-
-  let finished=false;
-  const finish=()=>{
-    if(finished)return;
-    finished=true;
-    if(btn){btn.disabled=false;btn.textContent="🔄 Perbarui GPS";}
-    diagnoseDeviceLocation_();
-  };
-
-  const timer=setTimeout(()=>{
-    if(finished)return;
-    finish();
-    showGPSRetryState_({
-      title:"Lokasi perangkat belum memberikan respons",
-      text:"Tidak ada koordinat yang diterima dalam 30 detik.",
-      steps:[
-        "Pastikan ikon Lokasi/GPS di HP aktif.",
-        "Pastikan Chrome memiliki izin Lokasi.",
-        "Pilih Lokasi Akurat/Precise.",
-        "Coba di area terbuka.",
-        "Tekan Perbarui GPS kembali."
-      ]
-    });
-  },31000);
-
-  navigator.geolocation.getCurrentPosition(
-    pos=>{
-      clearTimeout(timer);
-      if(finished)return;
-      updateGPSUI_(pos.coords);
-      updateLiveLocationLink_(pos.coords);
-      startGPSWatch_();
-      finish();
-    },
-    err=>{
-      clearTimeout(timer);
-      if(finished)return;
-      finish();
-      showGPSRetryState_(gpsErrorMessage_(err));
-    },
-    {
-      enableHighAccuracy:true,
-      timeout:30000,
-      maximumAge:0
-    }
-  );
-}
-
-
-
-async function diagnoseDeviceLocation_(){
-  const el=$("gpsDeviceDiagnostic");
-  if(!el)return;
-
-  const secure=window.isSecureContext || location.hostname==="localhost";
-  let permission="tidak diketahui";
-
-  try{
-    if(navigator.permissions && navigator.permissions.query){
-      const p=await navigator.permissions.query({name:"geolocation"});
-      permission=p.state;
-    }
-  }catch(e){}
-
-  const gpsAvailable=!!navigator.geolocation;
-  el.innerHTML=
-    "🔎 <b>Perangkat:</b> "+
-    (gpsAvailable?"Geolocation tersedia":"Geolocation tidak tersedia")+
-    " · <b>HTTPS:</b> "+(secure?"OK":"TIDAK")+
-    " · <b>Izin lokasi:</b> "+permission+
-    "<br><span style='font-size:10px'>Jika Google Maps di HP menunjukkan posisi benar tetapi data di sini berbeda, berarti browser/aplikasi belum memperoleh lokasi perangkat yang sama.</span>";
-
-  if(permission==="denied"){
-    el.style.background="#fff0f0";
-    el.style.color="#9b2020";
-  }else if(permission==="granted"){
-    el.style.background="#eaf8ef";
-    el.style.color="#176b3a";
-  }
-}
-
-diagnoseDeviceLocation_();
-
-async function refreshCurrentLocation(){
-  const status=$("currentLocationStatus");
-  const btn=$("refreshCurrentLocationBtn");
-
-  if(btn){
-    btn.disabled=true;
-    btn.textContent="⏳ Membaca…";
-  }
-  if(status){
-    status.innerHTML="🔄 <b>Meminta lokasi langsung dari perangkat…</b> Jika Chrome meminta izin, pilih Izinkan/Allow.";
-  }
-
-  if(!navigator.geolocation){
-    if(status)status.innerHTML="❌ Perangkat/browser tidak menyediakan Geolocation.";
-    if(btn){btn.disabled=false;btn.textContent="🔄 Baca Lokasi";}
-    return;
-  }
-
-  let permissionState="prompt";
-  try{
-    if(navigator.permissions && navigator.permissions.query){
-      const p=await navigator.permissions.query({name:"geolocation"});
-      permissionState=p.state;
-    }
-  }catch(e){}
-
-  if(permissionState==="denied"){
-    if(status){
-      status.innerHTML="❌ <b>Izin lokasi diblokir.</b> Tekan 🔒 pada alamat situs → Izin/Permissions → Lokasi → Izinkan.";
-    }
-    showGPSRetryState_({
-      title:"Izin lokasi diblokir oleh Chrome",
-      text:"Chrome tidak akan memberikan koordinat sampai izin situs diubah.",
-      steps:["Tekan 🔒 di alamat situs.","Pilih Izin/Permissions.","Lokasi → Izinkan/Allow.","Aktifkan Lokasi Akurat/Precise.","Kembali lalu tekan Baca Lokasi."]
-    });
-    if(btn){btn.disabled=false;btn.textContent="🔄 Baca Lokasi";}
-    diagnoseDeviceLocation_();
-    return;
-  }
-
-  navigator.geolocation.getCurrentPosition(
-    pos=>{
-      updateGPSUI_(pos.coords);
-      updateLiveLocationLink_(pos.coords);
-      if(status){
-        status.innerHTML="🟢 <b>Lokasi perangkat berhasil terbaca.</b> "+
-          Number(pos.coords.latitude).toFixed(6)+", "+
-          Number(pos.coords.longitude).toFixed(6)+
-          " · Akurasi ±"+Math.round(Number(pos.coords.accuracy))+" m";
-      }
-      if(btn){btn.disabled=false;btn.textContent="🔄 Baca Lokasi";}
-      startGPSWatch_();
-      diagnoseDeviceLocation_();
-    },
-    err=>{
-      if(btn){btn.disabled=false;btn.textContent="🔄 Baca Lokasi";}
-      const info=gpsErrorMessage_(err);
-      if(status)status.innerHTML="❌ <b>"+info.title+"</b> — "+info.text;
-      showGPSRetryState_(info);
-      diagnoseDeviceLocation_();
-    },
-    {enableHighAccuracy:true, timeout:30000, maximumAge:0}
-  );
-}
-
-function openLiveLocation(){
-  if(!state.gps){
-    toast("Lokasi GPS belum tersedia. Tekan Perbarui GPS.");
-    return;
-  }
-
-  const lat=Number(state.gps.latitude);
-  const lng=Number(state.gps.longitude);
-
-  if(!Number.isFinite(lat)||!Number.isFinite(lng)){
-    toast("Koordinat GPS belum valid.");
-    return;
-  }
-
-  window.open(
-    "https://www.google.com/maps?q="+encodeURIComponent(lat+","+lng),
-    "_blank",
-    "noopener,noreferrer"
-  );
-}
 
 function openCameraForAttendance(){
   const btn=$('btnMasuk');
@@ -1049,436 +411,183 @@ function setPresensiLockReason_(type,text,mode){
 }
 
 function updatePresensiLockReasons_(inside){
- const gps=state.gps;
- const acc=gps?Number(gps.accuracy):NaN;
- const dist=gps?Number(gps.distance):NaN;
- let reason='';
- if(!gps) reason='Lokasi GPS belum diperoleh.';
- else if(!Number.isFinite(acc)) reason='Akurasi GPS belum tersedia.';
- else if(acc>50) reason='Akurasi GPS masih ±'+Math.round(acc)+' m. Harus ≤90 m.';
- else if(!Number.isFinite(dist)) reason='Jarak ke sekolah belum dihitung.';
- else if(dist>100) reason='Di luar radius sekolah ('+Math.round(dist)+' m). Maksimal 100 m.';
- else if(!inside) reason='Belum memenuhi syarat lokasi sekolah.';
- const masukDone=state.today&&state.today.masuk;
- const pulangDone=state.today&&state.today.pulang;
- setPresensiLockReason_('MASUK',masukDone?'Presensi Masuk hari ini sudah tercatat.':reason,masukDone?'ok':'');
- setPresensiLockReason_('PULANG',pulangDone?'Presensi Pulang hari ini sudah tercatat.':reason,pulangDone?'ok':'');
-}
-function updateAttendanceButtons_(ready){
   const gps=state.gps;
-  const gpsOk=!!gps &&
-    Number(gps.accuracy)<=GPS_MAX_ACCURACY &&
-    Number(gps.distance)<=GPS_RADIUS_METERS;
+  const acc=gps?Number(gps.accuracy):NaN;
+  const dist=gps?Number(gps.distance):NaN;
+  let reason='';
+  if(!gps) reason='Lokasi GPS belum diperoleh.';
+  else if(!Number.isFinite(acc)) reason='Akurasi GPS belum tersedia.';
+  else if(acc>50) reason='Akurasi GPS masih ±'+Math.round(acc)+' m. Harus ≤50 m.';
+  else if(!Number.isFinite(dist)) reason='Jarak ke titik sekolah belum dihitung.';
+  else if(dist>GPS_RADIUS_METERS) reason='Di luar radius sekolah ('+Math.round(dist)+' m). Maksimal '+GPS_RADIUS_METERS+' m.';
+  else if(!inside) reason='Belum memenuhi syarat lokasi sekolah.';
+  setPresensiLockReason_('MASUK',reason,inside?'ok':'');
+  setPresensiLockReason_('PULANG',reason,inside?'ok':'');
+}
 
-  const finalReady=!!ready && gpsOk;
+function gpsQuality_(accuracy){
+  accuracy=Number(accuracy);
+  if(!Number.isFinite(accuracy)) return {label:'TIDAK VALID',cls:'bad',acceptable:false};
+  if(accuracy<=20) return {label:'SANGAT BAIK',cls:'ok',acceptable:true};
+  if(accuracy<=50) return {label:'CUKUP',cls:'warn',acceptable:true};
+  return {label:'BURUK',cls:'bad',acceptable:false};
+}
 
-  updatePresensiLockReasons_(finalReady);
-
-  ["btnMasuk","btnPulang"].forEach(id=>{
-    const b=$(id);
-    if(b)b.disabled=!finalReady;
-  });
-
-  const readyBtn=$("gpsReadyAction");
-  if(readyBtn){
-    readyBtn.disabled=!finalReady;
-    readyBtn.textContent=finalReady
-      ?"📷 Buka Kamera / Presensi"
-      :"📍 Menunggu GPS ≤90 m & radius ≤100 m";
+function updateGPSUI_(coords){
+ try{
+  if(!coords||!Number.isFinite(coords.latitude)||!Number.isFinite(coords.longitude)||!Number.isFinite(coords.accuracy))throw Error('Data GPS tidak lengkap.');
+  const accuracy=Number(coords.accuracy), q=gpsQuality_(accuracy);
+  const nearest=getNearestAttendanceLocation_(coords.latitude,coords.longitude);
+  const d=nearest?Number(nearest.distance):Infinity;
+  const inside=q.acceptable && d<=GPS_RADIUS_METERS;
+  state.gps={latitude:Number(coords.latitude),longitude:Number(coords.longitude),accuracy,distance:d,inside,nearestPoint:nearest?.name||''};
+  setGpsMetric_('gpsAccuracyValue','±'+Math.round(accuracy)+' m',q.cls);
+  setGpsMetric_('gpsQualityValue',q.label,q.cls);
+  setGpsMetric_('gpsDistanceValue',Number.isFinite(d)?Math.round(d)+' m':'—',inside?'ok':'bad');
+  setGpsMetric_('gpsRadiusValue',inside?'DI DALAM':'DI LUAR',inside?'ok':'bad');
+  $('gpsStatus').textContent=!q.acceptable?'GPS buruk · tunggu akurasi':(inside?'GPS aktif · dalam radius':'GPS aktif · di luar radius');
+  $('gpsStatus').className=!q.acceptable?'badge bad':(inside?'badge ok':'badge bad');
+  if($('gpsBadge')){$('gpsBadge').textContent=inside?'Lokasi valid':'Belum memenuhi syarat';$('gpsBadge').className=inside?'badge ok':'badge bad'}
+  if($('gpsAccuracy'))$('gpsAccuracy').textContent='Akurasi ±'+Math.round(accuracy)+' m · '+q.label+' · Jarak '+(Number.isFinite(d)?Math.round(d):'—')+' m / '+GPS_RADIUS_METERS+' m'+(nearest?' · '+nearest.name:'');
+  if($('distanceText'))$('distanceText').textContent='Koordinat: '+coords.latitude.toFixed(6)+', '+coords.longitude.toFixed(6)+' · Jarak '+(Number.isFinite(d)?Math.round(d):'—')+' meter'+(nearest?' · '+nearest.name:'');
+  if($('radiusProgress'))$('radiusProgress').style.width=Math.min(100,(d/GPS_RADIUS_METERS)*100)+'%';
+  const map=$('googleMapFrame'); if(map) map.src='https://www.google.com/maps?q='+encodeURIComponent(coords.latitude+','+coords.longitude)+'&z=18&output=embed';
+  const dot=$('gpsDot'); if(dot){dot.style.left='50%';dot.style.top='50%';dot.title='Lokasi perangkat saat ini';}
+  updateAttendanceButtons_(inside);
+  if(inside){
+    $('empNotice').textContent='✓ GPS '+q.label.toLowerCase()+'. Lokasi berada dalam radius '+GPS_RADIUS_METERS+' m dari '+(nearest?.name||'titik sekolah')+'. Tombol presensi aktif.';
+    $('empNotice').className='alert ok';
+  }else if(!q.acceptable){
+    $('empNotice').textContent='GPS belum memenuhi akurasi ≤50 m. Tunggu pembacaan berikutnya.';
+    $('empNotice').className='alert warn';
+  }else{
+    $('empNotice').textContent='Lokasi di luar radius '+GPS_RADIUS_METERS+' m. Jarak terdekat '+(Number.isFinite(d)?Math.round(d):'—')+' m.';
+    $('empNotice').className='alert warn';
   }
-}
-
-/* =========================================================
-   GPS TERHUBUNG LANGSUNG KE PERANGKAT
-   4 TITIK | RADIUS 100 M | AKURASI MAKS. 90 M
-   ========================================================= */
-
-function gpsErrorMessage_(err){
-  const code=err&&err.code;
-  if(code===1)return {
-    title:"Izin lokasi ditolak",
-    text:"Browser belum diizinkan membaca lokasi perangkat.",
-    steps:["Aktifkan izin Lokasi untuk browser.","Pilih Lokasi Akurat/Precise jika tersedia.","Kembali ke aplikasi lalu tekan Perbarui GPS."]
-  };
-  if(code===2)return {
-    title:"Lokasi perangkat belum tersedia",
-    text:"Perangkat belum memberikan koordinat GPS yang valid.",
-    steps:["Aktifkan GPS/Lokasi perangkat.","Aktifkan mode lokasi dengan akurasi tinggi.","Jika menggunakan HP, buka di tempat yang memungkinkan GPS menerima sinyal.","Tekan Perbarui GPS."]
-  };
-  if(code===3)return {
-    title:"GPS terlalu lama merespons",
-    text:"Perangkat belum memberikan posisi dalam batas waktu.",
-    steps:["Pastikan GPS/Lokasi aktif.","Tunggu beberapa detik di tempat terbuka.","Tekan Perbarui GPS kembali."]
-  };
-  return {
-    title:"Lokasi tidak dapat dibaca",
-    text:(err&&err.message)||"Browser belum memberikan lokasi perangkat.",
-    steps:["Pastikan aplikasi dibuka melalui HTTPS.","Pastikan izin Lokasi browser aktif.","Aktifkan GPS/Lokasi perangkat.","Tekan Perbarui GPS."]
-  };
-}
-
-function showGPSRetryState_(info){
-  const notice=$("empNotice");
-  if(!notice)return;
-  notice.className="alert bad";
-  notice.innerHTML=
-    '<div class="gps-error-title">📍 '+info.title+'</div>'+
-    '<div>'+info.text+'</div>'+
-    '<ol class="gps-steps">'+info.steps.map(x=>'<li>'+x+'</li>').join("")+'</ol>'+
-    '<button id="gpsRetryBtn" class="gps-retry" onclick="retryGPS()">🔄 Perbarui GPS</button>';
-}
-
-function stopGPSCountdown_(){
-  if(typeof gpsCountdownTimer!=="undefined" && gpsCountdownTimer!==null){
-    clearInterval(gpsCountdownTimer);
-    gpsCountdownTimer=null;
-  }
-  if(typeof gpsCountdownEndsAt!=="undefined")gpsCountdownEndsAt=0;
-}
-
-function startGPSCountdown_(seconds){
-  stopGPSCountdown_();
-  gpsCountdownEndsAt=Date.now()+seconds*1000;
-  const tick=()=>{
-    const remain=Math.max(0,Math.ceil((gpsCountdownEndsAt-Date.now())/1000));
-    const el=$("gpsCountdownTime");
-    if(el){
-      el.textContent=remain+" detik";
-      el.className="gps-countdown-time"+(remain<=5?" danger":"");
-    }
-    if(remain<=0)stopGPSCountdown_();
-  };
-  tick();
-  gpsCountdownTimer=setInterval(tick,500);
-}
-
-function addGPSCountdown_(seconds){
-  const visual=document.querySelector(".gps-visual");
-  if(!visual)return;
-  let box=$("gpsCountdownBox");
-  if(!box){
-    box=document.createElement("div");
-    box.id="gpsCountdownBox";
-    box.className="gps-countdown";
-    box.innerHTML='<span class="gps-countdown-label">Pencarian GPS</span><b id="gpsCountdownTime" class="gps-countdown-time">—</b>';
-    visual.appendChild(box);
-  }
-  startGPSCountdown_(seconds);
+ }catch(e){console.error(e);toast(e.message||'Gagal membaca GPS.')}
 }
 
 function setGPSVisual_(mode,title,text){
-  const notice=$("empNotice");
-  if(!notice)return;
-  const cls=mode==="waiting"?"waiting":mode==="good"?"good":"";
-  const indicator=mode==="permission"
-    ?'<div class="gps-spinner"></div>'
-    :mode==="search"
-      ?'<div class="gps-spinner"></div>'
-      :mode==="waiting"
-        ?'<div class="gps-pulse"></div>'
-        :'<div class="gps-check">✓</div>';
-  notice.className="alert "+(mode==="good"?"ok":mode==="waiting"?"warn":"warn");
-  notice.innerHTML=
-    '<div class="gps-visual '+cls+'">'+
-    '<div class="gps-visual-head">'+indicator+"<span>"+title+"</span></div>"+
-    '<div class="gps-visual-text">'+text+"</div>"+
-    '<div class="gps-progress"><div class="gps-progress-bar"></div></div>'+
-    "</div>";
+  const notice=$('empNotice'); if(!notice)return;
+  const cls=mode==='waiting'?'waiting':mode==='good'?'good':'';
+  const icon=mode==='permission'?'🔐':mode==='search'?'':'';
+  const indicator=mode==='permission'
+    ? '<div class="gps-spinner"></div>'
+    : mode==='search'
+      ? '<div class="gps-spinner"></div>'
+      : mode==='waiting'
+        ? '<div class="gps-pulse"></div>'
+        : '<div class="gps-check">✓</div>';
+  notice.className='alert '+(mode==='good'?'ok':'warn');
+  notice.innerHTML='<div class="gps-visual '+cls+'"><div class="gps-visual-head">'+indicator+'<span>'+title+'</span></div><div class="gps-visual-text">'+text+'</div><div class="gps-progress"><div class="gps-progress-bar"></div></div></div>';
 }
 
-function resetGPSDisplay_(){
-  state.gps=null;
+function getGPS(){
   updateAttendanceButtons_(false);
-  setGpsMetric_("gpsAccuracyValue","—","warn");
-  setGpsMetric_("gpsQualityValue","MENUNGGU","warn");
-  setGpsMetric_("gpsDistanceValue","—","warn");
-  setGpsMetric_("gpsRadiusValue","MENUNGGU","warn");
-
-  const ids=["currentLocationText","liveLocationInfo","nearestLocationInfo","allLocationsInfo"];
-  if($("currentLocationText"))$("currentLocationText").textContent="Menunggu lokasi perangkat…";
-  if($("liveLocationInfo"))$("liveLocationInfo").textContent="Menunggu koordinat GPS…";
-  if($("nearestLocationInfo"))$("nearestLocationInfo").innerHTML="📍 Titik lokasi terdekat: —";
-  if($("allLocationsInfo"))$("allLocationsInfo").innerHTML="<b>Jarak ke 4 titik:</b><br>—";
-  if($("currentLocationMapWrap"))$("currentLocationMapWrap").style.display="none";
-  if($("currentLocationMapActions"))$("currentLocationMapActions").style.display="none";
-}
-
-function getDeviceLocationOnce_(success,error){
   if(!navigator.geolocation){
-    error({code:2,message:"Geolocation tidak tersedia pada perangkat/browser."});
+    showGPSRetryState_(gpsErrorMessage_({message:'GPS tidak tersedia pada perangkat ini.'}));
     return;
   }
 
+  setGPSVisual_('permission','Meminta izin lokasi…','Silakan izinkan akses lokasi untuk SiDEt. Setelah izin diberikan, sistem akan langsung mulai membaca GPS.');
+  addGPSCountdown_(15);
+  if($('gpsStatus')){$('gpsStatus').textContent='Meminta izin lokasi…';$('gpsStatus').className='badge warn'}
+
+  if(gpsWatchId!==null){navigator.geolocation.clearWatch(gpsWatchId);gpsWatchId=null;}
+
+  // Memicu dialog izin browser terlebih dahulu.
   navigator.geolocation.getCurrentPosition(
-    success,
-    error,
-    {
-      enableHighAccuracy:true,
-      timeout:30000,
-      maximumAge:0
-    }
+    pos=>{
+      stopGPSCountdown_();
+      updateGPSUI_(pos.coords);
+      startGPSWatch_();
+    },
+    err=>{
+      stopGPSCountdown_();
+      showGPSRetryState_(gpsErrorMessage_(err));
+      if($('gpsStatus')){$('gpsStatus').textContent='GPS gagal';$('gpsStatus').className='badge bad'}
+    },
+    {enableHighAccuracy:true,timeout:15000,maximumAge:0}
   );
 }
 
 function startGPSWatch_(){
-  if(!navigator.geolocation){
-    showGPSRetryState_(gpsErrorMessage_({code:2,message:"Geolocation tidak tersedia."}));
-    return;
-  }
+  if(!navigator.geolocation)return;
+  setGPSVisual_('search','Mencari GPS…','Sistem sedang mencari posisi GPS terbaik. Mohon tunggu beberapa detik dan jangan menutup halaman.');
+  addGPSCountdown_(20);
+  if($('gpsStatus')){$('gpsStatus').textContent='Mencari GPS…';$('gpsStatus').className='badge warn'}
 
-  if(gpsWatchId!==null){
-    try{navigator.geolocation.clearWatch(gpsWatchId)}catch(e){}
-    gpsWatchId=null;
-  }
-
-  setGPSVisual_(
-    "search",
-    "Menghubungkan ke GPS perangkat…",
-    "Meminta koordinat langsung dari perangkat. Jangan menutup halaman selama proses pembacaan."
-  );
-
-  if($("gpsStatus")){
-    $("gpsStatus").textContent="Menghubungkan GPS…";
-    $("gpsStatus").className="badge warn";
-  }
+  if(gpsWatchId!==null){navigator.geolocation.clearWatch(gpsWatchId);gpsWatchId=null;}
 
   gpsWatchId=navigator.geolocation.watchPosition(
     pos=>{
       stopGPSCountdown_();
       updateGPSUI_(pos.coords);
-
       const acc=Number(pos.coords.accuracy);
-      const lat=Number(pos.coords.latitude);
-      const lng=Number(pos.coords.longitude);
-
-      if(Number.isFinite(lat)&&Number.isFinite(lng)&&Number.isFinite(acc)){
-        updateLiveLocationLink_(pos.coords);
-      }
-
-      if(acc>GPS_MAX_ACCURACY){
-        setGPSVisual_(
-          "waiting",
-          "⚠ Akurasi GPS belum memenuhi syarat",
-          "GPS perangkat terbaca, tetapi akurasi ±"+Math.round(acc)+
-          " m. Presensi aktif jika akurasi ≤90 m. Tunggu pembacaan yang lebih presisi."
-        );
+      if(Number.isFinite(acc) && acc>50){
+        setGPSVisual_('waiting','Menunggu akurasi GPS membaik…','Akurasi saat ini ±'+Math.round(acc)+' m. Sistem menunggu pembacaan yang lebih akurat (≤50 m).');
+        addGPSCountdown_(20);
+        if($('gpsStatus')){$('gpsStatus').textContent='Menunggu akurasi…';$('gpsStatus').className='badge warn'}
+      }else if(Number.isFinite(acc)){
+        setGPSVisual_('good','GPS siap digunakan','Akurasi sudah memenuhi syarat. Sistem tetap memantau posisi secara otomatis.');
+        if($('gpsStatus')){$('gpsStatus').textContent='GPS siap';$('gpsStatus').className='badge ok'}
       }
     },
     err=>{
       stopGPSCountdown_();
-      updateAttendanceButtons_(false);
       showGPSRetryState_(gpsErrorMessage_(err));
-      if($("gpsStatus")){
-        $("gpsStatus").textContent="GPS GAGAL";
-        $("gpsStatus").className="badge bad";
-      }
+      if($('gpsStatus')){$('gpsStatus').textContent='GPS gagal';$('gpsStatus').className='badge bad'}
     },
-    {
-      enableHighAccuracy:true,
-      timeout:30000,
-      maximumAge:0
-    }
+    {enableHighAccuracy:true,timeout:20000,maximumAge:0}
   );
 }
 
-async function getGPS(){
-  resetGPSDisplay_();
-
-  if(!navigator.geolocation){
-    showGPSRetryState_(gpsErrorMessage_({
-      code:2,
-      message:"Geolocation tidak tersedia pada perangkat/browser."
-    }));
-    return;
-  }
-
-  const secure=window.isSecureContext || location.hostname==="localhost";
-  if(!secure){
-    showGPSRetryState_(gpsErrorMessage_({
-      code:0,
-      message:"Akses lokasi membutuhkan HTTPS."
-    }));
-    return;
-  }
-
-  // Periksa status izin terlebih dahulu.
-  let permissionState="prompt";
-  try{
-    if(navigator.permissions && navigator.permissions.query){
-      const p=await navigator.permissions.query({name:"geolocation"});
-      permissionState=p.state;
-    }
-  }catch(e){}
-
-  if(permissionState==="denied"){
-    showGPSRetryState_({
-      title:"Izin lokasi diblokir",
-      text:"Chrome sudah menyimpan izin lokasi sebagai Ditolak untuk situs ini.",
-      steps:[
-        "Tekan ikon 🔒 di samping alamat ajar04-code.github.io.",
-        "Buka Izin/Permissions → Lokasi.",
-        "Ubah menjadi Izinkan/Allow.",
-        "Pastikan Lokasi Akurat/Precise aktif.",
-        "Muat ulang halaman lalu tekan Perbarui GPS."
-      ]
-    });
-    diagnoseDeviceLocation_();
-    return;
-  }
-
-  setGPSVisual_(
-    "permission",
-    "📍 Siap menghubungkan ke lokasi perangkat",
-    permissionState==="granted"
-      ? "Izin lokasi sudah aktif. Tekan tombol Perbarui GPS untuk membaca posisi perangkat."
-      : "Tekan tombol Perbarui GPS agar Chrome menampilkan permintaan izin lokasi."
-  );
-
-  if($("empNotice")){
-    $("empNotice").innerHTML=
-      '<div class="gps-visual">'+
-      '<div class="gps-visual-head"><span>📍 Menghubungkan ke GPS perangkat…</span></div>'+
-      '<div class="gps-visual-text">Jika kotak izin lokasi tidak muncul, tekan <b>Perbarui GPS</b> di sebelah kanan atau pada bagian Lokasi Saya Saat Ini.</div>'+
-      '<button type="button" class="gps-retry" onclick="refreshGPS()">🔄 Perbarui GPS Sekarang</button>'+
-      '</div>';
-  }
-
-  diagnoseDeviceLocation_();
-}
-
-function refreshGPS(){
-  resetGPSDisplay_();
-
-  const btn=$("refreshGPSBtn");
-  if(btn){
-    btn.disabled=true;
-    btn.textContent="⏳ Membaca GPS…";
-  }
-
-  setGPSVisual_(
-    "search",
-    "🔄 Membaca lokasi perangkat…",
-    "Mengambil koordinat terbaru dengan mode akurasi tinggi."
-  );
-
-  getDeviceLocationOnce_(
-    pos=>{
-      updateGPSUI_(pos.coords);
-      updateLiveLocationLink_(pos.coords);
-      startGPSWatch_();
-      if(btn){
-        btn.disabled=false;
-        btn.textContent="🔄 Perbarui GPS";
-      }
-    },
-    err=>{
-      if(btn){
-        btn.disabled=false;
-        btn.textContent="🔄 Perbarui GPS";
-      }
-      showGPSRetryState_(gpsErrorMessage_(err));
-    }
-  );
-}
-
-function refreshCurrentLocation(){
-  const status=$("currentLocationStatus");
-  const btn=$("refreshCurrentLocationBtn");
-
-  if(btn){
-    btn.disabled=true;
-    btn.textContent="⏳ Membaca…";
-  }
-  if(status){
-    status.innerHTML="🔄 <b>Membaca lokasi langsung dari perangkat…</b>";
-  }
-
-  getDeviceLocationOnce_(
-    pos=>{
-      updateGPSUI_(pos.coords);
-      updateLiveLocationLink_(pos.coords);
-      if(status){
-        status.innerHTML="🟢 <b>Lokasi perangkat berhasil terbaca.</b> Koordinat berasal dari Geolocation perangkat/browser.";
-      }
-      if(btn){
-        btn.disabled=false;
-        btn.textContent="🔄 Baca Lokasi";
-      }
-      startGPSWatch_();
-    },
-    err=>{
-      if(btn){
-        btn.disabled=false;
-        btn.textContent="🔄 Baca Lokasi";
-      }
-      if(status)status.innerHTML="❌ "+gpsErrorMessage_(err).text;
-      showGPSRetryState_(gpsErrorMessage_(err));
-    }
-  );
-}
 
 function retryGPS(){
   stopGPSCountdown_();
-  if(gpsWatchId!==null){
-    try{navigator.geolocation.clearWatch(gpsWatchId)}catch(e){}
-    gpsWatchId=null;
-  }
-  getGPS();
+  const b=$('gpsRetryBtn'); if(b){b.disabled=true;b.textContent='⏳ Meminta izin & mencari GPS…';}
+  state.gps=null;
+  if(gpsWatchId!==null){navigator.geolocation.clearWatch(gpsWatchId);gpsWatchId=null;}
+  updateAttendanceButtons_(false);
+  setGpsMetric_('gpsAccuracyValue','—','warn');
+  setGpsMetric_('gpsQualityValue','MENUNGGU','warn');
+  setGpsMetric_('gpsDistanceValue','—','warn');
+  setGpsMetric_('gpsRadiusValue','MENUNGGU','warn');
+
+  setGPSVisual_('permission','Meminta izin lokasi…','Silakan izinkan akses lokasi. Setelah itu SiDEt akan memulai pembacaan GPS kembali tanpa memuat ulang halaman.');
+  addGPSCountdown_(15);
+  if($('gpsStatus')){$('gpsStatus').textContent='Meminta izin lokasi…';$('gpsStatus').className='badge warn'}
+
+  if(navigator.geolocation){
+    navigator.geolocation.getCurrentPosition(
+      pos=>{
+        stopGPSCountdown_();
+        updateGPSUI_(pos.coords);
+        startGPSWatch_();
+      },
+      err=>{
+        stopGPSCountdown_();
+        showGPSRetryState_(gpsErrorMessage_(err));
+        if($('gpsStatus')){$('gpsStatus').textContent='GPS gagal';$('gpsStatus').className='badge bad'}
+      },
+      {enableHighAccuracy:true,timeout:15000,maximumAge:0}
+    );
+  }else showGPSRetryState_(gpsErrorMessage_({message:'GPS tidak tersedia pada perangkat ini.'}));
 }
+
 
 function validateGPS_(coords){
-  const lat=Number(coords.latitude);
-  const lng=Number(coords.longitude);
-  const accuracy=Number(coords.accuracy);
-
-  if(!Number.isFinite(lat)||!Number.isFinite(lng))
-    throw Error("Koordinat GPS tidak valid.");
-
-  if(!Number.isFinite(accuracy))
-    throw Error("Akurasi GPS tidak tersedia.");
-
-  if(accuracy>GPS_MAX_ACCURACY)
-    throw Error(
-      "Akurasi GPS belum memenuhi syarat. Saat ini ±"+
-      Math.round(accuracy)+" m. Batas presensi adalah ≤90 m."
-    );
-
-  const nearest=getNearestAttendanceLocation_(lat,lng);
-  if(!nearest)
-    throw Error("Empat titik lokasi presensi belum tersedia.");
-
-  if(nearest.distance>GPS_RADIUS_METERS)
-    throw Error(
-      "Lokasi berada "+Math.round(nearest.distance)+
-      " m dari titik terdekat ("+nearest.name+"). Radius maksimal 100 m."
-    );
-
-  return {
-    distance:nearest.distance,
-    inside:true,
-    nearestLocation:nearest.name,
-    nearestLat:nearest.lat,
-    nearestLng:nearest.lng
-  };
+ if(!coords||!Number.isFinite(Number(coords.latitude))||!Number.isFinite(Number(coords.longitude)))throw Error('Koordinat GPS tidak valid.');
+ if(!Number.isFinite(Number(coords.accuracy)))throw Error('Akurasi GPS tidak tersedia.');
+ if(Number(coords.accuracy)>50)throw Error('Kualitas GPS buruk (±'+Math.round(coords.accuracy)+' m). Tunggu hingga akurasi ≤50 m.');
+ const nearest=getNearestAttendanceLocation_(Number(coords.latitude),Number(coords.longitude));
+ if(!nearest)throw Error('Titik lokasi sekolah belum tersedia.');
+ return {distance:nearest.distance,inside:nearest.distance<=GPS_RADIUS_METERS,nearestPoint:nearest.name,lat:Number(coords.latitude),lng:Number(coords.longitude)};
 }
 
-function getFreshGPS_(){
-  return new Promise((resolve,reject)=>{
-    getDeviceLocationOnce_(
-      pos=>{
-        try{
-          const check=validateGPS_(pos.coords);
-          resolve({...pos.coords,...check});
-        }catch(e){
-          reject(e);
-        }
-      },
-      err=>reject(Error(gpsErrorMessage_(err).text))
-    );
-  });
-}
+function getFreshGPS_(){return new Promise((resolve,reject)=>{if(!navigator.geolocation)return reject(Error('GPS tidak tersedia pada perangkat ini.'));navigator.geolocation.getCurrentPosition(pos=>{try{validateGPS_(pos.coords);resolve(pos.coords)}catch(e){reject(e)}},err=>reject(Error('GPS gagal: '+err.message)),{enableHighAccuracy:true,timeout:20000,maximumAge:0})})}
 
-function compressCanvasMax300KB(canvas){
+async function compressCanvasMax300KB(canvas){
  const MAX_BYTES=300*1024;
  const ctx=canvas.getContext('2d',{alpha:false});
  let width=canvas.width,height=canvas.height;
@@ -1505,8 +614,9 @@ function compressCanvasMax300KB(canvas){
 
 async function captureAttendance(type){
  const video=$('cam');if(!video.videoWidth)return toast('Kamera belum siap.');
- const gps=state.gps;if(!gps)return toast('Lokasi GPS belum tersedia.');
- const gpsCheck=validateGPS_(gps);if(!gpsCheck.inside)return toast('Presensi ditolak: di luar radius 100 m dari salah satu titik. Jarak '+Math.round(gpsCheck.distance)+' meter.');
+ let gps;try{gps=await getFreshGPS_();}catch(e){return toast(e.message||'Lokasi GPS belum memenuhi syarat.');}
+ const gpsCheck=validateGPS_(gps);
+ if(!gpsCheck.inside)return toast('Presensi ditolak: di luar radius '+GPS_RADIUS_METERS+' m dari titik sekolah terdekat. Jarak '+Math.round(gpsCheck.distance)+' meter.');
  const c=document.createElement('canvas');c.width=video.videoWidth;c.height=video.videoHeight;
  c.getContext('2d').drawImage(video,0,0,c.width,c.height);
  const button=document.querySelector('#modalBox .btn.primary');
@@ -1517,7 +627,7 @@ async function captureAttendance(type){
   $('attInfo').textContent='Foto siap · '+compressed.sizeKB+' KB · memeriksa dan mengirim presensi…';
   $('attInfo').className='alert ok';
   if(state.stream)state.stream.getTracks().forEach(x=>x.stop());
-  const record={userId:state.user.id,type,lat:gps.latitude,lng:gps.longitude,accuracy:gps.accuracy,distance:gps.distance||null,nearestLocation:gps.nearestLocation||'',photo,timestamp:new Date().toISOString(),link:state.user.link||'',name:state.user.name,nisn:state.user.nisn,kelas:state.user.kelas};
+  const record={userId:state.user.id,type,lat:gps.latitude,lng:gps.longitude,accuracy:gps.accuracy,distance:gpsCheck.distance,nearestPoint:gpsCheck.nearestPoint,photo,timestamp:new Date().toISOString(),link:state.user.link||'',name:state.user.name,nisn:state.user.nisn,kelas:state.user.kelas};
   if(apiReady()){
     $('attInfo').textContent='Mengirim presensi dan foto '+compressed.sizeKB+' KB ke server…';
     const result=await api('attendance',record);
@@ -1587,9 +697,9 @@ function setCenter(){if(!navigator.geolocation)return toast('GPS tidak tersedia'
 
 function exportExcel(){
  const wb=XLSX.utils.book_new(),a=state.data.attendance||[],u=state.data.users||[],l=state.data.leave||[];
- XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(a.map((x,i)=>({No:i+1,Tanggal:x.tanggal||'',Jam:x.jam||'',NISN:x.nip||'',Nama:x.name||'',Jenis:x.type||x.jenis||'',Status:x.status||'',TerlambatMenit:x.terlambatMenit||0,Latitude:x.lat||'',Longitude:x.lng||'',AkurasiGPS:x.accuracy||'',JarakMeter:x.jarak||'',Foto:x.photoUrl||x.photo||''}))),"PRESENSI");
+ XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(a.map((x,i)=>({No:i+1,Tanggal:x.tanggal||'',Jam:x.jam||'',NISN:x.nisn||x.nip||'',Nama:x.name||'',Jenis:x.type||x.jenis||'',Status:x.status||'',TerlambatMenit:x.terlambatMenit||0,Latitude:x.lat||'',Longitude:x.lng||'',AkurasiGPS:x.accuracy||'',JarakMeter:x.jarak||'',Foto:x.photoUrl||x.photo||''}))),"PRESENSI");
  XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(u.map((x,i)=>({No:i+1,NISN:x.nip||x.id,Nama:x.name,Sekolah:x.sekolah||'',Kelas:x.kelas||'',Aktif:x.active!==false}))),"PEGAWAI");
- XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(l.map((x,i)=>({No:i+1,NISN:x.nip||'',Nama:x.name||'',Jenis:x.type||'',Mulai:x.tanggalMulai||'',Selesai:x.tanggalSelesai||'',Alasan:x.alasan||'',Status:x.status||''}))),"IZIN");
+ XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(l.map((x,i)=>({No:i+1,NISN:x.nisn||x.nip||'',Nama:x.name||'',Jenis:x.type||'',Mulai:x.tanggalMulai||'',Selesai:x.tanggalSelesai||'',Alasan:x.alasan||'',Status:x.status||''}))),"IZIN");
  XLSX.writeFile(wb,'SiDEt_v2_Laporan_'+new Date().toISOString().slice(0,10)+'.xlsx')
 }
 function exportSummary(){const a=state.data.attendance||[],m={};a.forEach(x=>{const k=x.tanggal||'';m[k]=(m[k]||0)+1});const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(Object.entries(m).map(([Tanggal,Jumlah])=>({Tanggal,Jumlah}))),"RINGKASAN");XLSX.writeFile(wb,'SiDEt_v2_Ringkasan.xlsx')}
