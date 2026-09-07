@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>SiDEt Siswa v2 — Sistem Digital Presensi Siswa</title>
+<title>SiDEt Siswa v2 — FIX LOGIN</title>
 <script>
 const ATTENDANCE_LOCATIONS = [
   { lat: 4.048999, lng: 117.726480, name: "Titik 1" },
@@ -145,6 +145,9 @@ function isInsideAttendanceArea_(lat, lng) {
     <div class="field"><label>Password</label><input id="loginPass" type="password" placeholder="Password"></div>
     <button class="btn primary" style="width:100%" onclick="login()">Masuk</button>
     <div id="loginMsg" class="alert hidden"></div>
+    <div id="loginConnectionHint" class="muted" style="margin-top:10px;text-align:center;font-size:11px">
+      Koneksi server: <b style="color:#16834b">Google Apps Script aktif</b>
+    </div>
     <p class="muted" style="margin-top:16px">Terhubung otomatis ke Google Apps Script. Presensi dapat dilakukan di mana pun; GPS tetap dicatat untuk laporan jarak.</p>
   </div>
 </div>
@@ -267,29 +270,130 @@ function saveApi(v){const u=v.trim();state.api=/^https:\/\//i.test(u)?u:DEFAULT_
 function apiReady(){return /^https:\/\//i.test(state.api)}
 async function api(action,payload={}){
   if(!apiReady()) throw Error('URL Google Apps Script belum dikonfigurasi.');
+
   const body=JSON.stringify({action,...payload});
-  const r=await fetch(state.api,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body});
-  const j=await r.json();if(!j.ok)throw Error(j.message||'Permintaan gagal');return j;
+  const controller=new AbortController();
+  const timer=setTimeout(()=>controller.abort(),30000);
+
+  try{
+    /*
+      FIX LOGIN GOOGLE APPS SCRIPT
+      - text/plain mencegah preflight OPTIONS
+      - redirect:'follow' penting karena ContentService dapat mengalihkan
+        respons dari script.google.com ke script.googleusercontent.com
+      - credentials:'omit' mencegah masalah cookie lintas situs
+      - cache:'no-store' memastikan login membaca data terbaru
+    */
+    const r=await fetch(state.api,{
+      method:'POST',
+      mode:'cors',
+      credentials:'omit',
+      redirect:'follow',
+      cache:'no-store',
+      headers:{
+        'Content-Type':'text/plain;charset=utf-8',
+        'Accept':'application/json,text/plain,*/*'
+      },
+      body,
+      signal:controller.signal
+    });
+
+    const raw=await r.text();
+
+    if(!r.ok){
+      throw Error('Server Google Apps Script HTTP '+r.status);
+    }
+
+    let j;
+    try{
+      j=JSON.parse(raw);
+    }catch(_){
+      const preview=String(raw||'').replace(/\s+/g,' ').slice(0,180);
+      throw Error('Respons server bukan JSON. Respons: '+(preview||'kosong'));
+    }
+
+    if(!j || j.ok!==true){
+      throw Error(j?.message || 'Permintaan ke server gagal.');
+    }
+
+    return j;
+  }catch(e){
+    if(e?.name==='AbortError'){
+      throw Error('Koneksi ke server terlalu lama (timeout 30 detik). Periksa internet lalu coba lagi.');
+    }
+
+    const msg=String(e?.message||e||'');
+    if(/failed to fetch|networkerror|load failed/i.test(msg)){
+      throw Error('Koneksi ke Google Apps Script gagal. Web App aktif, tetapi browser gagal membaca respons. Silakan coba lagi atau buka aplikasi melalui HTTPS.');
+    }
+
+    throw e;
+  }finally{
+    clearTimeout(timer);
+  }
 }
+
 async function login(){
   const u=$('loginUser').value.trim(),p=$('loginPass').value;
-  if(!u||!p){return showLogin('Username dan password wajib diisi.',true)}
+  if(!u||!p){
+    return showLogin('Username dan password wajib diisi.',true);
+  }
+
+  const btn=document.querySelector('#loginView button[onclick="login()"]');
+  const oldText=btn?.textContent;
+  if(btn){
+    btn.disabled=true;
+    btn.textContent='Menghubungkan...';
+  }
+
   try{
     if(apiReady()){
-      const j=await api('login',{role:state.role,username:u,password:p});
-      state.user={...j.user,link:(INITIAL_STUDENTS.find(x=>String(x.nisn)===String(j.user.nisn))||{}).link||''}; startApp();
+      const j=await api('login',{
+        role:state.role,
+        username:u,
+        password:p
+      });
+
+      if(!j.user){
+        throw Error('Server tidak mengirim data pengguna.');
+      }
+
+      state.user={
+        ...j.user,
+        link:(INITIAL_STUDENTS.find(
+          x=>String(x.nisn)===String(j.user.nisn)
+        )||{}).link||''
+      };
+
+      startApp();
     }else{
-      if(state.role==='admin'&&u==='admin'&&p==='admin123') {state.user={id:'ADMIN',name:'Administrator',role:'admin'};startApp()}
-      else if(state.role==='siswa'){
+      if(state.role==='admin'&&u==='admin'&&p==='admin123'){
+        state.user={id:'ADMIN',name:'Administrator',role:'admin'};
+        startApp();
+      }else if(state.role==='siswa'){
         const st=INITIAL_STUDENTS.find(x=>String(x.nisn)===String(u));
         if(st && p==='0123SMAN2Nusa'){
-          state.user={id:st.id,nisn:st.nisn,name:st.name,sekolah:st.sekolah,kelas:st.kelas,gender:st.gender,link:st.link||'',role:'siswa'};
+          state.user={
+            id:st.id,nisn:st.nisn,name:st.name,sekolah:st.sekolah,
+            kelas:st.kelas,gender:st.gender,link:st.link||'',role:'siswa'
+          };
           startApp();
-        }else showLogin(st?'Password siswa salah.':'NISN tidak ditemukan pada data siswa.',true);
+        }else{
+          showLogin(st?'Password siswa salah.':'NISN tidak ditemukan pada data siswa.',true);
+        }
+      }else{
+        showLogin('Login siswa menggunakan NISN yang terdaftar. Admin: admin/admin123.',true);
       }
-      else showLogin('Login siswa menggunakan NISN yang terdaftar. Admin: admin/admin123.',true);
     }
-  }catch(e){showLogin(e.message,true)}
+  }catch(e){
+    console.error('SiDEt LOGIN ERROR:',e);
+    showLogin(e?.message||'Login gagal. Silakan coba lagi.',true);
+  }finally{
+    if(btn){
+      btn.disabled=false;
+      btn.textContent=oldText||'Masuk';
+    }
+  }
 }
 
 
