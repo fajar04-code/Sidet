@@ -104,6 +104,9 @@ table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:10px 8px;
 .nearest-location.ok{background:#e9f7ef;color:#176b3a}
 .all-locations{padding:7px 10px;border-radius:9px;background:#f5f8fb;color:#526273;line-height:1.5}
 #refreshGPSBtn{margin-left:5px}
+
+.current-location-maps{box-shadow:0 5px 18px rgba(30,80,120,.07)}
+#currentLocationMap{min-height:280px}
 </style>
 </head>
 
@@ -222,7 +225,31 @@ function isInsideAttendanceArea_(lat, lng) {
 </div>
       </div>
 
-      <div class="card">
+      
+<div id="currentLocationMapsPanel" class="current-location-maps" style="margin-top:12px;padding:12px;border:1px solid #d8e4ee;border-radius:14px;background:#fff">
+  <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap">
+    <div>
+      <b>📍 Lokasi Saya Saat Ini</b>
+      <div id="currentLocationText" style="font-size:11px;color:#637587;margin-top:4px">Menunggu lokasi perangkat…</div>
+    </div>
+    <button id="refreshCurrentLocationBtn" class="btn secondary" type="button" onclick="refreshCurrentLocation()">🔄 Baca Lokasi</button>
+  </div>
+  <div id="currentLocationStatus" style="margin-top:8px;padding:7px 9px;border-radius:8px;background:#f3f7fa;font-size:11px;color:#526273">
+    Meminta lokasi akurat dari perangkat…
+  </div>
+  <div id="currentLocationMapWrap" style="display:none;margin-top:9px;border-radius:12px;overflow:hidden;border:1px solid #d8e4ee;background:#eef4f8">
+    <iframe id="currentLocationMap" title="Lokasi saya saat ini di Google Maps"
+      style="width:100%;height:300px;border:0;display:block"
+      loading="lazy" referrerpolicy="no-referrer-when-downgrade"
+      allowfullscreen></iframe>
+  </div>
+  <div id="currentLocationMapActions" style="display:none;margin-top:8px;display:flex;gap:7px;flex-wrap:wrap">
+    <button id="openCurrentGoogleMapsBtn" class="btn primary" type="button">🗺️ Buka di Google Maps</button>
+    <button id="copyCurrentCoordsBtn" class="btn secondary" type="button">📋 Salin Koordinat</button>
+  </div>
+</div>
+
+<div class="card">
         <div class="section-label">Profil siswa</div>
         <div class="profile-row"><div class="profile-avatar" id="profileAvatar">S</div><div class="profile-lines"><strong id="profileName">Siswa</strong><small id="profileDetail">NISN — · Kelas —</small></div></div>
         <div style="margin-top:16px;font-size:13px;line-height:1.9"><div><span class="muted">Sekolah</span><br><b>SMAN 2 Nunukan Selatan</b></div><div><span class="muted">Status akun</span><br><span class="badge ok">Aktif</span></div></div>
@@ -449,10 +476,18 @@ function gpsQuality_(accuracy){
 }
 
 function updateLiveLocationLink_(coords){
-  const btn=$("liveLocationBtn");
+  const el=$("liveLocationBtn");
   const info=$("liveLocationInfo");
-  const nearestInfo=$("nearestLocationInfo");
+  const nearestEl=$("nearestLocationInfo");
   const allInfo=$("allLocationsInfo");
+
+  const currentText=$("currentLocationText");
+  const currentStatus=$("currentLocationStatus");
+  const mapWrap=$("currentLocationMapWrap");
+  const map=$("currentLocationMap");
+  const mapsBtn=$("openCurrentGoogleMapsBtn");
+  const copyBtn=$("copyCurrentCoordsBtn");
+  const actions=$("currentLocationMapActions");
 
   if(!coords) return;
 
@@ -464,35 +499,66 @@ function updateLiveLocationLink_(coords){
 
   const nearest=getNearestAttendanceLocation_(lat,lng);
   const all=getAllAttendanceDistances_(lat,lng);
-  const mapsUrl="https://www.google.com/maps?q="+encodeURIComponent(lat+","+lng);
+  const coord=lat.toFixed(6)+", "+lng.toFixed(6);
 
-  if(btn){
-    btn.disabled=false;
-    btn.onclick=()=>window.open(mapsUrl,"_blank","noopener,noreferrer");
+  // Google Maps: posisi aktual perangkat.
+  const mapsUrl="https://www.google.com/maps?q="+encodeURIComponent(coord);
+  const embedUrl="https://www.google.com/maps?q="+encodeURIComponent(coord)+"&z=18&output=embed";
+
+  if(el){
+    el.disabled=false;
+    el.onclick=()=>window.open(mapsUrl,"_blank","noopener,noreferrer");
   }
 
   if(info){
-    info.innerHTML=
-      "Koordinat GPS terbaru: <b>"+lat.toFixed(6)+", "+lng.toFixed(6)+
+    info.innerHTML="Koordinat GPS terbaru: <b>"+coord+
       "</b> · Akurasi ±"+Math.round(accuracy)+" m · diperbarui "+
       new Date().toLocaleTimeString("id-ID");
   }
 
-  if(nearestInfo && nearest){
+  if(nearestEl && nearest){
     const valid=nearest.distance<=GPS_RADIUS_METERS;
-    nearestInfo.innerHTML=
-      "📍 <b>Titik terdekat: "+nearest.name+
+    nearestEl.innerHTML="📍 <b>Titik terdekat: "+nearest.name+
       "</b> · Jarak <b>"+Math.round(nearest.distance)+" m</b> · "+
       (valid?"<b>DALAM radius 100 m</b>":"<b>DI LUAR radius 100 m</b>")+
-      "<br>Koordinat titik: "+nearest.lat.toFixed(6)+", "+nearest.lng.toFixed(6);
-    nearestInfo.className="nearest-location "+(valid?"ok":"");
+      "<br>Koordinat titik: "+Number(nearest.lat).toFixed(6)+", "+Number(nearest.lng).toFixed(6);
+    nearestEl.className="nearest-location "+(valid?"ok":"");
   }
 
   if(allInfo){
     allInfo.innerHTML="<b>Jarak ke 4 titik:</b><br>"+
-      all.map(x=>
-        "• "+x.name+": <b>"+Math.round(x.distance)+" m</b>"
-      ).join("<br>");
+      all.map(x=>"• "+x.name+": <b>"+Math.round(x.distance)+" m</b>").join("<br>");
+  }
+
+  // Tampilkan lokasi saat ini di dalam aplikasi menggunakan Google Maps.
+  if(currentText){
+    currentText.innerHTML="<b>"+coord+"</b> · Akurasi ±"+Math.round(accuracy)+" m";
+  }
+  if(currentStatus){
+    currentStatus.innerHTML="🟢 <b>Lokasi perangkat terbaca.</b> "+
+      "Koordinat di atas adalah posisi yang diberikan GPS/browser. "+
+      (nearest ? "Titik terdekat: <b>"+nearest.name+"</b> ("+Math.round(nearest.distance)+" m)." : "");
+    currentStatus.style.background=nearest && nearest.distance<=GPS_RADIUS_METERS ? "#eaf8ef" : "#fff7e8";
+    currentStatus.style.color=nearest && nearest.distance<=GPS_RADIUS_METERS ? "#176b3a" : "#7a5a13";
+  }
+  if(map){
+    map.src=embedUrl;
+    mapWrap.style.display="block";
+  }
+  if(actions) actions.style.display="flex";
+
+  if(mapsBtn){
+    mapsBtn.onclick=()=>window.open(mapsUrl,"_blank","noopener,noreferrer");
+  }
+  if(copyBtn){
+    copyBtn.onclick=async()=>{
+      try{
+        await navigator.clipboard.writeText(coord);
+        toast("Koordinat berhasil disalin: "+coord);
+      }catch(e){
+        toast("Koordinat: "+coord);
+      }
+    };
   }
 }
 
@@ -769,6 +835,40 @@ function refreshGPS(){
       timeout:30000,
       maximumAge:0
     }
+  );
+}
+
+
+function refreshCurrentLocation(){
+  const status=$("currentLocationStatus");
+  const btn=$("refreshCurrentLocationBtn");
+
+  if(!navigator.geolocation){
+    if(status) status.innerHTML="❌ Browser/perangkat ini tidak menyediakan Geolocation.";
+    return;
+  }
+
+  if(status) status.innerHTML="🔄 <b>Membaca lokasi perangkat…</b> Pastikan Lokasi/GPS HP aktif dan izinkan lokasi akurat.";
+  if(btn){btn.disabled=true;btn.textContent="⏳ Membaca…";}
+
+  navigator.geolocation.getCurrentPosition(
+    pos=>{
+      updateGPSUI_(pos.coords);
+      updateLiveLocationLink_(pos.coords);
+      if(btn){btn.disabled=false;btn.textContent="🔄 Baca Lokasi";}
+    },
+    err=>{
+      if(btn){btn.disabled=false;btn.textContent="🔄 Baca Lokasi";}
+      if(status){
+        let msg="❌ Lokasi belum dapat dibaca.";
+        if(err.code===1) msg+=" Izin lokasi ditolak. Aktifkan izin Lokasi untuk browser.";
+        else if(err.code===2) msg+=" Posisi tidak tersedia. Aktifkan GPS/Lokasi dan coba lagi.";
+        else if(err.code===3) msg+=" GPS terlalu lama merespons. Coba lagi di area terbuka.";
+        status.innerHTML=msg;
+      }
+      showGPSRetryState_(gpsErrorMessage_(err));
+    },
+    {enableHighAccuracy:true, timeout:30000, maximumAge:0}
   );
 }
 
