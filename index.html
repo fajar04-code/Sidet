@@ -5,6 +5,9 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>SiDEt Siswa v2 — Sistem Digital Presensi Siswa</title>
 <script>
+try{const t=localStorage.getItem('sidet_theme');if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t);}catch(e){}
+</script>
+<script>
 const ATTENDANCE_LOCATIONS = [
   { lat: 4.048999, lng: 117.726480, name: "Titik 1" },
   { lat: 4.048987, lng: 117.726179, name: "Titik 2" },
@@ -100,6 +103,64 @@ table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:10px 8px;
 .gps-ready-action:disabled{opacity:.55;cursor:not-allowed}
 .gps-live-note{margin-top:8px;font-size:11px;color:#66788a;line-height:1.5}
 
+
+/* === MODE GELAP ELEGAN — hanya tema visual, alur login/presensi tetap sama === */
+html{color-scheme:light;transition:background-color .25s ease,color .25s ease}
+body,.card,.top,.btn,input,select,textarea,.today-item,.gps-card,.gps-visual,.permission-box,.modalbox,.nav button,.gps-metric,.notice-info,.student-hero{transition:background-color .25s ease,border-color .25s ease,color .25s ease,box-shadow .25s ease}
+.theme-toggle{display:inline-flex;align-items:center;gap:8px;justify-content:center;min-width:112px;border:1px solid var(--line);background:var(--card);color:var(--ink);box-shadow:0 6px 18px rgba(20,40,70,.07)}
+.theme-toggle .theme-icon{font-size:16px;line-height:1}
+.theme-toggle .theme-text{font-size:12px}
+.theme-toggle:hover{transform:translateY(-1px);box-shadow:0 9px 22px rgba(20,40,70,.11)}
+@media(max-width:560px){.theme-toggle{min-width:44px;width:44px;padding:10px}.theme-toggle .theme-text{display:none}}
+
+html[data-theme="dark"]{color-scheme:dark}
+html[data-theme="dark"] body{--bg:#0b1220;--card:#111a2a;--ink:#edf4ff;--muted:#9cafc6;--primary:#3c8cff;--primary2:#1f65d8;--ok:#35c27f;--bad:#ff6b6b;--warn:#f0b24f;--line:#25344a;--shadow:0 14px 38px rgba(0,0,0,.28);background:var(--bg);color:var(--ink)}
+html[data-theme="dark"] .top{background:#0e1726;border-color:var(--line)}
+html[data-theme="dark"] .muted{color:var(--muted)}
+html[data-theme="dark"] .card{background:var(--card);border-color:var(--line);box-shadow:var(--shadow)}
+html[data-theme="dark"] .btn{background:#1b2a40;color:#dbe8f8;border-color:#2b3c55}
+html[data-theme="dark"] .btn.primary{background:linear-gradient(135deg,#2477f0,#3d92ff);color:#fff}
+html[data-theme="dark"] .btn.ok{background:#123a2a;color:#79dfad}
+html[data-theme="dark"] .btn.danger{background:#3c1b22;color:#ff9393}
+html[data-theme="dark"] .btn.warn{background:#3a2b16;color:#f0bd67}
+html[data-theme="dark"] input,html[data-theme="dark"] select,html[data-theme="dark"] textarea{background:#0d1625;color:var(--ink);border-color:#2a3a52}
+html[data-theme="dark"] input::placeholder,html[data-theme="dark"] textarea::placeholder{color:#71849b}
+html[data-theme="dark"] input:focus,html[data-theme="dark"] select:focus,html[data-theme="dark"] textarea:focus{box-shadow:0 0 0 3px rgba(60,140,255,.16)}
+html[data-theme="dark"] .nav button{background:#111a2a;color:#cbd8e8;border-color:var(--line)}
+html[data-theme="dark"] .nav button.active{background:#14294a;color:#66a5ff;border-color:#285492}
+html[data-theme="dark"] .today-item{background:#0f1928;border-color:var(--line)}
+html[data-theme="dark"] .gps-card{background:#0f1a29;border-color:var(--line)}
+html[data-theme="dark"] .gps-icon{background:#153c31}
+html[data-theme="dark"] .gps-metric{background:#101a2a;border-color:var(--line)}
+html[data-theme="dark"] .gps-visual{background:#0e1928;border-color:var(--line)}
+html[data-theme="dark"] .gps-visual-head{color:#dce8f7}
+html[data-theme="dark"] .gps-visual-text{color:#8fa2ba}
+html[data-theme="dark"] .gps-progress{background:#243247}
+html[data-theme="dark"] .progress{background:#223148}
+html[data-theme="dark"] .notice-info{background:#11243d;color:#9cc9ff}
+html[data-theme="dark"] .mapbox{background:linear-gradient(#173a55,#152b3d)}
+html[data-theme="dark"] .mapgrid{background-image:linear-gradient(#ffffff16 1px,transparent 1px),linear-gradient(90deg,#ffffff16 1px,transparent 1px)}
+html[data-theme="dark"] th{background:#0f1928;color:#dbe7f5}
+html[data-theme="dark"] th,html[data-theme="dark"] td{border-color:var(--line)}
+html[data-theme="dark"] .modal{background:rgba(0,0,0,.72)}
+html[data-theme="dark"] .modalbox,.html[data-theme="dark"] .permission-box{background:#111a2a;border-color:#26364c}
+html[data-theme="dark"] .permission-box{background:#111a2a;color:var(--ink);border-color:#26364c}
+html[data-theme="dark"] .permission-steps{background:#0d1725;border-color:#26364c;color:#aabbd0}
+html[data-theme="dark"] .permission-icon{background:#152b46}
+html[data-theme="dark"] .permission-box p{color:#9fb1c5}
+html[data-theme="dark"] .permission-note{background:#362b16;color:#e9c979}
+html[data-theme="dark"] .toast{background:#eef4ff;color:#122039;box-shadow:0 14px 40px rgba(0,0,0,.32)}
+html[data-theme="dark"] .login{background:radial-gradient(circle at 10% 10%,#142a48,transparent 35%),var(--bg)}
+html[data-theme="dark"] .loginbox{background:#111a2a;border-color:#26364c;box-shadow:0 20px 60px rgba(0,0,0,.32)}
+html[data-theme="dark"] .student-hero{box-shadow:0 16px 38px rgba(0,0,0,.28)}
+html[data-theme="dark"] .profile-avatar{background:#152b46}
+html[data-theme="dark"] .gps-left small,html[data-theme="dark"] .map-caption,html[data-theme="dark"] .today-item small{color:#90a3bb}
+html[data-theme="dark"] .badge.info{background:#163055;color:#8fc0ff}
+html[data-theme="dark"] .badge.ok{background:#123a2a;color:#7de0af}
+html[data-theme="dark"] .badge.warn{background:#3b2b15;color:#efbd66}
+html[data-theme="dark"] .badge.bad{background:#3b1e23;color:#ff9696}
+html[data-theme="dark"] .presensi-lock-reason{background:#352816!important;border-color:#5b4320!important;color:#e9c77b!important}
+
 </style>
 </head>
 
@@ -150,7 +211,7 @@ function isInsideAttendanceArea_(lat, lng) {
 </div>
 
 <div id="app" class="hidden">
-<header class="top"><div class="brand"><div class="logo">S</div><div>SiDEt <span class="muted">v2</span></div></div><div class="actions"><span id="who" class="muted"></span><button class="btn" onclick="logout()">Keluar</button></div></header>
+<header class="top"><div class="brand"><div class="logo">S</div><div>SiDEt <span class="muted">v2</span></div></div><div class="actions"><span id="who" class="muted"></span><button id="themeToggle" class="btn theme-toggle" type="button" onclick="toggleTheme()" aria-label="Ganti tema"><span class="theme-icon">🌙</span><span class="theme-text">Mode Gelap</span></button><button class="btn" onclick="logout()">Keluar</button></div></header>
 <main class="container">
 <div id="nav" class="nav"></div>
 
@@ -177,8 +238,8 @@ function isInsideAttendanceArea_(lat, lng) {
       <div class="card">
         <div class="card-title"><div><div class="section-label">Aksi utama</div><h3 style="margin:0">Lakukan Presensi</h3></div></div>
         <div class="grid two">
-          <button id="btnMasuk" class="btn primary bigbtn" disabled onclick="openAttendance('MASUK')"><span>📸</span><strong>Presensi Masuk</strong><small>Selfie + GPS</small></button><div id="btnMasukReason" class="presensi-lock-reason">🔒 Terkunci: menunggu GPS memenuhi syarat.</div>
-          <button id="btnPulang" class="btn bigbtn" disabled onclick="openAttendance('PULANG')"><span>🏁</span><strong>Presensi Pulang</strong><small>Selfie + GPS</small></button><div id="btnPulangReason" class="presensi-lock-reason">🔒 Terkunci: menunggu GPS memenuhi syarat.</div>
+          <button id="btnMasuk" class="btn primary bigbtn" onclick="openAttendance('MASUK')"><span>📸</span><strong>Presensi Masuk</strong><small>Selfie + GPS</small></button><div id="btnMasukReason" class="presensi-lock-reason">🔒 Terkunci: menunggu GPS memenuhi syarat.</div>
+          <button id="btnPulang" class="btn bigbtn" onclick="openAttendance('PULANG')"><span>🏁</span><strong>Presensi Pulang</strong><small>Selfie + GPS</small></button><div id="btnPulangReason" class="presensi-lock-reason">🔒 Terkunci: menunggu GPS memenuhi syarat.</div>
         </div>
         <div class="notice-info"><div>📷</div><div><strong>Foto otomatis dikompres</strong>Foto selfie diproses maksimal <b>300 KB</b> sebelum dikirim ke server dan Drive sekolah.</div></div>
         <div id="empNotice" class="alert">Kamera dapat digunakan di mana pun. GPS dicatat untuk membedakan lokasi dekat dan jauh.</div>
@@ -200,7 +261,7 @@ function isInsideAttendanceArea_(lat, lng) {
           <div class="gps-metric"><span>Jarak ke sekolah</span><b id="gpsDistanceValue">—</b></div>
           <div class="gps-metric"><span>Status radius</span><b id="gpsRadiusValue">—</b></div>
         </div>
-<button id="gpsReadyAction" class="gps-ready-action" disabled onclick="openCameraForAttendance()">📍 Menunggu GPS memenuhi syarat</button><div class="gps-live-note">Kamera/presensi dapat digunakan di mana pun. GPS dan jarak ke sekolah tetap dicatat untuk laporan.</div>
+<button id="gpsReadyAction" class="gps-ready-action" onclick="openCameraForAttendance()">📍 Perbarui Lokasi GPS</button><div class="gps-live-note">Kamera/presensi dapat digunakan di mana pun. GPS dan jarak ke sekolah tetap dicatat untuk laporan.</div>
         <div class="mapbox" style="margin-top:14px"><iframe id="googleMapFrame" title="Lokasi GPS saat ini" style="position:absolute;inset:0;width:100%;height:100%;border:0" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe><div class="circle" style="pointer-events:none"></div><div class="pin" style="pointer-events:none">📍</div><div id="gpsDot" class="dot" style="left:50%;top:50%;pointer-events:none"></div></div>
         <div class="map-caption"><span id="distanceText">Belum ada lokasi.</span><span>Radius 100 m dari salah satu titik</span></div>
         <div class="progress"><i id="radiusProgress"></i></div>
@@ -265,24 +326,49 @@ function setRole(r){state.role=r;$('rPeg').classList.toggle('active',r==='siswa'
 function toast(t,ok=false){$('toast').textContent=t;$('toast').classList.remove('hidden');setTimeout(()=>$('toast').classList.add('hidden'),3000)}
 function saveApi(v){state.api=DEFAULT_API_URL;localStorage.setItem('sidet_api',DEFAULT_API_URL);}
 function apiReady(){return /^https:\/\//i.test(state.api)}
-async function api(action,payload={}){
-  if(!apiReady()) throw Error('URL Google Apps Script belum dikonfigurasi.');
-  const body=JSON.stringify({action,...payload});
-  try{
-    const r=await fetch(state.api,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body});
-    const j=await r.json();
-    if(!j.ok)throw Error(j.message||'Permintaan gagal');
-    return j;
-  }catch(e){
-    const msg=String(e?.message||e||'');
-    if(/failed to fetch|networkerror|load failed/i.test(msg)){
-      throw Error('Koneksi browser ke Google Apps Script ditolak. Login memakai jalur aman form POST, tetapi fitur setelah login membutuhkan Web App yang dapat diakses publik (Anyone).');
+function apiViaIframe_(action,payload={}){
+  return new Promise((resolve,reject)=>{
+    const requestId='sidet_api_'+Date.now()+'_'+Math.random().toString(36).slice(2);
+    let frame=document.getElementById('sidetApiFrame');
+    if(!frame){
+      frame=document.createElement('iframe');
+      frame.id='sidetApiFrame';
+      frame.name='sidetApiFrame';
+      frame.style.display='none';
+      frame.setAttribute('aria-hidden','true');
+      document.body.appendChild(frame);
     }
-    throw e;
-  }
+    let form=null;
+    const timeout=setTimeout(()=>{cleanup();reject(Error('Server tidak mengirim respons dalam 45 detik. Silakan coba lagi.'));},45000);
+    function cleanup(){clearTimeout(timeout);window.removeEventListener('message',onMessage);if(form&&form.parentNode)form.parentNode.removeChild(form);}
+    function onMessage(ev){
+      const d=ev.data;
+      if(!d||d.type!=='SIDET_API_RESULT'||d.requestId!==requestId)return;
+      cleanup();
+      if(d.ok===true)resolve(d);else reject(Error(d.message||'Permintaan ke server gagal.'));
+    }
+    window.addEventListener('message',onMessage);
+    form=document.createElement('form');
+    form.method='POST';
+    form.action=state.api;
+    form.target='sidetApiFrame';
+    form.style.display='none';
+    const data={...payload,action,transport:'iframe_api',requestId};
+    Object.entries(data).forEach(([name,value])=>{
+      const input=document.createElement('input');
+      input.type='hidden';input.name=name;
+      input.value=typeof value==='string'?value:JSON.stringify(value??'');
+      form.appendChild(input);
+    });
+    document.body.appendChild(form);
+    form.submit();
+  });
 }
 
-// Login siswa/admin tidak memakai fetch() agar tidak terkena CORS/NetworkError.
+async function api(action,payload={}){
+  if(!apiReady()) throw Error('URL Google Apps Script belum dikonfigurasi.');
+  return apiViaIframe_(action,payload);
+}
 function loginViaForm_(username,password){
   return new Promise((resolve,reject)=>{
     const requestId='sidet_login_'+Date.now()+'_'+Math.random().toString(36).slice(2);
@@ -291,14 +377,15 @@ function loginViaForm_(username,password){
       frame=document.createElement('iframe');
       frame.id='sidetLoginFrame';
       frame.name='sidetLoginFrame';
-      frame.hidden=true;
+      frame.style.display='none';
       frame.setAttribute('aria-hidden','true');
       document.body.appendChild(frame);
     }
 
+    let form=null;
     const timeout=setTimeout(()=>{
       cleanup();
-      reject(Error('Server login tidak mengirim respons dalam 30 detik. Pastikan Web App menggunakan URL /exec dan aksesnya Anyone.'));
+      reject(Error('Server login tidak mengirim respons dalam 30 detik. Periksa Web App dan koneksi internet.'));
     },30000);
 
     function cleanup(){
@@ -311,13 +398,16 @@ function loginViaForm_(username,password){
       const d=ev.data;
       if(!d || d.type!=='SIDET_LOGIN_RESULT' || d.requestId!==requestId)return;
       cleanup();
-      if(d.ok && d.user)resolve(d);
-      else reject(Error(d.message||'NISN/username atau password salah.'));
+      if(d.ok===true && d.user){
+        resolve(d);
+      }else{
+        reject(Error(d.message||'NISN atau password siswa salah.'));
+      }
     }
 
-    window.addEventListener('message',onMessage,false);
+    window.addEventListener('message',onMessage);
 
-    const form=document.createElement('form');
+    form=document.createElement('form');
     form.method='POST';
     form.action=state.api;
     form.target='sidetLoginFrame';
@@ -330,9 +420,10 @@ function loginViaForm_(username,password){
       input.value=String(value??'');
       form.appendChild(input);
     };
+
     add('transport','iframe');
     add('action','login');
-    add('role',state.role);
+    add('role',state.role||'siswa');
     add('username',username);
     add('password',password);
     add('requestId',requestId);
@@ -344,13 +435,25 @@ function loginViaForm_(username,password){
 
 async function login(){
   const u=$('loginUser').value.trim(),p=$('loginPass').value;
-  if(!u||!p){return showLogin(state.role==='siswa'?'NISN dan password wajib diisi.':'Username dan password wajib diisi.',true)}
-  const btn=document.querySelector('#loginView button[onclick=\"login()\"]');
+  if(!u||!p){return showLogin('NISN dan password wajib diisi.',true)}
+
+  const btn=document.querySelector('#loginView button[onclick="login()"]');
   if(btn){btn.disabled=true;btn.textContent='Memeriksa akun...';}
+
   try{
+    if(!apiReady()) throw Error('Web App belum terhubung.');
+
+    // Login memakai POST form tersembunyi, bukan fetch(), agar tidak terkena CORS.
     const j=await loginViaForm_(u,p);
-    if(!j?.user)throw Error('Server tidak mengirim data pengguna.');
-    state.user={...j.user,link:(INITIAL_STUDENTS.find(x=>String(x.nisn)===String(j.user.nisn))||{}).link||''};
+    if(!j?.user) throw Error('Web App tidak mengirim data siswa.');
+
+    const local=INITIAL_STUDENTS.find(x=>
+      String(x.nisn).replace(/^0+/,'')===String(j.user.nisn||'').replace(/^0+/,'') ||
+      String(x.id)===String(j.user.id)
+    )||{};
+
+    state.user={...j.user,link:local.link||''};
+    localStorage.setItem('sidet_user',JSON.stringify(state.user));
     startApp();
   }catch(e){
     showLogin(e.message||'Login gagal.',true);
@@ -589,7 +692,25 @@ function resumeGPSAfterReturn_(){
 document.addEventListener('visibilitychange',resumeGPSAfterReturn_);
 window.addEventListener('focus',resumeGPSAfterReturn_);
 
+function getTheme(){return document.documentElement.getAttribute('data-theme')==='dark'?'dark':'light'}
+function applyTheme(theme,save=true){
+ const t=theme==='dark'?'dark':'light';
+ document.documentElement.setAttribute('data-theme',t);
+ if(save)try{localStorage.setItem('sidet_theme',t)}catch(e){}
+ const b=$('themeToggle');
+ if(b){
+   const dark=t==='dark';
+   b.querySelector('.theme-icon').textContent=dark?'☀️':'🌙';
+   b.querySelector('.theme-text').textContent=dark?'Mode Terang':'Mode Gelap';
+   b.setAttribute('aria-label',dark?'Aktifkan mode terang':'Aktifkan mode gelap');
+   b.title=dark?'Gunakan mode terang':'Gunakan mode gelap';
+ }
+}
+function toggleTheme(){applyTheme(getTheme()==='dark'?'light':'dark')}
+applyTheme(getTheme(),false);
+
 function startApp(){
+ applyTheme(getTheme(),false);
  $('loginView').classList.add('hidden');$('app').classList.remove('hidden');$('who').textContent=(state.user.name||'')+' · '+state.user.role;
  const nav=$('nav');nav.innerHTML=state.user.role==='admin'?'<button class="active" onclick="showPage(\'adminPage\')">Dashboard Admin</button>':'<button class="active" onclick="showPage(\'siswaPage\')">Presensi Saya</button>';
  if(state.user.role==='siswa'){showPage('siswaPage');renderStudentProfile();loadData();showLocationPermissionPrompt_()}
@@ -1014,8 +1135,8 @@ function startGPSWatch_(){
       if(Number.isFinite(acc) && acc>50){
         setGPSVisual_(
           'waiting',
-          'GPS terbaca — menunggu akurasi membaik',
-          'Akurasi saat ini ±'+Math.round(acc)+' m. Presensi membutuhkan akurasi ≤50 m.'
+          'GPS terbaca — akurasi rendah',
+          'Akurasi saat ini ±'+Math.round(acc)+' m. Presensi tetap dapat dikirim; akurasi hanya dicatat.'
         );
       }
     },
@@ -1082,8 +1203,6 @@ function retryGPS(){
 
 function validateGPS_(coords){
  if(!coords||!Number.isFinite(Number(coords.latitude))||!Number.isFinite(Number(coords.longitude)))throw Error('Koordinat GPS tidak valid.');
- if(!Number.isFinite(Number(coords.accuracy)))throw Error('Akurasi GPS tidak tersedia.');
- if(Number(coords.accuracy)>50)throw Error('Kualitas GPS buruk (±'+Math.round(coords.accuracy)+' m). Tunggu hingga akurasi ≤50 m.');
  const nearest=getNearestAttendanceLocation_(Number(coords.latitude),Number(coords.longitude));
  const distance=nearest?Number(nearest.distance):Infinity;
  return {
@@ -1161,7 +1280,7 @@ async function openAttendance(type){
           if($('attInfo')){
             $('attInfo').textContent=
               'Kamera tetap aktif. GPS belum diperoleh: '+gpsErrorMessage_(err)+
-              '. Tekan Ambil Selfie & Simpan untuk mencoba mengambil GPS kembali.';
+              '. Anda tetap dapat mencoba mengirim presensi; sistem akan menggunakan lokasi terakhir yang tersedia bila ada.';
             $('attInfo').className='alert warn';
           }
         }
@@ -1180,25 +1299,45 @@ async function openAttendance(type){
 
 async function compressCanvasMax300KB(canvas){
  const MAX_BYTES=300*1024;
+ const TARGET_MIN=270*1024;
+ const TARGET_MAX=299*1024;
  const ctx=canvas.getContext('2d',{alpha:false});
  let width=canvas.width,height=canvas.height;
- const maxW=1280,maxH=1280;
- if(width>maxW||height>maxH){const scale=Math.min(maxW/width,maxH/height);width=Math.round(width*scale);height=Math.round(height*scale);}
- canvas.width=width;canvas.height=height;
- ctx.imageSmoothingEnabled=true;ctx.imageSmoothingQuality='high';
- let quality=.82;
- const toBlob=()=>new Promise((resolve,reject)=>canvas.toBlob(b=>b?resolve(b):reject(new Error('Gagal membuat foto.')),'image/jpeg',quality));
- let blob=await toBlob();
- while(blob.size>MAX_BYTES&&quality>.22){quality-=.05;blob=await toBlob();}
- while(blob.size>MAX_BYTES&&width>640&&height>640){
-   width=Math.round(width*.85);height=Math.round(height*.85);
-   const src=canvas.toDataURL('image/jpeg',.7);
-   const img=await new Promise((resolve,reject)=>{const im=new Image();im.onload=()=>resolve(im);im.onerror=reject;im.src=src;});
-   canvas.width=width;canvas.height=height;ctx.fillStyle='#fff';ctx.fillRect(0,0,width,height);ctx.drawImage(img,0,0,width,height);
-   quality=.72;blob=await toBlob();
-   while(blob.size>MAX_BYTES&&quality>.20){quality-=.05;blob=await toBlob();}
+ const MAX_DIM=1600;
+ if(width>MAX_DIM||height>MAX_DIM){
+   const scale=Math.min(MAX_DIM/width,MAX_DIM/height);
+   width=Math.max(1,Math.round(width*scale));height=Math.max(1,Math.round(height*scale));
  }
- if(blob.size>MAX_BYTES)throw new Error('Foto tidak dapat dikompres hingga maksimal 300 KB. Silakan ambil foto kembali.');
+ const source=canvas.toDataURL('image/jpeg',0.98);
+ const img=await new Promise((resolve,reject)=>{const im=new Image();im.onload=()=>resolve(im);im.onerror=()=>reject(new Error('Gagal membaca foto kamera.'));im.src=source;});
+ const draw=()=>{
+   canvas.width=width;canvas.height=height;
+   ctx.imageSmoothingEnabled=true;ctx.imageSmoothingQuality='high';
+   ctx.fillStyle='#fff';ctx.fillRect(0,0,width,height);ctx.drawImage(img,0,0,width,height);
+ };
+ const makeBlob=q=>new Promise((resolve,reject)=>canvas.toBlob(b=>b?resolve(b):reject(new Error('Gagal membuat foto.')),'image/jpeg',q));
+ let blob=null;
+ // Utamakan file sedekat mungkin ke 300 KB tanpa pernah melewati batas.
+ for(let round=0;round<4;round++){
+   draw();
+   let b=await makeBlob(0.96);
+   if(b.size>MAX_BYTES){
+     let lo=0.45,hi=0.96,best=null;
+     for(let i=0;i<10;i++){
+       const q=(lo+hi)/2, candidate=await makeBlob(q);
+       if(candidate.size<=TARGET_MAX){best=candidate;lo=q;}else hi=q;
+     }
+     b=best||await makeBlob(0.45);
+   }
+   blob=b;
+   if(blob.size>=TARGET_MIN && blob.size<=TARGET_MAX) break;
+   if(blob.size<TARGET_MIN && width<MAX_DIM && height<MAX_DIM){
+     const scale=Math.min(1.25,MAX_DIM/width,MAX_DIM/height);
+     width=Math.min(MAX_DIM,Math.round(width*scale));
+     height=Math.min(MAX_DIM,Math.round(height*scale));
+   }else break;
+ }
+ if(!blob || blob.size>MAX_BYTES)throw new Error('Foto terlalu besar. Silakan ambil foto kembali.');
  const dataUrl=await new Promise((resolve,reject)=>{const r=new FileReader();r.onload=()=>resolve(r.result);r.onerror=reject;r.readAsDataURL(blob);});
  return {blob,dataUrl,size:blob.size,sizeKB:Math.ceil(blob.size/1024)};
 }
@@ -1211,7 +1350,13 @@ async function captureAttendance(type){
  try{
    gps=await getFreshGPS_();
  }catch(e){
-   return toast(e.message||'Lokasi GPS belum tersedia. Aktifkan Lokasi/GPS lalu coba lagi.');
+   if(state.gps && Number.isFinite(Number(state.gps.latitude)) && Number.isFinite(Number(state.gps.longitude))){
+     gps={latitude:Number(state.gps.latitude),longitude:Number(state.gps.longitude),accuracy:Number(state.gps.accuracy)};
+     $('attInfo').textContent='GPS terbaru belum tersedia. Menggunakan lokasi terakhir yang berhasil dibaca…';
+     $('attInfo').className='alert warn';
+   }else{
+     return toast(e.message||'Lokasi GPS belum tersedia. Aktifkan Lokasi/GPS lalu coba lagi.');
+   }
  }
 
  const gpsCheck=validateGPS_(gps);
