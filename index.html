@@ -5,13 +5,6 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>SiDEt Siswa v2 — Sistem Digital Presensi Siswa</title>
 <script>
-const ATTENDANCE_LOCATIONS = [
-  { lat: 4.048999, lng: 117.726480, name: "Titik 1" },
-  { lat: 4.048987, lng: 117.726179, name: "Titik 2" },
-  { lat: 4.049306, lng: 117.726132, name: "Titik 3" },
-  { lat: 4.049390, lng: 117.727064, name: "Titik 4" }
-];
-const GPS_RADIUS_METERS = 100;
 </script>
 <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
 <style>
@@ -100,6 +93,17 @@ table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:10px 8px;
 .gps-ready-action:disabled{opacity:.55;cursor:not-allowed}
 .gps-live-note{margin-top:8px;font-size:11px;color:#66788a;line-height:1.5}
 
+
+.live-location-panel{box-shadow:0 4px 14px rgba(30,80,120,.06)}
+#liveLocationBtn:disabled{opacity:.55;cursor:not-allowed}
+
+.nearest-location{padding:7px 9px;border-radius:8px;background:#eef3f7;color:#526273}
+.nearest-location.ok{background:#e9f7ef;color:#176b3a}
+
+.nearest-location{padding:8px 10px;border-radius:9px;background:#eef3f7;color:#526273;line-height:1.45}
+.nearest-location.ok{background:#e9f7ef;color:#176b3a}
+.all-locations{padding:7px 10px;border-radius:9px;background:#f5f8fb;color:#526273;line-height:1.5}
+#refreshGPSBtn{margin-left:5px}
 </style>
 </head>
 
@@ -200,10 +204,22 @@ function isInsideAttendanceArea_(lat, lng) {
           <div class="gps-metric"><span>Jarak ke sekolah</span><b id="gpsDistanceValue">—</b></div>
           <div class="gps-metric"><span>Status radius</span><b id="gpsRadiusValue">—</b></div>
         </div>
-<button id="gpsReadyAction" class="gps-ready-action" disabled onclick="openCameraForAttendance()">📍 Menunggu GPS memenuhi syarat</button><div class="gps-live-note">Kamera/presensi akan aktif setelah lokasi terdeteksi, akurasi ≤50 m, dan jarak ≤100 m.</div>
+<button id="gpsReadyAction" class="gps-ready-action" disabled onclick="openCameraForAttendance()">📍 Menunggu GPS memenuhi syarat</button><div class="gps-live-note">Kamera/presensi aktif setelah lokasi terdeteksi, akurasi ≤90 m, dan jarak ≤100 m dari salah satu titik.</div>
         <div class="mapbox" style="margin-top:14px"><div class="mapgrid"></div><div class="circle"></div><div class="pin">📍</div><div id="gpsDot" class="dot" style="left:50%;top:50%"></div></div>
         <div class="map-caption"><span id="distanceText">Belum ada lokasi.</span><span>Radius 100 m dari salah satu titik</span></div>
-        <div class="progress"><i id="radiusProgress"></i></div>
+        <div class="progress"><i id="radiusProgress"></i></div><div class="live-location-panel" style="margin-top:12px;padding:12px;border:1px solid #dbe7f0;border-radius:12px;background:#f8fbfd">
+  <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap">
+    <div>
+      <b>📍 Live Location</b>
+      <div id="liveLocationInfo" class="muted" style="font-size:11px;margin-top:3px">Menunggu koordinat GPS…</div>
+      <div id="nearestLocationInfo" class="nearest-location" style="font-size:11px;margin-top:5px">📍 Titik lokasi terdekat: —</div>
+      <div id="allLocationsInfo" class="all-locations" style="font-size:11px;margin-top:7px">Jarak ke 4 titik: —</div>
+    </div>
+    <button id="liveLocationBtn" class="btn primary" disabled onclick="openLiveLocation()">🗺️ Buka GPS Terbaru di Google Maps</button>
+    <button id="refreshGPSBtn" class="btn secondary" onclick="refreshGPS()">🔄 Perbarui GPS</button>
+  </div>
+  <div style="font-size:11px;color:#66788a;margin-top:8px">Posisi pada Google Maps diperbarui setiap kali GPS perangkat memberikan koordinat terbaru.</div>
+</div>
       </div>
 
       <div class="card">
@@ -379,18 +395,403 @@ function renderStudentProfile(){
  $('profileName').textContent=name; $('profileDetail').textContent='NISN '+(u.nisn||'—')+' · Kelas '+(u.kelas||'—');
  $('profileAvatar').textContent=name.trim().split(/\s+/).slice(0,2).map(x=>x[0]).join('').toUpperCase();
 }
-const GEOFENCE_DEFAULT={lat:4.0416667,lng:117.7201667,radius:100};
-const GPS_MAX_ACCURACY=100;
 let gpsWatchId=null;
 let gpsCountdownTimer=null;
 let gpsCountdownEndsAt=0;
-function distanceMeters_(lat1,lng1,lat2,lng2){
- const R=6371000,rad=x=>x*Math.PI/180,dLat=rad(lat2-lat1),dLng=rad(lng2-lng1);
- const a=Math.sin(dLat/2)**2+Math.cos(rad(lat1))*Math.cos(rad(lat2))*Math.sin(dLng/2)**2;
- return 2*R*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
-}
-function setGpsMetric_(id,text,cls){const el=$(id);if(!el)return;el.textContent=text;el.className=cls||''}
+let gpsBestCoords=null;
+let gpsSamples=[];
 
+/* === KONFIGURASI GPS PRESENSI === */
+const ATTENDANCE_LOCATIONS = [
+  { lat: 4.048999, lng: 117.726480, name: "Titik 1" },
+  { lat: 4.048987, lng: 117.726179, name: "Titik 2" },
+  { lat: 4.049306, lng: 117.726132, name: "Titik 3" },
+  { lat: 4.049390, lng: 117.727064, name: "Titik 4" }
+];
+const GPS_RADIUS_METERS = 100;
+const GPS_MAX_ACCURACY = 90;
+const GPS_TARGET_ACCURACY = 30;
+
+
+function distanceMeters_(lat1,lng1,lat2,lng2){
+  const R=6371000;
+  const p=Math.PI/180;
+  const a=Math.sin((lat2-lat1)*p/2)**2+
+    Math.cos(lat1*p)*Math.cos(lat2*p)*Math.sin((lng2-lng1)*p/2)**2;
+  return 2*R*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
+}
+
+function getNearestAttendanceLocation_(lat,lng){
+  let nearest=null;
+  for(const point of ATTENDANCE_LOCATIONS){
+    const distance=distanceMeters_(lat,lng,point.lat,point.lng);
+    if(!nearest || distance<nearest.distance){
+      nearest={...point,distance};
+    }
+  }
+  return nearest;
+}
+
+function getAllAttendanceDistances_(lat,lng){
+  return ATTENDANCE_LOCATIONS.map(point=>({
+    ...point,
+    distance:distanceMeters_(lat,lng,point.lat,point.lng)
+  })).sort((a,b)=>a.distance-b.distance);
+}
+
+function gpsQuality_(accuracy){
+  const a=Number(accuracy);
+  if(!Number.isFinite(a)) return {label:"TIDAK TERSEDIA",cls:"bad",valid:false};
+  if(a<=30) return {label:"SANGAT BAIK",cls:"ok",valid:true};
+  if(a<=90) return {label:"BAIK",cls:"ok",valid:true};
+  if(a<=150) return {label:"KURANG",cls:"warn",valid:false};
+  return {label:"BURUK",cls:"bad",valid:false};
+}
+
+function updateLiveLocationLink_(coords){
+  const btn=$("liveLocationBtn");
+  const info=$("liveLocationInfo");
+  const nearestInfo=$("nearestLocationInfo");
+  const allInfo=$("allLocationsInfo");
+
+  if(!coords) return;
+
+  const lat=Number(coords.latitude);
+  const lng=Number(coords.longitude);
+  const accuracy=Number(coords.accuracy);
+
+  if(!Number.isFinite(lat)||!Number.isFinite(lng)) return;
+
+  const nearest=getNearestAttendanceLocation_(lat,lng);
+  const all=getAllAttendanceDistances_(lat,lng);
+  const mapsUrl="https://www.google.com/maps?q="+encodeURIComponent(lat+","+lng);
+
+  if(btn){
+    btn.disabled=false;
+    btn.onclick=()=>window.open(mapsUrl,"_blank","noopener,noreferrer");
+  }
+
+  if(info){
+    info.innerHTML=
+      "Koordinat GPS terbaru: <b>"+lat.toFixed(6)+", "+lng.toFixed(6)+
+      "</b> · Akurasi ±"+Math.round(accuracy)+" m · diperbarui "+
+      new Date().toLocaleTimeString("id-ID");
+  }
+
+  if(nearestInfo && nearest){
+    const valid=nearest.distance<=GPS_RADIUS_METERS;
+    nearestInfo.innerHTML=
+      "📍 <b>Titik terdekat: "+nearest.name+
+      "</b> · Jarak <b>"+Math.round(nearest.distance)+" m</b> · "+
+      (valid?"<b>DALAM radius 100 m</b>":"<b>DI LUAR radius 100 m</b>")+
+      "<br>Koordinat titik: "+nearest.lat.toFixed(6)+", "+nearest.lng.toFixed(6);
+    nearestInfo.className="nearest-location "+(valid?"ok":"");
+  }
+
+  if(allInfo){
+    allInfo.innerHTML="<b>Jarak ke 4 titik:</b><br>"+
+      all.map(x=>
+        "• "+x.name+": <b>"+Math.round(x.distance)+" m</b>"
+      ).join("<br>");
+  }
+}
+
+function updateGPSUI_(coords){
+  try{
+    const lat=Number(coords.latitude);
+    const lng=Number(coords.longitude);
+    const accuracy=Number(coords.accuracy);
+
+    if(!Number.isFinite(lat)||!Number.isFinite(lng))
+      throw Error("Koordinat GPS tidak valid.");
+    if(!Number.isFinite(accuracy))
+      throw Error("Akurasi GPS tidak tersedia.");
+
+    const nearest=getNearestAttendanceLocation_(lat,lng);
+    if(!nearest) throw Error("Empat titik lokasi presensi belum tersedia.");
+
+    const quality=gpsQuality_(accuracy);
+    const insideRadius=nearest.distance<=GPS_RADIUS_METERS;
+    const gpsReady=quality.valid && insideRadius;
+
+    const enriched={
+      ...coords,
+      distance:nearest.distance,
+      nearestLocation:nearest.name,
+      nearestLat:nearest.lat,
+      nearestLng:nearest.lng,
+      insideRadius,
+      gpsReady
+    };
+
+    state.gps=enriched;
+    updateLiveLocationLink_(enriched);
+
+    if($("gpsAccuracyValue")){
+      $("gpsAccuracyValue").textContent="±"+Math.round(accuracy)+" m";
+      $("gpsAccuracyValue").className=quality.cls;
+    }
+    if($("gpsQualityValue")){
+      $("gpsQualityValue").textContent=quality.label;
+      $("gpsQualityValue").className=quality.cls;
+    }
+    if($("gpsDistanceValue")){
+      $("gpsDistanceValue").textContent=Math.round(nearest.distance)+" m";
+      $("gpsDistanceValue").className=insideRadius?"ok":"bad";
+    }
+    if($("gpsRadiusValue")){
+      $("gpsRadiusValue").textContent=insideRadius?"DI DALAM":"DI LUAR";
+      $("gpsRadiusValue").className=insideRadius?"ok":"bad";
+    }
+
+    if($("gpsStatus")){
+      $("gpsStatus").textContent=gpsReady?"GPS SIAP":"GPS BELUM MEMENUHI SYARAT";
+      $("gpsStatus").className="badge "+(gpsReady?"ok":"bad");
+    }
+
+    if($("gpsBadge")){
+      $("gpsBadge").textContent=gpsReady?"Lokasi valid":"Belum memenuhi syarat";
+      $("gpsBadge").className="badge "+(gpsReady?"ok":"bad");
+    }
+
+    if($("gpsAccuracy")){
+      $("gpsAccuracy").textContent=
+        "Akurasi ±"+Math.round(accuracy)+" m · "+quality.label+
+        " · Jarak "+Math.round(nearest.distance)+" m / 100 m";
+    }
+
+    if($("distanceText")){
+      $("distanceText").textContent=
+        "Koordinat: "+lat.toFixed(6)+", "+lng.toFixed(6)+
+        " · "+nearest.name+" · Jarak "+Math.round(nearest.distance)+" meter";
+    }
+
+    if($("radiusProgress")){
+      const percent=Math.max(0,Math.min(100,(nearest.distance/GPS_RADIUS_METERS)*100));
+      $("radiusProgress").style.width=percent+"%";
+    }
+
+    if(gpsReady){
+      setGPSVisual_(
+        "good",
+        "GPS memenuhi syarat",
+        "Akurasi ±"+Math.round(accuracy)+" m dan berada "+Math.round(nearest.distance)+
+        " m dari "+nearest.name+". Presensi dapat dilakukan."
+      );
+      if($("empNotice")){
+        $("empNotice").textContent=
+          "✓ GPS valid. Akurasi maksimal yang diizinkan adalah 90 m dan jarak maksimal 100 m dari salah satu titik.";
+        $("empNotice").className="alert ok";
+      }
+    }else if(!quality.valid){
+      setGPSVisual_(
+        "waiting",
+        "⚠ Akurasi GPS belum memenuhi syarat",
+        "Akurasi saat ini ±"+Math.round(accuracy)+
+        " m. Presensi hanya aktif jika akurasi GPS ≤90 m. Tunggu pembacaan GPS lebih presisi."
+      );
+      if($("empNotice")){
+        $("empNotice").textContent=
+          "⚠ GPS belum cukup presisi. Akurasi saat ini ±"+Math.round(accuracy)+
+          " m. Syarat presensi: akurasi ≤90 m.";
+        $("empNotice").className="alert bad";
+      }
+    }else{
+      setGPSVisual_(
+        "waiting",
+        "⚠ Di luar radius presensi",
+        "Akurasi GPS sudah memenuhi syarat, tetapi jarak ke titik terdekat "+
+        Math.round(nearest.distance)+" m. Maksimal 100 m."
+      );
+      if($("empNotice")){
+        $("empNotice").textContent=
+          "⚠ GPS sudah cukup presisi, tetapi Anda berada di luar radius 100 m dari keempat titik presensi.";
+        $("empNotice").className="alert bad";
+      }
+    }
+
+    updateAttendanceButtons_(gpsReady);
+  }catch(e){
+    state.gps=null;
+    updateAttendanceButtons_(false);
+    if($("gpsStatus")){
+      $("gpsStatus").textContent="GPS BELUM VALID";
+      $("gpsStatus").className="badge bad";
+    }
+    if($("gpsBadge")){
+      $("gpsBadge").textContent="Belum valid";
+      $("gpsBadge").className="badge bad";
+    }
+    if($("empNotice")){
+      $("empNotice").textContent=e.message;
+      $("empNotice").className="alert bad";
+    }
+  }
+}
+
+function validateGPS_(coords){
+  const lat=Number(coords.latitude);
+  const lng=Number(coords.longitude);
+  const accuracy=Number(coords.accuracy);
+
+  if(!Number.isFinite(lat)||!Number.isFinite(lng))
+    throw Error("Koordinat GPS tidak valid.");
+  if(!Number.isFinite(accuracy))
+    throw Error("Akurasi GPS tidak tersedia.");
+
+  if(accuracy>GPS_MAX_ACCURACY){
+    throw Error(
+      "Akurasi GPS belum memenuhi syarat. Saat ini ±"+Math.round(accuracy)+
+      " m. Presensi hanya aktif jika akurasi GPS ≤90 m."
+    );
+  }
+
+  const nearest=getNearestAttendanceLocation_(lat,lng);
+  if(!nearest) throw Error("Titik lokasi presensi belum tersedia.");
+
+  if(nearest.distance>GPS_RADIUS_METERS){
+    throw Error(
+      "Lokasi berada "+Math.round(nearest.distance)+
+      " m dari titik terdekat ("+nearest.name+"). Radius maksimal 100 m."
+    );
+  }
+
+  return {
+    distance:nearest.distance,
+    inside:true,
+    nearestLocation:nearest.name,
+    nearestLat:nearest.lat,
+    nearestLng:nearest.lng
+  };
+}
+
+function getFreshGPS_(){
+  return new Promise((resolve,reject)=>{
+    if(!navigator.geolocation){
+      reject(Error("GPS tidak tersedia pada perangkat ini."));
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      pos=>{
+        try{
+          validateGPS_(pos.coords);
+          resolve({
+            ...pos.coords,
+            distance:getNearestAttendanceLocation_(
+              Number(pos.coords.latitude),
+              Number(pos.coords.longitude)
+            ).distance
+          });
+        }catch(e){
+          reject(e);
+        }
+      },
+      err=>{
+        reject(Error(gpsErrorMessage_(err)));
+      },
+      {
+        enableHighAccuracy:true,
+        timeout:30000,
+        maximumAge:0
+      }
+    );
+  });
+}
+
+function startGPSWatch_(){
+  if(!navigator.geolocation) return;
+
+  setGPSVisual_(
+    "search",
+    "Mencari GPS presisi…",
+    "Sistem meminta lokasi akurat dari perangkat. Tekan Perbarui GPS jika posisi belum sesuai."
+  );
+
+  if($("gpsStatus")){
+    $("gpsStatus").textContent="Mencari GPS…";
+    $("gpsStatus").className="badge warn";
+  }
+
+  if(gpsWatchId!==null){
+    navigator.geolocation.clearWatch(gpsWatchId);
+    gpsWatchId=null;
+  }
+
+  gpsWatchId=navigator.geolocation.watchPosition(
+    pos=>{
+      updateGPSUI_(pos.coords);
+    },
+    err=>{
+      showGPSRetryState_(gpsErrorMessage_(err));
+      if($("gpsStatus")){
+        $("gpsStatus").textContent="GPS GAGAL";
+        $("gpsStatus").className="badge bad";
+      }
+      updateAttendanceButtons_(false);
+    },
+    {
+      enableHighAccuracy:true,
+      timeout:30000,
+      maximumAge:0
+    }
+  );
+}
+
+function refreshGPS(){
+  if(!navigator.geolocation){
+    toast("Perangkat/browser tidak menyediakan GPS.");
+    return;
+  }
+
+  setGPSVisual_(
+    "search",
+    "🔄 Memperbarui GPS…",
+    "Mengambil koordinat terbaru dengan mode akurasi tinggi."
+  );
+
+  if($("gpsStatus")){
+    $("gpsStatus").textContent="Memperbarui GPS…";
+    $("gpsStatus").className="badge warn";
+  }
+
+  navigator.geolocation.getCurrentPosition(
+    pos=>{
+      updateGPSUI_(pos.coords);
+      startGPSWatch_();
+    },
+    err=>{
+      updateAttendanceButtons_(false);
+      showGPSRetryState_(gpsErrorMessage_(err));
+    },
+    {
+      enableHighAccuracy:true,
+      timeout:30000,
+      maximumAge:0
+    }
+  );
+}
+
+function openLiveLocation(){
+  if(!state.gps){
+    toast("Lokasi GPS belum tersedia. Tekan Perbarui GPS.");
+    return;
+  }
+
+  const lat=Number(state.gps.latitude);
+  const lng=Number(state.gps.longitude);
+
+  if(!Number.isFinite(lat)||!Number.isFinite(lng)){
+    toast("Koordinat GPS belum valid.");
+    return;
+  }
+
+  window.open(
+    "https://www.google.com/maps?q="+encodeURIComponent(lat+","+lng),
+    "_blank",
+    "noopener,noreferrer"
+  );
+}
 
 function openCameraForAttendance(){
   const btn=$('btnMasuk');
@@ -411,43 +812,43 @@ function setPresensiLockReason_(type,text,mode){
 }
 
 function updatePresensiLockReasons_(inside){
-  const gps=state.gps;
-  const acc=gps?Number(gps.accuracy):NaN;
-  const dist=gps?Number(gps.distance):NaN;
-
-  let reason='';
-  if(!gps){
-    reason='Lokasi GPS belum diperoleh.';
-  }else if(!Number.isFinite(acc)){
-    reason='Akurasi GPS belum tersedia.';
-  }else if(acc>50){
-    reason='Akurasi GPS masih ±'+Math.round(acc)+' m. Harus ≤50 m.';
-  }else if(!Number.isFinite(dist)){
-    reason='Jarak ke sekolah belum dihitung.';
-  }else if(dist>100){
-    reason='Di luar radius sekolah ('+Math.round(dist)+' m). Maksimal 100 m.';
-  }else if(!inside){
-    reason='Belum memenuhi syarat lokasi sekolah.';
-  }else{
-    reason='';
-  }
-
-  const masukDone=state.today&&state.today.masuk;
-  const pulangDone=state.today&&state.today.pulang;
-
-  setPresensiLockReason_('MASUK',
-    masukDone ? 'Presensi Masuk hari ini sudah tercatat.' : reason,
-    masukDone ? 'ok' : ''
-  );
-  setPresensiLockReason_('PULANG',
-    pulangDone ? 'Presensi Pulang hari ini sudah tercatat.' : reason,
-    pulangDone ? 'ok' : ''
-  );
+ const gps=state.gps;
+ const acc=gps?Number(gps.accuracy):NaN;
+ const dist=gps?Number(gps.distance):NaN;
+ let reason='';
+ if(!gps) reason='Lokasi GPS belum diperoleh.';
+ else if(!Number.isFinite(acc)) reason='Akurasi GPS belum tersedia.';
+ else if(acc>50) reason='Akurasi GPS masih ±'+Math.round(acc)+' m. Harus ≤90 m.';
+ else if(!Number.isFinite(dist)) reason='Jarak ke sekolah belum dihitung.';
+ else if(dist>100) reason='Di luar radius sekolah ('+Math.round(dist)+' m). Maksimal 100 m.';
+ else if(!inside) reason='Belum memenuhi syarat lokasi sekolah.';
+ const masukDone=state.today&&state.today.masuk;
+ const pulangDone=state.today&&state.today.pulang;
+ setPresensiLockReason_('MASUK',masukDone?'Presensi Masuk hari ini sudah tercatat.':reason,masukDone?'ok':'');
+ setPresensiLockReason_('PULANG',pulangDone?'Presensi Pulang hari ini sudah tercatat.':reason,pulangDone?'ok':'');
 }
-
 function updateAttendanceButtons_(ready){
-  updatePresensiLockReasons_(inside);
- ['btnMasuk','btnPulang'].forEach(id=>{const b=$(id);if(b)b.disabled=!ready});
+  const gps=state.gps;
+  const gpsOk=!!gps &&
+    Number(gps.accuracy)<=GPS_MAX_ACCURACY &&
+    Number(gps.distance)<=GPS_RADIUS_METERS;
+
+  const finalReady=!!ready && gpsOk;
+
+  updatePresensiLockReasons_(finalReady);
+
+  ["btnMasuk","btnPulang"].forEach(id=>{
+    const b=$(id);
+    if(b)b.disabled=!finalReady;
+  });
+
+  const readyBtn=$("gpsReadyAction");
+  if(readyBtn){
+    readyBtn.disabled=!finalReady;
+    readyBtn.textContent=finalReady
+      ?"📷 Buka Kamera / Presensi"
+      :"📍 Menunggu GPS ≤90 m & radius ≤100 m";
+  }
 }
 function gpsQuality_(accuracy){
   accuracy=Number(accuracy);
@@ -478,10 +879,10 @@ function updateGPSUI_(coords){
     $('empNotice').textContent='✓ GPS '+q.label.toLowerCase()+'. Lokasi berada dalam radius 100 m dari salah satu titiketer. Tombol presensi aktif.';
     $('empNotice').className='alert ok';
   }else if(!q.acceptable){
-    $('empNotice').textContent='⚠ Kualitas GPS BURUK (±'+Math.round(accuracy)+' m). Tunggu hingga akurasi ≤50 m sebelum presensi.';
+    $('empNotice').textContent='⚠ Kualitas GPS BURUK (±'+Math.round(accuracy)+' m). Tunggu hingga akurasi ≤90 m sebelum presensi.';
     $('empNotice').className='alert bad';
   }else{
-    $('empNotice').textContent='⚠ Anda berada di luar radius 100 m dari salah satu titiketer. Tombol presensi dinonaktifkan.';
+    $('empNotice').textContent='⚠ Anda berada di luar radius 100 m dari salah satu titik. Tombol presensi dinonaktifkan.';
     $('empNotice').className='alert bad';
   }
  }catch(e){state.gps=null;updateAttendanceButtons_(false);$('gpsStatus').textContent='GPS belum valid';$('gpsStatus').className='badge bad';if($('gpsBadge')){$('gpsBadge').textContent='Belum valid';$('gpsBadge').className='badge bad'}setGpsMetric_('gpsAccuracyValue','—','bad');setGpsMetric_('gpsQualityValue','—','bad');setGpsMetric_('gpsDistanceValue','—','bad');setGpsMetric_('gpsRadiusValue','—','bad');$('empNotice').textContent=e.message;$('empNotice').className='alert bad'}
@@ -666,7 +1067,7 @@ function retryGPS(){
 function validateGPS_(coords){
  if(!coords||!Number.isFinite(coords.latitude)||!Number.isFinite(coords.longitude))throw Error('Koordinat GPS tidak valid.');
  if(!Number.isFinite(coords.accuracy))throw Error('Akurasi GPS tidak tersedia.');
- if(coords.accuracy>50)throw Error('Kualitas GPS buruk (±'+Math.round(coords.accuracy)+' m). Tunggu hingga akurasi ≤50 m.');
+ if(coords.accuracy>50)throw Error('Kualitas GPS buruk (±'+Math.round(coords.accuracy)+' m). Tunggu hingga akurasi ≤90 m.');
  const d=distanceMeters_(coords.latitude,coords.longitude,GEOFENCE_DEFAULT.lat,GEOFENCE_DEFAULT.lng);return {distance:d,inside:d<=GEOFENCE_DEFAULT.radius};
 }
 function getFreshGPS_(){return new Promise((resolve,reject)=>{if(!navigator.geolocation)return reject(Error('GPS tidak tersedia pada perangkat ini.'));navigator.geolocation.getCurrentPosition(pos=>{try{validateGPS_(pos.coords);resolve(pos.coords)}catch(e){reject(e)}},err=>reject(Error('GPS gagal: '+err.message)),{enableHighAccuracy:true,timeout:20000,maximumAge:0})})}
@@ -699,7 +1100,7 @@ async function compressCanvasMax300KB(canvas){
 async function captureAttendance(type){
  const video=$('cam');if(!video.videoWidth)return toast('Kamera belum siap.');
  const gps=state.gps;if(!gps)return toast('Lokasi GPS belum tersedia.');
- const gpsCheck=validateGPS_(gps);if(!gpsCheck.inside)return toast('Presensi ditolak: di luar radius 100 m dari salah satu titiketer. Jarak '+Math.round(gpsCheck.distance)+' meter.');
+ const gpsCheck=validateGPS_(gps);if(!gpsCheck.inside)return toast('Presensi ditolak: di luar radius 100 m dari salah satu titik. Jarak '+Math.round(gpsCheck.distance)+' meter.');
  const c=document.createElement('canvas');c.width=video.videoWidth;c.height=video.videoHeight;
  c.getContext('2d').drawImage(video,0,0,c.width,c.height);
  const button=document.querySelector('#modalBox .btn.primary');
@@ -710,7 +1111,7 @@ async function captureAttendance(type){
   $('attInfo').textContent='Foto siap · '+compressed.sizeKB+' KB · memeriksa dan mengirim presensi…';
   $('attInfo').className='alert ok';
   if(state.stream)state.stream.getTracks().forEach(x=>x.stop());
-  const record={userId:state.user.id,type,lat:gps.latitude,lng:gps.longitude,accuracy:gps.accuracy,photo,timestamp:new Date().toISOString(),link:state.user.link||'',name:state.user.name,nisn:state.user.nisn,kelas:state.user.kelas};
+  const record={userId:state.user.id,type,lat:gps.latitude,lng:gps.longitude,accuracy:gps.accuracy,distance:gps.distance||null,nearestLocation:gps.nearestLocation||'',photo,timestamp:new Date().toISOString(),link:state.user.link||'',name:state.user.name,nisn:state.user.nisn,kelas:state.user.kelas};
   if(apiReady()){
     $('attInfo').textContent='Mengirim presensi dan foto '+compressed.sizeKB+' KB ke server…';
     const result=await api('attendance',record);
