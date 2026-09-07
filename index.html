@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>SiDEt Siswa v2 — FIX LOGIN V3</title>
+<title>SiDEt Siswa v2 — FIX LOGIN V4 CLEAN</title>
 <script>
 const ATTENDANCE_LOCATIONS = [
   { lat: 4.048999, lng: 117.726480, name: "Titik 1" },
@@ -146,7 +146,7 @@ function isInsideAttendanceArea_(lat, lng) {
     <button class="btn primary" style="width:100%" onclick="login()">Masuk</button>
     <div id="loginMsg" class="alert hidden"></div>
     <div id="loginConnectionHint" class="muted" style="margin-top:10px;text-align:center;font-size:11px">
-      Koneksi server: <b style="color:#16834b">Google Apps Script aktif</b>
+      Koneksi server: <b style="color:#16834b">Google Apps Script aktif</b> · <span>LOGIN V4</span>
     </div>
     <p class="muted" style="margin-top:16px">Terhubung otomatis ke Google Apps Script. Presensi dapat dilakukan di mana pun; GPS tetap dicatat untuk laporan jarak.</p>
   </div>
@@ -323,8 +323,8 @@ async function api(action,payload={}){
     }
 
     const msg=String(e?.message||e||'');
-    if(/failed to fetch|networkerror|load failed/i.test(msg)){
-      throw Error('Koneksi ke Google Apps Script gagal. Web App aktif, tetapi browser gagal membaca respons. Silakan coba lagi atau buka aplikasi melalui HTTPS.');
+    if(/networkerror|load failed/i.test(msg)){
+      throw Error('Koneksi ke Google Apps Script gagal. Silakan periksa internet dan coba lagi.');
     }
 
     throw e;
@@ -414,10 +414,9 @@ async function login(){
   try{
     if(apiReady()){
       /*
-        LOGIN V3:
-        Tidak menggunakan fetch() untuk login.
-        Browser mengirim POST melalui form tersembunyi ke Apps Script,
-        sehingga respons tidak terkena masalah CORS/Failed to fetch.
+        LOGIN V4:
+        Login menggunakan POST form tersembunyi ke Apps Script.
+        Hasil login dikembalikan melalui postMessage().
         Password tetap dikirim sebagai POST body, bukan URL.
       */
       const j=await loginViaForm_(u,p);
