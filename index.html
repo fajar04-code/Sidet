@@ -104,6 +104,13 @@ table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:10px 8px;
 <style>
 #empHistory td:nth-child(2),#empHistory td:nth-child(3){white-space:nowrap}
 #empHistory .badge{display:inline-flex;align-items:center;justify-content:center;white-space:nowrap}
+.history-toolbar{display:flex;gap:12px;align-items:end;margin:14px 0}
+.history-toolbar select{width:100%;padding:11px 12px;border:1px solid #dbe2ea;border-radius:12px;background:#fff;font:inherit}
+.history-summary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:12px 0 16px}
+.history-stat{padding:13px 14px;border:1px solid #e6ebf0;border-radius:14px;background:#fafbfc}
+.history-stat span,.history-stat small{display:block;color:#667085;font-size:11px}
+.history-stat b{display:block;font-size:23px;line-height:1.2;margin:4px 0}
+@media(max-width:720px){.history-summary{grid-template-columns:repeat(2,minmax(0,1fr))}.history-toolbar{display:block}}
 </style>
 
 </head>
@@ -193,8 +200,35 @@ function isInsideAttendanceArea_(lat, lng) {
       </div>
 
       <div class="card">
-        <div class="card-title"><div><div class="section-label">Aktivitas Saya</div><h3 style="margin:0">Riwayat Presensi</h3><div class="muted" style="font-size:11px;margin-top:4px">Menampilkan hingga 30 presensi terakhir Anda</div></div><button class="btn" onclick="loadData()">↻ Muat ulang</button></div>
-        <div class="tablewrap"><table><thead><tr><th>Tanggal</th><th>Jam Datang</th><th>Jam Pulang</th><th>Status</th></tr></thead><tbody id="empHistory"></tbody></table></div>
+        <div class="card-title">
+          <div>
+            <div class="section-label">Aktivitas Saya</div>
+            <h3 style="margin:0">Rekap & Riwayat Presensi</h3>
+            <div class="muted" style="font-size:11px;margin-top:4px">Pilih bulan untuk melihat rekap dan riwayat presensi Anda.</div>
+          </div>
+          <button class="btn" onclick="loadData()">↻ Muat ulang</button>
+        </div>
+
+        <div class="history-toolbar">
+          <div class="field" style="margin:0;flex:1;min-width:190px">
+            <label for="historyMonth">Periode Bulan</label>
+            <select id="historyMonth" onchange="renderEmpHistory()"></select>
+          </div>
+        </div>
+
+        <div class="history-summary">
+          <div class="history-stat"><span>Total Hari</span><b id="rekapTotalHari">0</b><small>ada presensi</small></div>
+          <div class="history-stat"><span>Hadir</span><b id="rekapHadir">0</b><small>presensi masuk</small></div>
+          <div class="history-stat"><span>Lengkap</span><b id="rekapLengkap">0</b><small>masuk + pulang</small></div>
+          <div class="history-stat"><span>Belum Pulang</span><b id="rekapBelumPulang">0</b><small>masuk tanpa pulang</small></div>
+        </div>
+
+        <div class="tablewrap">
+          <table>
+            <thead><tr><th>Tanggal</th><th>Jam Datang</th><th>Jam Pulang</th><th>Status</th></tr></thead>
+            <tbody id="empHistory"></tbody>
+          </table>
+        </div>
       </div>
     </div>
 
@@ -1479,25 +1513,34 @@ async function loadData(){
  if(state.user?.role==='siswa')renderEmpHistory();else renderAdminDashboard()
 }
 function renderEmpHistory(){
- const all=(state.data.attendance||[]).filter(x=>String(x.userId??x.UserID??'')===String(state.user?.id??'')||String(x.nisn??x.NISN??''));
- const today=new Date().toISOString().slice(0,10);
- const todayRows=all.filter(x=>(x.tanggal||String(x.timestamp||'').slice(0,10))===today);
- const masuk=todayRows.find(x=>(x.type||x.jenis)==='MASUK'), pulang=todayRows.find(x=>(x.type||x.jenis)==='PULANG');
- $('masukTime').textContent=masuk?(masuk.jam||'-'):'—';
- $('pulangTime').textContent=pulang?(pulang.jam||'-'):'—';
- $('masukSub').textContent=masuk?'Presensi masuk tercatat':'Belum melakukan presensi masuk';
- $('pulangSub').textContent=pulang?'Presensi pulang tercatat':'Belum melakukan presensi pulang';
- $('masukBadge').textContent=masuk?'✓ Tercatat':'Belum';$('masukBadge').className='badge '+(masuk?'ok':'warn');
- $('pulangBadge').textContent=pulang?'✓ Tercatat':'Belum';$('pulangBadge').className='badge '+(pulang?'ok':'warn');
- $('todayStatus').textContent=masuk&&pulang?'Lengkap':masuk?'Masuk tercatat':'Belum lengkap';$('todayStatus').className='badge '+(masuk&&pulang?'ok':masuk?'info':'warn');
- $('btnMasuk').disabled=!!masuk;$('btnPulang').disabled=!!pulang;
- $('btnMasuk').classList.toggle('disabled',!!masuk);$('btnPulang').classList.toggle('disabled',!!pulang);
- $('empNotice').textContent=masuk&&pulang?'Presensi hari ini sudah lengkap. Terima kasih.':masuk?'Presensi masuk sudah tercatat. Jangan lupa presensi pulang.':'Kamera dapat digunakan di mana pun. GPS dicatat untuk membedakan lokasi dekat dan jauh.';
- $('empNotice').className='alert '+(masuk&&pulang?'ok':'');
+ const all=(state.data.attendance||[])
+   .filter(x=>String(x.userId??x.UserID??'')===String(state.user?.id??'')||String(x.nisn??x.NISN??''));
 
- // Gabungkan presensi MASUK dan PULANG berdasarkan tanggal.
+ const monthName=['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
+ const monthKey=x=>String(x.tanggal||String(x.timestamp||'').slice(0,10)).slice(0,7);
+ const monthLabel=k=>{
+   const p=String(k||'').split('-');
+   return p.length===2 && p[0] && p[1] ? `${monthName[Number(p[1])-1]||p[1]} ${p[0]}` : k;
+ };
+
+ const monthSet=new Set(all.map(monthKey).filter(k=>/^\d{4}-\d{2}$/.test(k)));
+ const todayKey=new Date().toISOString().slice(0,7);
+ if(!monthSet.size) monthSet.add(todayKey);
+
+ const select=$('historyMonth');
+ if(select){
+   const current=select.value;
+   const months=[...monthSet].sort((a,b)=>b.localeCompare(a));
+   select.innerHTML=months.map(k=>`<option value="${k}">${monthLabel(k)}</option>`).join('');
+   select.value=monthSet.has(current)?current:(monthSet.has(todayKey)?todayKey:months[0]);
+ }
+
+ const selected=select?.value||todayKey;
+ const filtered=all.filter(x=>monthKey(x)===selected);
+
+ // Ringkas MASUK dan PULANG menjadi satu baris per tanggal.
  const byDate={};
- all.forEach(x=>{
+ filtered.forEach(x=>{
    const tanggal=x.tanggal||String(x.timestamp||'').slice(0,10)||'-';
    if(!byDate[tanggal]) byDate[tanggal]={tanggal,masuk:null,pulang:null};
    const jenis=String(x.type||x.jenis||'').toUpperCase();
@@ -1505,9 +1548,17 @@ function renderEmpHistory(){
    if(jenis==='PULANG' && !byDate[tanggal].pulang) byDate[tanggal].pulang=x;
  });
 
- const rows=Object.values(byDate)
-   .sort((a,b)=>String(b.tanggal).localeCompare(String(a.tanggal)))
-   .slice(0,30);
+ const rows=Object.values(byDate).sort((a,b)=>String(b.tanggal).localeCompare(String(a.tanggal)));
+
+ const totalHari=rows.length;
+ const hadir=rows.filter(r=>!!r.masuk).length;
+ const lengkap=rows.filter(r=>!!r.masuk&&!!r.pulang).length;
+ const belumPulang=rows.filter(r=>!!r.masuk&&!r.pulang).length;
+
+ $('rekapTotalHari').textContent=totalHari;
+ $('rekapHadir').textContent=hadir;
+ $('rekapLengkap').textContent=lengkap;
+ $('rekapBelumPulang').textContent=belumPulang;
 
  const jam=x=>x?(x.jam||'-'):'—';
  const statusRow=r=>{
@@ -1528,7 +1579,7 @@ function renderEmpHistory(){
    <td>${r.masuk?`<span class="badge info">🕐 ${jam(r.masuk)}</span>`:'—'}</td>
    <td>${r.pulang?`<span class="badge ok">🕐 ${jam(r.pulang)}</span>`:'—'}</td>
    <td>${statusRow(r)}</td>
- </tr>`).join('')||'<tr><td colspan="4" class="empty-history">Belum ada riwayat presensi.</td></tr>';
+ </tr>`).join('')||'<tr><td colspan="4" class="empty-history">Belum ada riwayat presensi pada bulan ini.</td></tr>';
 }
 
 function renderAdminDashboard(){
