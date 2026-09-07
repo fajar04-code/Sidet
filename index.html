@@ -815,22 +815,24 @@ const GPS_MAX_ACCURACY=50;
 let gpsWatchId=null;
 let gpsCountdownTimer=null;
 let gpsCountdownEndsAt=0;
-function openCurrentLocationMap(){
- const lat=Number(state.gps?.latitude);
- const lng=Number(state.gps?.longitude);
- if(!Number.isFinite(lat)||!Number.isFinite(lng)){
-   toast('Lokasi GPS belum terbaca. Tunggu sampai status GPS aktif.');
-   return;
- }
- // Utamakan aplikasi Maps eksternal pada perangkat. Jika tidak tersedia, buka Google Maps di browser.
- const geoUrl='geo:'+lat+','+lng+'?q='+lat+','+lng;
- const webUrl='https://www.google.com/maps?q='+encodeURIComponent(lat+','+lng);
- try{
-   window.location.href=geoUrl;
-   setTimeout(()=>{ try{ window.open(webUrl,'_blank','noopener,noreferrer'); }catch(e){} },800);
- }catch(e){
-   window.open(webUrl,'_blank','noopener,noreferrer');
- }
+function openCurrentLocationMap() {
+  // Selalu izinkan membuka Maps eksternal, meskipun GPS belum terbaca.
+  // Jika koordinat tersedia, buka titik tersebut; jika belum, buka Maps biasa.
+  try {
+    const lat = Number(state?.gps?.latitude);
+    const lng = Number(state?.gps?.longitude);
+    if (Number.isFinite(lat) && Number.isFinite(lng)) {
+      window.open(
+        'https://www.google.com/maps/search/?api=1&query=' +
+        encodeURIComponent(lat + ',' + lng),
+        '_blank'
+      );
+    } else {
+      window.open('https://www.google.com/maps', '_blank');
+    }
+  } catch (e) {
+    window.open('https://www.google.com/maps', '_blank');
+  }
 }
 
 function distanceMeters_(lat1,lng1,lat2,lng2){
@@ -1073,55 +1075,56 @@ function clearGPSWatch_(){
   gpsWatchId=null;
 }
 
-function getCurrentPositionBestEffort_(onSuccess,onFailure){
-  if(!gpsBrowserReady_())return;
+function getCurrentPositionBestEffort_(onSuccess, onError) {
+  // GPS adalah pelengkap, BUKAN syarat mutlak presensi.
+  // Coba beberapa kali secara non-blocking. Presensi tidak menunggu fungsi ini selesai.
+  if (!navigator.geolocation) {
+    if (typeof onError === 'function') onError(new Error('Geolocation tidak tersedia'));
+    return;
+  }
 
-  let finished=false;
-  let attempts=0;
-  const maxAttempts=4;
+  let finished = false;
+  let attempt = 0;
+  let bestPosition = null;
+  const maxAttempts = 4;
 
-  const success=pos=>{
-    if(finished)return;
-    const acc=Number(pos?.coords?.accuracy);
-    // Posisi pertama yang masuk tetap disimpan agar aplikasi tidak terasa macet.
-    // Jika akurasinya <= 50 m, langsung dianggap memenuhi syarat.
-    if(Number.isFinite(acc) && acc<=GPS_MAX_ACCURACY){
-      finished=true;
-      onSuccess(pos);
+  const finishSuccess = (pos) => {
+    if (finished) return;
+    finished = true;
+    if (typeof onSuccess === 'function') onSuccess(pos);
+  };
+
+  const tryAgain = () => {
+    if (finished || attempt >= maxAttempts) {
+      if (bestPosition) finishSuccess(bestPosition);
+      else if (typeof onError === 'function') onError(new Error('Lokasi belum terbaca'));
       return;
     }
 
-    attempts++;
-    if(attempts<maxAttempts){
-      setSimpleGPSStatus_('waiting','Menunggu lokasi','Mencari GPS yang lebih akurat…');
-      setTimeout(()=>request(true),1200);
-    }else{
-      finished=true;
-      onSuccess(pos);
-    }
-  };
-
-  const failure=err=>{
-    if(finished)return;
-    attempts++;
-    if(attempts<maxAttempts && err && (err.code===2||err.code===3)){
-      setSimpleGPSStatus_('waiting','Menunggu lokasi','GPS sedang mencari sinyal…');
-      setTimeout(()=>request(attempts<=2),1200);
-    }else{
-      finished=true;
-      onFailure(err);
-    }
-  };
-
-  const request=high=>{
+    attempt++;
     navigator.geolocation.getCurrentPosition(
-      success,
-      failure,
-      high ? gpsOptions_(true,20000,0) : gpsOptions_(false,15000,0)
+      (pos) => {
+        const acc = Number(pos?.coords?.accuracy);
+        if (!bestPosition ||
+            (!Number.isNaN(acc) && Number(acc) < Number(bestPosition.coords.accuracy))) {
+          bestPosition = pos;
+        }
+
+        // Jika sudah cukup baik, langsung gunakan.
+        if (Number.isFinite(acc) && acc <= GPS_MAX_ACCURACY) {
+          finishSuccess(pos);
+        } else {
+          setTimeout(tryAgain, 700);
+        }
+      },
+      () => {
+        setTimeout(tryAgain, 700);
+      },
+      gpsOptions_(true, 8000, 0)
     );
   };
 
-  request(true);
+  tryAgain();
 }
 
 function beginGPSAcquisition_(){
@@ -1726,6 +1729,26 @@ function exportSummary(){const a=state.data.attendance||[],m={};a.forEach(x=>{co
 
 <script>
 /* Password awal seluruh siswa: 0123SMAN2Nusa */
+</script>
+
+<script>
+/* GPS OPTIONAL MODE
+   Lokasi hanya melengkapi data presensi. Presensi tetap dapat dikirim
+   ketika GPS belum terbaca / perangkat menolak lokasi / akurasi kurang baik.
+*/
+window.GPS_OPTIONAL_MODE = true;
+
+function gpsOptionalStatus_(title, detail) {
+  try {
+    const el = document.getElementById('gpsStatus');
+    if (el) {
+      el.textContent = title || 'Lokasi belum terbaca';
+      el.className = 'gps-status waiting';
+    }
+    const d = document.getElementById('gpsStatusDetail');
+    if (d) d.textContent = detail || 'Lokasi adalah data pelengkap. Presensi tetap dapat dilakukan.';
+  } catch(e) {}
+}
 </script>
 </body></html>
 <script>
