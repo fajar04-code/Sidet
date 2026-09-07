@@ -181,7 +181,7 @@ function isInsideAttendanceArea_(lat, lng) {
           <button id="btnPulang" class="btn bigbtn" disabled onclick="openAttendance('PULANG')"><span>🏁</span><strong>Presensi Pulang</strong><small>Selfie + GPS</small></button><div id="btnPulangReason" class="presensi-lock-reason">🔒 Terkunci: menunggu GPS memenuhi syarat.</div>
         </div>
         <div class="notice-info"><div>📷</div><div><strong>Foto otomatis dikompres</strong>Foto selfie diproses maksimal <b>300 KB</b> sebelum dikirim ke server dan Drive sekolah.</div></div>
-        <div id="empNotice" class="alert">Pastikan kamera dan GPS aktif sebelum menekan tombol presensi.</div>
+        <div id="empNotice" class="alert">Kamera dapat digunakan di mana pun. GPS dicatat untuk membedakan lokasi dekat dan jauh.</div>
       </div>
 
       <div class="card">
@@ -200,7 +200,7 @@ function isInsideAttendanceArea_(lat, lng) {
           <div class="gps-metric"><span>Jarak ke sekolah</span><b id="gpsDistanceValue">—</b></div>
           <div class="gps-metric"><span>Status radius</span><b id="gpsRadiusValue">—</b></div>
         </div>
-<button id="gpsReadyAction" class="gps-ready-action" disabled onclick="openCameraForAttendance()">📍 Menunggu GPS memenuhi syarat</button><div class="gps-live-note">Kamera/presensi akan aktif setelah lokasi terdeteksi, akurasi ≤50 m, dan jarak ≤100 m.</div>
+<button id="gpsReadyAction" class="gps-ready-action" disabled onclick="openCameraForAttendance()">📍 Menunggu GPS memenuhi syarat</button><div class="gps-live-note">Kamera/presensi dapat digunakan di mana pun. GPS dan jarak ke sekolah tetap dicatat untuk laporan.</div>
         <div class="mapbox" style="margin-top:14px"><iframe id="googleMapFrame" title="Lokasi GPS saat ini" style="position:absolute;inset:0;width:100%;height:100%;border:0" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe><div class="circle" style="pointer-events:none"></div><div class="pin" style="pointer-events:none">📍</div><div id="gpsDot" class="dot" style="left:50%;top:50%;pointer-events:none"></div></div>
         <div class="map-caption"><span id="distanceText">Belum ada lokasi.</span><span>Radius 100 m dari salah satu titik</span></div>
         <div class="progress"><i id="radiusProgress"></i></div>
@@ -559,6 +559,29 @@ function openCameraForAttendance(){
   if(reason) reason.scrollIntoView({behavior:'smooth',block:'center'});
 }
 
+function updateAttendanceButtons_(gpsReady){
+  const today=state.today||{};
+  const masukDone=!!today.masuk;
+  const pulangDone=!!today.pulang;
+
+  // PENTING:
+  // Radius TIDAK lagi mengunci kamera/presensi.
+  // Tombol hanya terkunci jika presensi jenis tersebut sudah tercatat hari ini.
+  const bMasuk=$('btnMasuk');
+  const bPulang=$('btnPulang');
+
+  if(bMasuk){
+    bMasuk.disabled=masukDone;
+    bMasuk.classList.toggle('disabled',masukDone);
+  }
+  if(bPulang){
+    bPulang.disabled=pulangDone;
+    bPulang.classList.toggle('disabled',pulangDone);
+  }
+
+  updatePresensiLockReasons_(gpsReady);
+}
+
 function setPresensiLockReason_(type,text,mode){
   const id=type==='MASUK'?'btnMasukReason':'btnPulangReason';
   const el=$(id); if(!el)return;
@@ -567,20 +590,38 @@ function setPresensiLockReason_(type,text,mode){
   el.textContent=(mode==='ok'?'✓ ':'🔒 ')+text;
 }
 
-function updatePresensiLockReasons_(inside){
+function updatePresensiLockReasons_(gpsReady){
   const gps=state.gps;
   const acc=gps?Number(gps.accuracy):NaN;
   const dist=gps?Number(gps.distance):NaN;
-  let reason='';
-  if(!gps) reason='Lokasi GPS belum diperoleh.';
-  else if(!Number.isFinite(acc)) reason='Akurasi GPS belum tersedia.';
-  else if(acc>50) reason='Akurasi GPS masih ±'+Math.round(acc)+' m. Harus ≤50 m.';
-  else if(!Number.isFinite(dist)) reason='Jarak ke titik sekolah belum dihitung.';
-  else if(dist>GPS_RADIUS_METERS) reason='Di luar radius sekolah ('+Math.round(dist)+' m). Maksimal '+GPS_RADIUS_METERS+' m.';
-  else if(!inside) reason='Belum memenuhi syarat lokasi sekolah.';
-  setPresensiLockReason_('MASUK',reason,inside?'ok':'');
-  setPresensiLockReason_('PULANG',reason,inside?'ok':'');
+  const today=state.today||{};
+
+  const masukDone=!!today.masuk;
+  const pulangDone=!!today.pulang;
+
+  let info='';
+  if(!gps){
+    info='Kamera tetap dapat dibuka. Lokasi GPS akan diambil saat presensi dikirim.';
+  }else if(!Number.isFinite(acc)){
+    info='Kamera tetap dapat dibuka. Akurasi GPS belum tersedia.';
+  }else if(!Number.isFinite(dist)){
+    info='Kamera tetap dapat dibuka. Jarak ke sekolah sedang dihitung.';
+  }else if(dist<=GPS_RADIUS_METERS){
+    info='✓ Lokasi dekat sekolah · '+Math.round(dist)+' m. Presensi diizinkan.';
+  }else{
+    info='✓ Lokasi di luar radius · '+Math.round(dist)+' m. Presensi tetap diizinkan dan akan dilaporkan sebagai lokasi jauh.';
+  }
+
+  setPresensiLockReason_('MASUK',
+    masukDone ? 'Presensi Masuk hari ini sudah tercatat.' : info,
+    masukDone ? '' : 'ok'
+  );
+  setPresensiLockReason_('PULANG',
+    pulangDone ? 'Presensi Pulang hari ini sudah tercatat.' : info,
+    pulangDone ? '' : 'ok'
+  );
 }
+
 
 function gpsQuality_(accuracy){
   accuracy=Number(accuracy);
@@ -593,36 +634,106 @@ function gpsQuality_(accuracy){
 function updateGPSUI_(coords){
  try{
   if(!coords||!Number.isFinite(coords.latitude)||!Number.isFinite(coords.longitude)||!Number.isFinite(coords.accuracy))throw Error('Data GPS tidak lengkap.');
-  const accuracy=Number(coords.accuracy), q=gpsQuality_(accuracy);
+
+  const accuracy=Number(coords.accuracy);
+  const q=gpsQuality_(accuracy);
   const nearest=getNearestAttendanceLocation_(coords.latitude,coords.longitude);
   const d=nearest?Number(nearest.distance):Infinity;
-  const inside=q.acceptable && d<=GPS_RADIUS_METERS;
-  state.gps={latitude:Number(coords.latitude),longitude:Number(coords.longitude),accuracy,distance:d,inside,nearestPoint:nearest?.name||''};
+
+  // Radius hanya menentukan klasifikasi laporan, BUKAN izin kamera/presensi.
+  const nearSchool=Number.isFinite(d) && d<=GPS_RADIUS_METERS;
+  const locationClass=nearSchool?'DEKAT_SEKOLAH':'JAUH_DARI_SEKOLAH';
+
+  state.gps={
+    latitude:Number(coords.latitude),
+    longitude:Number(coords.longitude),
+    accuracy,
+    distance:d,
+    inside:nearSchool,
+    nearSchool,
+    locationClass,
+    nearestPoint:nearest?.name||''
+  };
+
   setGpsMetric_('gpsAccuracyValue','±'+Math.round(accuracy)+' m',q.cls);
   setGpsMetric_('gpsQualityValue',q.label,q.cls);
-  setGpsMetric_('gpsDistanceValue',Number.isFinite(d)?Math.round(d)+' m':'—',inside?'ok':'bad');
-  setGpsMetric_('gpsRadiusValue',inside?'DI DALAM':'DI LUAR',inside?'ok':'bad');
-  $('gpsStatus').textContent=!q.acceptable?'GPS buruk · tunggu akurasi':(inside?'GPS aktif · dalam radius':'GPS aktif · di luar radius');
-  $('gpsStatus').className=!q.acceptable?'badge bad':(inside?'badge ok':'badge bad');
-  if($('gpsBadge')){$('gpsBadge').textContent=inside?'Lokasi valid':'Belum memenuhi syarat';$('gpsBadge').className=inside?'badge ok':'badge bad'}
-  if($('gpsAccuracy'))$('gpsAccuracy').textContent='Akurasi ±'+Math.round(accuracy)+' m · '+q.label+' · Jarak '+(Number.isFinite(d)?Math.round(d):'—')+' m / '+GPS_RADIUS_METERS+' m'+(nearest?' · '+nearest.name:'');
-  if($('distanceText'))$('distanceText').textContent='Koordinat: '+coords.latitude.toFixed(6)+', '+coords.longitude.toFixed(6)+' · Jarak '+(Number.isFinite(d)?Math.round(d):'—')+' meter'+(nearest?' · '+nearest.name:'');
-  if($('radiusProgress'))$('radiusProgress').style.width=Math.min(100,(d/GPS_RADIUS_METERS)*100)+'%';
-  const map=$('googleMapFrame'); if(map) map.src='https://www.google.com/maps?q='+encodeURIComponent(coords.latitude+','+coords.longitude)+'&z=18&output=embed';
-  const dot=$('gpsDot'); if(dot){dot.style.left='50%';dot.style.top='50%';dot.title='Lokasi perangkat saat ini';}
-  updateAttendanceButtons_(inside);
-  if(inside){
-    $('empNotice').textContent='✓ GPS '+q.label.toLowerCase()+'. Lokasi berada dalam radius '+GPS_RADIUS_METERS+' m dari '+(nearest?.name||'titik sekolah')+'. Tombol presensi aktif.';
+  setGpsMetric_('gpsDistanceValue',Number.isFinite(d)?Math.round(d)+' m':'—',nearSchool?'ok':'warn');
+  setGpsMetric_('gpsRadiusValue',nearSchool?'DEKAT':'JAUH',nearSchool?'ok':'warn');
+
+  $('gpsStatus').textContent=!q.acceptable
+    ?'GPS terbaca · akurasi rendah'
+    :(nearSchool?'GPS aktif · dekat sekolah':'GPS aktif · lokasi jauh');
+
+  $('gpsStatus').className=!q.acceptable
+    ?'badge warn'
+    :(nearSchool?'badge ok':'badge warn');
+
+  if($('gpsBadge')){
+    $('gpsBadge').textContent=nearSchool?'Lokasi dekat sekolah':'Lokasi jauh';
+    $('gpsBadge').className=nearSchool?'badge ok':'badge warn';
+  }
+
+  if($('gpsAccuracy')){
+    $('gpsAccuracy').textContent=
+      'Akurasi ±'+Math.round(accuracy)+' m · '+q.label+
+      ' · Jarak '+(Number.isFinite(d)?Math.round(d):'—')+
+      ' m / radius '+GPS_RADIUS_METERS+' m'+
+      (nearest?' · '+nearest.name:'');
+  }
+
+  if($('distanceText')){
+    $('distanceText').textContent=
+      'Koordinat: '+coords.latitude.toFixed(6)+', '+coords.longitude.toFixed(6)+
+      ' · Jarak '+(Number.isFinite(d)?Math.round(d):'—')+' meter'+
+      ' · '+(nearSchool?'DEKAT SEKOLAH':'JAUH DARI SEKOLAH')+
+      (nearest?' · '+nearest.name:'');
+  }
+
+  if($('radiusProgress')){
+    $('radiusProgress').style.width=Math.min(100,(d/GPS_RADIUS_METERS)*100)+'%';
+  }
+
+  const map=$('googleMapFrame');
+  if(map){
+    map.src='https://www.google.com/maps?q='+
+      encodeURIComponent(coords.latitude+','+coords.longitude)+
+      '&z=18&output=embed';
+  }
+
+  const dot=$('gpsDot');
+  if(dot){
+    dot.style.left='50%';
+    dot.style.top='50%';
+    dot.title='Lokasi perangkat saat ini';
+  }
+
+  // SELALU buka akses kamera/presensi, baik dekat maupun jauh.
+  updateAttendanceButtons_(true);
+
+  if(nearSchool){
+    $('empNotice').textContent=
+      '✓ Lokasi DEKAT sekolah ('+Math.round(d)+' m). Presensi diizinkan.';
     $('empNotice').className='alert ok';
+  }else if(Number.isFinite(d)){
+    $('empNotice').textContent=
+      '✓ Lokasi JAUH dari sekolah ('+Math.round(d)+' m). Presensi tetap diizinkan. Jarak akan masuk laporan.';
+    $('empNotice').className='alert warn';
   }else if(!q.acceptable){
-    $('empNotice').textContent='GPS belum memenuhi akurasi ≤50 m. Tunggu pembacaan berikutnya.';
+    $('empNotice').textContent=
+      'GPS terbaca, tetapi akurasi ±'+Math.round(accuracy)+' m. Presensi tetap dapat dibuka; lokasi akan dicatat saat pengiriman.';
     $('empNotice').className='alert warn';
   }else{
-    $('empNotice').textContent='Lokasi di luar radius '+GPS_RADIUS_METERS+' m. Jarak terdekat '+(Number.isFinite(d)?Math.round(d):'—')+' m.';
-    $('empNotice').className='alert warn';
+    $('empNotice').textContent=
+      'Lokasi GPS terbaca. Presensi tetap diizinkan.';
+    $('empNotice').className='alert ok';
   }
- }catch(e){console.error(e);toast(e.message||'Gagal membaca GPS.')}
+
+ }catch(e){
+  console.error(e);
+  toast(e.message||'Gagal membaca GPS.');
+ }
 }
+
 
 function setGPSVisual_(mode,title,text){
   const notice=$('empNotice'); if(!notice)return;
@@ -904,11 +1015,98 @@ function validateGPS_(coords){
  if(!Number.isFinite(Number(coords.accuracy)))throw Error('Akurasi GPS tidak tersedia.');
  if(Number(coords.accuracy)>50)throw Error('Kualitas GPS buruk (±'+Math.round(coords.accuracy)+' m). Tunggu hingga akurasi ≤50 m.');
  const nearest=getNearestAttendanceLocation_(Number(coords.latitude),Number(coords.longitude));
- if(!nearest)throw Error('Titik lokasi sekolah belum tersedia.');
- return {distance:nearest.distance,inside:nearest.distance<=GPS_RADIUS_METERS,nearestPoint:nearest.name,lat:Number(coords.latitude),lng:Number(coords.longitude)};
+ const distance=nearest?Number(nearest.distance):Infinity;
+ return {
+   distance,
+   inside:Number.isFinite(distance)&&distance<=GPS_RADIUS_METERS,
+   nearestPoint:nearest?.name||'',
+   lat:Number(coords.latitude),
+   lng:Number(coords.longitude)
+ };
 }
 
 function getFreshGPS_(){return new Promise((resolve,reject)=>{if(!gpsBrowserReady_())return reject(Error('GPS perangkat tidak tersedia atau halaman bukan HTTPS.'));getCurrentPositionBestEffort_(pos=>{try{validateGPS_(pos.coords);resolve(pos.coords)}catch(e){reject(e)}},err=>reject(Error(gpsErrorMessage_(err))))})}
+
+async function openAttendance(type){
+  const doneKey=type==='MASUK'?'masuk':'pulang';
+  if(state.today && state.today[doneKey]){
+    return toast('Presensi '+type+' hari ini sudah tercatat.');
+  }
+
+  $('modal').classList.remove('hidden');
+  $('modalBox').innerHTML=`
+    <div class="hero">
+      <h3>Presensi ${type}</h3>
+      <div class="muted">Selfie + GPS · lokasi dekat maupun jauh tetap dapat melakukan presensi</div>
+    </div>
+    <div style="margin-top:12px">
+      <video id="cam" autoplay playsinline muted style="width:100%;max-height:60vh;object-fit:cover;border-radius:16px;background:#111"></video>
+    </div>
+    <div id="attInfo" class="alert" style="margin-top:12px">
+      Menyiapkan kamera dan mengambil lokasi perangkat…
+    </div>
+    <div class="actions" style="margin-top:12px">
+      <button class="btn" onclick="closeModal()">Batal</button>
+      <button class="btn primary" onclick="captureAttendance('${type}')">📸 Ambil Selfie & Simpan</button>
+    </div>`;
+
+  try{
+    if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){
+      throw new Error('Kamera tidak tersedia pada browser/perangkat ini.');
+    }
+
+    state.stream=await navigator.mediaDevices.getUserMedia({
+      video:{
+        facingMode:'user',
+        width:{ideal:1280},
+        height:{ideal:720}
+      },
+      audio:false
+    });
+
+    const video=$('cam');
+    if(video){
+      video.srcObject=state.stream;
+      await video.play().catch(()=>{});
+    }
+
+    $('attInfo').textContent=
+      'Kamera aktif. Silakan ambil selfie. Lokasi akan dicatat dan jaraknya terhadap sekolah akan dilaporkan.';
+    $('attInfo').className='alert ok';
+
+    // GPS diambil di latar belakang, tetapi TIDAK digunakan untuk mengunci kamera.
+    if(navigator.geolocation){
+      getCurrentPositionBestEffort_(
+        pos=>{
+          updateGPSUI_(pos.coords);
+          if($('attInfo')){
+            const g=state.gps;
+            $('attInfo').textContent=
+              'Kamera aktif · Lokasi '+(g.nearSchool?'DEKAT SEKOLAH':'JAUH DARI SEKOLAH')+
+              ' · jarak '+(Number.isFinite(g.distance)?Math.round(g.distance):'—')+' m. Presensi tetap dapat disimpan.';
+            $('attInfo').className='alert '+(g.nearSchool?'ok':'warn');
+          }
+        },
+        err=>{
+          if($('attInfo')){
+            $('attInfo').textContent=
+              'Kamera tetap aktif. GPS belum diperoleh: '+gpsErrorMessage_(err)+
+              '. Tekan Ambil Selfie & Simpan untuk mencoba mengambil GPS kembali.';
+            $('attInfo').className='alert warn';
+          }
+        }
+      );
+    }
+  }catch(e){
+    if(state.stream){
+      state.stream.getTracks().forEach(x=>x.stop());
+      state.stream=null;
+    }
+    $('attInfo').textContent=e.message||'Kamera gagal dibuka.';
+    $('attInfo').className='alert bad';
+    toast(e.message||'Kamera gagal dibuka.');
+  }
+}
 
 async function compressCanvasMax300KB(canvas){
  const MAX_BYTES=300*1024;
@@ -937,9 +1135,19 @@ async function compressCanvasMax300KB(canvas){
 
 async function captureAttendance(type){
  const video=$('cam');if(!video.videoWidth)return toast('Kamera belum siap.');
- let gps;try{gps=await getFreshGPS_();}catch(e){return toast(e.message||'Lokasi GPS belum memenuhi syarat.');}
+
+ // Ambil lokasi TERBARU. Radius tidak pernah menolak presensi.
+ let gps;
+ try{
+   gps=await getFreshGPS_();
+ }catch(e){
+   return toast(e.message||'Lokasi GPS belum tersedia. Aktifkan Lokasi/GPS lalu coba lagi.');
+ }
+
  const gpsCheck=validateGPS_(gps);
- if(!gpsCheck.inside)return toast('Presensi ditolak: di luar radius '+GPS_RADIUS_METERS+' m dari titik sekolah terdekat. Jarak '+Math.round(gpsCheck.distance)+' meter.');
+ const nearSchool=Number.isFinite(Number(gpsCheck.distance)) && Number(gpsCheck.distance)<=GPS_RADIUS_METERS;
+ const locationClass=nearSchool?'DEKAT_SEKOLAH':'JAUH_DARI_SEKOLAH';
+
  const c=document.createElement('canvas');c.width=video.videoWidth;c.height=video.videoHeight;
  c.getContext('2d').drawImage(video,0,0,c.width,c.height);
  const button=document.querySelector('#modalBox .btn.primary');
@@ -950,7 +1158,26 @@ async function captureAttendance(type){
   $('attInfo').textContent='Foto siap · '+compressed.sizeKB+' KB · memeriksa dan mengirim presensi…';
   $('attInfo').className='alert ok';
   if(state.stream)state.stream.getTracks().forEach(x=>x.stop());
-  const record={userId:state.user.id,type,lat:gps.latitude,lng:gps.longitude,accuracy:gps.accuracy,distance:gpsCheck.distance,nearestPoint:gpsCheck.nearestPoint,photo,timestamp:new Date().toISOString(),link:state.user.link||'',name:state.user.name,nisn:state.user.nisn,kelas:state.user.kelas};
+  const record={
+    userId:state.user.id,
+    type,
+    lat:gps.latitude,
+    lng:gps.longitude,
+    accuracy:gps.accuracy,
+    distance:gpsCheck.distance,
+    jarak:gpsCheck.distance,
+    nearestPoint:gpsCheck.nearestPoint,
+    locationClass,
+    locationStatus:nearSchool?'DEKAT SEKOLAH':'JAUH DARI SEKOLAH',
+    withinRadius:nearSchool,
+    radius:GPS_RADIUS_METERS,
+    photo,
+    timestamp:new Date().toISOString(),
+    link:state.user.link||'',
+    name:state.user.name,
+    nisn:state.user.nisn,
+    kelas:state.user.kelas
+  };
   if(apiReady()){
     $('attInfo').textContent='Mengirim presensi dan foto '+compressed.sizeKB+' KB ke server…';
     const result=await api('attendance',record);
@@ -992,7 +1219,7 @@ function renderEmpHistory(){
  $('todayStatus').textContent=masuk&&pulang?'Lengkap':masuk?'Masuk tercatat':'Belum lengkap';$('todayStatus').className='badge '+(masuk&&pulang?'ok':masuk?'info':'warn');
  $('btnMasuk').disabled=!!masuk;$('btnPulang').disabled=!!pulang;
  $('btnMasuk').classList.toggle('disabled',!!masuk);$('btnPulang').classList.toggle('disabled',!!pulang);
- $('empNotice').textContent=masuk&&pulang?'Presensi hari ini sudah lengkap. Terima kasih.':masuk?'Presensi masuk sudah tercatat. Jangan lupa presensi pulang.':'Pastikan kamera dan GPS aktif sebelum menekan tombol presensi.';
+ $('empNotice').textContent=masuk&&pulang?'Presensi hari ini sudah lengkap. Terima kasih.':masuk?'Presensi masuk sudah tercatat. Jangan lupa presensi pulang.':'Kamera dapat digunakan di mana pun. GPS dicatat untuk membedakan lokasi dekat dan jauh.';
  $('empNotice').className='alert '+(masuk&&pulang?'ok':'');
  $('empHistory').innerHTML=rows.map(x=>`<tr><td>${x.tanggal||new Date(x.timestamp).toLocaleDateString('id-ID')}</td><td>${x.jam||new Date(x.timestamp).toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'})}</td><td><span class="badge info">${x.type||x.jenis||'-'}</span></td><td><span class="badge ${x.status==='VALID'||x.status==='HADIR'?'ok':'warn'}">${x.status||'VALID'}</span></td><td>${x.jarak!=null?Math.round(x.jarak)+' m':'-'}</td></tr>`).join('')||'<tr><td colspan="5" class="empty-history">Belum ada riwayat presensi.</td></tr>';
 }
