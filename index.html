@@ -326,42 +326,97 @@ function closeLocationPermission(){
 
 function requestLocationPermission(){
   const btn=$('allowLocationBtn');
-  if(btn){btn.disabled=true;btn.textContent='⏳ Meminta izin lokasi perangkat…';}
+
+  if(btn){
+    btn.disabled=true;
+    btn.textContent='⏳ Mengaktifkan GPS perangkat…';
+  }
+
   const modal=$('locationPermissionModal');
   if(modal)modal.classList.add('hidden');
 
-  if(!navigator.geolocation){
-    showGPSRetryState_(gpsErrorMessage_({message:'GPS/lokasi tidak tersedia pada perangkat ini.'}));
-    if(btn){btn.disabled=false;btn.textContent='📍 Izinkan Lokasi Perangkat';}
+  // Penting: panggilan GPS dilakukan langsung dari klik tombol pengguna.
+  // Ini memberi Android/Chrome kesempatan menampilkan native permission prompt.
+  clearGPSWatch_();
+  state.gps=null;
+  updateAttendanceButtons_(false);
+
+  if(!gpsBrowserReady_()){
+    if(btn){
+      btn.disabled=false;
+      btn.textContent='📍 Izinkan Lokasi Perangkat';
+    }
     return;
   }
 
-  setGPSVisual_('permission','Meminta izin lokasi perangkat…','Browser akan menampilkan peringatan izin lokasi. Pilih <b>Izinkan / Allow</b> agar SiDEt dapat membaca GPS.');
-  if($('gpsStatus')){$('gpsStatus').textContent='Meminta izin lokasi…';$('gpsStatus').className='badge warn'}
-  addGPSCountdown_(20);
+  setGPSVisual_(
+    'permission',
+    'Meminta izin lokasi perangkat…',
+    'Jika Android menampilkan permintaan izin, pilih <b>Izinkan / Allow</b>. Setelah itu SiDEt akan membaca GPS secara otomatis.'
+  );
 
-  // Panggilan dilakukan dari klik pengguna agar dialog izin browser dapat muncul.
-  navigator.geolocation.getCurrentPosition(
+  if($('gpsStatus')){
+    $('gpsStatus').textContent='Meminta izin lokasi…';
+    $('gpsStatus').className='badge warn';
+  }
+
+  addGPSCountdown_(30);
+
+  // Gunakan mesin GPS yang sudah diperbaiki.
+  getCurrentPositionBestEffort_(
     pos=>{
       stopGPSCountdown_();
       updateGPSUI_(pos.coords);
       startGPSWatch_();
-      if(btn){btn.disabled=false;btn.textContent='📍 Izinkan Lokasi Perangkat';}
+
+      if(btn){
+        btn.disabled=false;
+        btn.textContent='📍 Lokasi Aktif';
+      }
     },
     err=>{
       stopGPSCountdown_();
+
       if(err && err.code===1){
+        // Izin benar-benar ditolak. Tampilkan kembali modal dengan
+        // petunjuk mengaktifkan izin situs dari Chrome.
         showLocationPermissionPrompt_();
       }else{
-        showGPSRetryState_(gpsErrorMessage_(err));
+        // Timeout/position unavailable tidak dianggap sebagai penolakan izin.
+        startGPSWatch_();
+        showGPSRetryState_(
+          gpsErrorMessage_(err)+' Sistem tetap mencoba memperoleh lokasi perangkat.'
+        );
       }
-      if(btn){btn.disabled=false;btn.textContent='📍 Izinkan Lokasi Perangkat';}
-    },
-    {enableHighAccuracy:true,timeout:20000,maximumAge:0}
+
+      if(btn){
+        btn.disabled=false;
+        btn.textContent='📍 Coba Aktifkan Lokasi Lagi';
+      }
+    }
   );
 }
 
 function showLogin(t,bad=false){$('loginMsg').textContent=t;$('loginMsg').className='alert '+(bad?'bad':'ok')}
+function resumeGPSAfterReturn_(){
+  if(!state.user || state.user.role!=='siswa')return;
+  if(document.visibilityState!=='visible')return;
+  if(!state.gps){
+    try{
+      if(navigator.permissions && navigator.permissions.query){
+        navigator.permissions.query({name:'geolocation'}).then(p=>{
+          if(p.state==='granted'){
+            getGPS();
+          }
+        }).catch(()=>{});
+      }
+    }catch(e){}
+  }
+}
+
+document.addEventListener('visibilitychange',resumeGPSAfterReturn_);
+window.addEventListener('focus',resumeGPSAfterReturn_);
+
 function startApp(){
  $('loginView').classList.add('hidden');$('app').classList.remove('hidden');$('who').textContent=(state.user.name||'')+' · '+state.user.role;
  const nav=$('nav');nav.innerHTML=state.user.role==='admin'?'<button class="active" onclick="showPage(\'adminPage\')">Dashboard Admin</button>':'<button class="active" onclick="showPage(\'siswaPage\')">Presensi Saya</button>';
