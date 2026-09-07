@@ -1649,7 +1649,58 @@ function toggleAllHistory(){
 }
 
 function renderEmpHistory(){
- const all=(state.data.attendance||[])
+ // Gunakan tanggal lokal perangkat, bukan UTC. Ini penting untuk Indonesia (UTC+8),
+ // agar presensi yang sudah tercatat hari ini langsung muncul di kartu "Kehadiran hari ini".
+ const localDateKey_ = (d)=>{
+   const y=d.getFullYear(), m=String(d.getMonth()+1).padStart(2,'0'), day=String(d.getDate()).padStart(2,'0');
+   return `${y}-${m}-${day}`;
+ };
+ const todayKey = localDateKey_(new Date());
+ const allAttendance = state.data.attendance||[];
+ const userAttendance = allAttendance.filter(x=>
+   String(x.userId??x.UserID??'')===String(state.user?.id??'') ||
+   String(x.nisn??x.NISN??'')===String(state.user?.nisn??'')
+ );
+ const getRecordDate_ = (x)=>{
+   const raw=String(x?.tanggal??x?.Tanggal??'').trim();
+   if(/^\d{4}-\d{2}-\d{2}/.test(raw)) return raw.slice(0,10);
+   if(x?.timestamp || x?.Timestamp){
+     const d=new Date(x.timestamp??x.Timestamp);
+     if(!isNaN(d.getTime())) return localDateKey_(d);
+   }
+   return '';
+ };
+ const todayRows = userAttendance.filter(x=>getRecordDate_(x)===todayKey);
+ const masukToday = todayRows.filter(x=>String(x.type??x.jenis??x.Type??x.Jenis??'').toUpperCase()==='MASUK')
+   .sort((a,b)=>String(a.jam??a.Jam??a.timestamp??'').localeCompare(String(b.jam??b.Jam??b.timestamp??'')))[0];
+ const pulangToday = todayRows.filter(x=>String(x.type??x.jenis??x.Type??x.Jenis??'').toUpperCase()==='PULANG')
+   .sort((a,b)=>String(a.jam??a.Jam??a.timestamp??'').localeCompare(String(b.jam??b.Jam??b.timestamp??'')))[0];
+ const timeToday_ = (x)=>{
+   if(!x) return '—';
+   const raw=String(x.jam??x.Jam??'').trim();
+   if(raw) return raw.slice(0,8);
+   const ts=x.timestamp??x.Timestamp;
+   if(ts){
+     const d=new Date(ts);
+     if(!isNaN(d.getTime())) return d.toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'});
+   }
+   return '—';
+ };
+ const masukEl=$('masukTime'), pulangEl=$('pulangTime');
+ if(masukEl) masukEl.textContent=timeToday_(masukToday);
+ if(pulangEl) pulangEl.textContent=timeToday_(pulangToday);
+ const masukSub=$('masukSub'), pulangSub=$('pulangSub');
+ if(masukSub) masukSub.textContent=masukToday?'Presensi masuk tercatat':'Belum melakukan presensi masuk';
+ if(pulangSub) pulangSub.textContent=pulangToday?'Presensi pulang tercatat':'Belum melakukan presensi pulang';
+ const masukBadge=$('masukBadge'), pulangBadge=$('pulangBadge'), todayStatus=$('todayStatus');
+ if(masukBadge){ masukBadge.textContent=masukToday?'✓ Tercatat':'Belum'; masukBadge.className='badge '+(masukToday?'ok':'warn'); }
+ if(pulangBadge){ pulangBadge.textContent=pulangToday?'✓ Tercatat':'Belum'; pulangBadge.className='badge '+(pulangToday?'ok':'warn'); }
+ if(todayStatus){
+   todayStatus.textContent=masukToday&&pulangToday?'Lengkap':masukToday?'Masuk tercatat':'Belum lengkap';
+   todayStatus.className='badge '+(masukToday&&pulangToday?'ok':masukToday?'info':'warn');
+ }
+
+ const all=userAttendance;
    .filter(x=>String(x.userId??x.UserID??'')===String(state.user?.id??'')||String(x.nisn??x.NISN??''));
 
  const monthNames=['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
@@ -1675,7 +1726,8 @@ function renderEmpHistory(){
  };
 
  const monthSet=[...new Set(all.map(getMonth).filter(k=>/^\d{4}-\d{2}$/.test(k)))].sort((a,b)=>b.localeCompare(a));
- const currentMonth=new Date().toISOString().slice(0,7);
+ const nowLocal=new Date();
+ const currentMonth=`${nowLocal.getFullYear()}-${String(nowLocal.getMonth()+1).padStart(2,'0')}`;
  const sel=$('historyMonth');
  if(sel){
    const old=sel.value;
