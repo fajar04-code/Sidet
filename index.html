@@ -296,13 +296,13 @@ function isInsideAttendanceArea_(lat, lng) {
         <div class="gps-map-link">
           <span>📍</span>
           <div>
-            <b>Lihat lokasi di Google Maps</b>
+            <b>Buka lokasi di aplikasi Maps</b>
             <small>Buka hanya jika ingin melihat posisi GPS</small>
           </div>
-          <button type="button" class="btn" onclick="openCurrentLocationMap()">Buka Maps</button>
+          <button type="button" class="btn" onclick="openCurrentLocationMap()">Buka aplikasi Maps</button>
         </div>
         <div id="gpsMapHidden" style="display:none">
-          <iframe id="googleMapFrame" title="Lokasi GPS saat ini"></iframe>
+          <div id="googleMapFrame" style="display:none"></div>
           <div id="gpsDot"></div>
         </div>
         <div class="map-caption"><span id="distanceText">Lokasi belum terbaca.</span></div>
@@ -822,8 +822,15 @@ function openCurrentLocationMap(){
    toast('Lokasi GPS belum terbaca. Tunggu sampai status GPS aktif.');
    return;
  }
- const url='https://www.google.com/maps?q='+encodeURIComponent(lat+','+lng);
- window.open(url,'_blank','noopener,noreferrer');
+ // Utamakan aplikasi Maps eksternal pada perangkat. Jika tidak tersedia, buka Google Maps di browser.
+ const geoUrl='geo:'+lat+','+lng+'?q='+lat+','+lng;
+ const webUrl='https://www.google.com/maps?q='+encodeURIComponent(lat+','+lng);
+ try{
+   window.location.href=geoUrl;
+   setTimeout(()=>{ try{ window.open(webUrl,'_blank','noopener,noreferrer'); }catch(e){} },800);
+ }catch(e){
+   window.open(webUrl,'_blank','noopener,noreferrer');
+ }
 }
 
 function distanceMeters_(lat1,lng1,lat2,lng2){
