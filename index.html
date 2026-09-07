@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>SiDEt Siswa v2 — FIX LOGIN V4 CLEAN</title>
+<title>SiDEt Siswa v2 — LOGIN FINAL V5</title>
 <script>
 const ATTENDANCE_LOCATIONS = [
   { lat: 4.048999, lng: 117.726480, name: "Titik 1" },
@@ -146,7 +146,7 @@ function isInsideAttendanceArea_(lat, lng) {
     <button class="btn primary" style="width:100%" onclick="login()">Masuk</button>
     <div id="loginMsg" class="alert hidden"></div>
     <div id="loginConnectionHint" class="muted" style="margin-top:10px;text-align:center;font-size:11px">
-      Koneksi server: <b style="color:#16834b">Google Apps Script aktif</b> · <span>LOGIN V4</span>
+      Koneksi server: <b style="color:#16834b">Google Apps Script aktif</b> · <span>LOGIN FINAL V5</span>
     </div>
     <p class="muted" style="margin-top:16px">Terhubung otomatis ke Google Apps Script. Presensi dapat dilakukan di mana pun; GPS tetap dicatat untuk laporan jarak.</p>
   </div>
@@ -324,7 +324,7 @@ async function api(action,payload={}){
 
     const msg=String(e?.message||e||'');
     if(/networkerror|load failed/i.test(msg)){
-      throw Error('Koneksi ke Google Apps Script gagal. Silakan periksa internet dan coba lagi.');
+      throw Error('Komunikasi server gagal. Silakan periksa koneksi internet.');
     }
 
     throw e;
