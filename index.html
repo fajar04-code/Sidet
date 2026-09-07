@@ -242,8 +242,8 @@ function isInsideAttendanceArea_(lat, lng) {
       <div class="card">
         <div class="card-title"><div><div class="section-label">Aksi utama</div><h3 style="margin:0">Lakukan Presensi</h3></div></div>
         <div class="grid two">
-          <button id="btnMasuk" class="btn primary bigbtn" disabled onclick="openAttendance('MASUK')"><span>📸</span><strong>Presensi Masuk</strong><small>Selfie + GPS</small></button><div id="btnMasukReason" class="presensi-lock-reason">🔒 Terkunci: menunggu GPS memenuhi syarat.</div>
-          <button id="btnPulang" class="btn bigbtn" disabled onclick="openAttendance('PULANG')"><span>🏁</span><strong>Presensi Pulang</strong><small>Selfie + GPS</small></button><div id="btnPulangReason" class="presensi-lock-reason">🔒 Terkunci: menunggu GPS memenuhi syarat.</div>
+          <button id="btnMasuk" class="btn primary bigbtn" onclick="openAttendance('MASUK')"><span>📸</span><strong>Presensi Masuk</strong><small>Selfie + GPS</small></button><div id="btnMasukReason" class="presensi-lock-reason">🔒 Terkunci: menunggu GPS memenuhi syarat.</div>
+          <button id="btnPulang" class="btn bigbtn" onclick="openAttendance('PULANG')"><span>🏁</span><strong>Presensi Pulang</strong><small>Selfie + GPS</small></button><div id="btnPulangReason" class="presensi-lock-reason">🔒 Terkunci: menunggu GPS memenuhi syarat.</div>
         </div>
         <div class="notice-info"><div>📷</div><div><strong>Foto otomatis dikompres</strong>Foto selfie diproses dengan kualitas tinggi sekitar <b>200–300 KB</b> sebelum dikirim ke server dan Drive sekolah.</div></div>
         <div id="empNotice" class="alert">Kamera dapat digunakan di mana pun. GPS dicatat untuk membedakan lokasi dekat dan jauh.</div>
@@ -291,7 +291,7 @@ function isInsideAttendanceArea_(lat, lng) {
           <span id="gpsRadiusValue">—</span>
         </div>
 
-        <button id="gpsReadyAction" class="gps-ready-action" disabled onclick="openCameraForAttendance()">📍 Menunggu GPS</button>
+        <button id="gpsReadyAction" class="gps-ready-action" onclick="getGPS()">📍 Perbarui Lokasi GPS</button>
 
         <div class="gps-map-link">
           <span>📍</span>
@@ -621,7 +621,7 @@ function showLocationPermissionPrompt_(){
 function closeLocationPermission(){
   const modal=$('locationPermissionModal');
   if(modal)modal.classList.add('hidden');
-  updateAttendanceButtons_(false);
+  updateAttendanceButtons_(true);
   setGPSVisual_(
     'permission',
     'Izin lokasi diperlukan',
@@ -751,27 +751,28 @@ function showGPSDiagnostic_(code,message){
 function resumeGPSAfterReturn_(){
   if(!state.user || state.user.role!=='siswa')return;
   if(document.visibilityState!=='visible')return;
-  if(state.gps)return;
 
-  // Hanya mengecek status izin. Tidak memulai request GPS secara otomatis
-  // agar Android tetap menganggap pembacaan berasal dari tindakan pengguna.
+  // Saat kembali dari aplikasi Maps, langsung minta pembacaan GPS lagi.
+  // Tidak perlu menunggu user menekan tombol dan tidak mengunci kamera.
   try{
-    if(navigator.permissions && navigator.permissions.query){
-      navigator.permissions.query({name:'geolocation'}).then(p=>{
-        if(p.state==='granted'){
-          showGPSDiagnostic_(
-            'READY',
-            'Izin lokasi sudah aktif. Tekan tombol Coba GPS Lagi untuk membaca posisi perangkat.'
-          );
-        }
-      }).catch(()=>{});
+    if(navigator.geolocation){
+      if(navigator.permissions && navigator.permissions.query){
+        navigator.permissions.query({name:'geolocation'}).then(p=>{
+          if(p.state==='granted'){
+            beginGPSAcquisition_();
+            // Pertahankan tombol presensi tetap aktif selama GPS diperbarui.
+            updateAttendanceButtons_(!!state.gps);
+          }
+        }).catch(()=>{ if(state.gps) updateGPSUI_(state.gps); });
+      }else{
+        beginGPSAcquisition_();
+      }
     }
-  }catch(e){}
+  }catch(e){ console.warn('resume GPS:',e); }
 }
 
 document.addEventListener('visibilitychange',resumeGPSAfterReturn_);
 window.addEventListener('focus',resumeGPSAfterReturn_);
-
 
 function showLogin(t,bad=false){$('loginMsg').textContent=t;$('loginMsg').className='alert '+(bad?'bad':'ok')}
 function resumeGPSAfterReturn_(){
@@ -816,22 +817,29 @@ let gpsWatchId=null;
 let gpsCountdownTimer=null;
 let gpsCountdownEndsAt=0;
 function openCurrentLocationMap() {
-  // Selalu izinkan membuka Maps eksternal, meskipun GPS belum terbaca.
-  // Jika koordinat tersedia, buka titik tersebut; jika belum, buka Maps biasa.
+  // Tidak ada peta di dalam aplikasi. Selalu buka aplikasi Maps eksternal.
+  // Jika GPS sudah tersedia, gunakan koordinat terakhir; jika belum, buka Maps umum.
+  const lat = Number(state?.gps?.latitude);
+  const lng = Number(state?.gps?.longitude);
+  const hasCoord = Number.isFinite(lat) && Number.isFinite(lng);
+  const query = hasCoord ? (lat + ',' + lng) : '';
+
   try {
-    const lat = Number(state?.gps?.latitude);
-    const lng = Number(state?.gps?.longitude);
-    if (Number.isFinite(lat) && Number.isFinite(lng)) {
-      window.open(
-        'https://www.google.com/maps/search/?api=1&query=' +
-        encodeURIComponent(lat + ',' + lng),
-        '_blank'
-      );
+    if (hasCoord) {
+      // geo: lebih berpeluang diteruskan Android ke aplikasi Maps yang terpasang.
+      window.location.href = 'geo:' + lat + ',' + lng + '?q=' + encodeURIComponent(query);
+      // Cadangan jika geo: tidak ditangani browser.
+      setTimeout(() => {
+        window.open('https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(query), '_blank');
+      }, 900);
     } else {
-      window.open('https://www.google.com/maps', '_blank');
+      window.location.href = 'geo:0,0?q=Google%20Maps';
+      setTimeout(() => window.open('https://www.google.com/maps', '_blank'), 900);
     }
   } catch (e) {
-    window.open('https://www.google.com/maps', '_blank');
+    window.open(hasCoord ?
+      'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(query) :
+      'https://www.google.com/maps', '_blank');
   }
 }
 
@@ -854,6 +862,7 @@ function openCameraForAttendance(){
 }
 
 function updateAttendanceButtons_(gpsReady){
+  // gpsReady sengaja diabaikan: GPS bukan syarat presensi.
   const today=state.today||{};
   const masukDone=!!today.masuk;
   const pulangDone=!!today.pulang;
@@ -1359,7 +1368,7 @@ async function openAttendance(type){
       <video id="cam" autoplay playsinline muted style="width:100%;max-height:60vh;object-fit:cover;border-radius:16px;background:#111"></video>
     </div>
     <div id="attInfo" class="alert" style="margin-top:12px">
-      Menyiapkan kamera dan mengambil lokasi perangkat…
+      Menyiapkan kamera. GPS hanya data pelengkap dan tidak mengunci presensi…
     </div>
     <div class="actions" style="margin-top:12px">
       <button class="btn" onclick="closeModal()">Batal</button>
@@ -1533,17 +1542,31 @@ async function compressCanvasMax300KB(canvas){
 async function captureAttendance(type){
  const video=$('cam');if(!video.videoWidth)return toast('Kamera belum siap.');
 
- // Ambil lokasi TERBARU. Radius tidak pernah menolak presensi.
- let gps;
- try{
-   gps=await getFreshGPS_();
- }catch(e){
-   return toast(e.message||'Lokasi GPS belum tersedia. Aktifkan Lokasi/GPS lalu coba lagi.');
+ // GPS adalah pelengkap. Jangan pernah mengunci pengambilan foto/presensi.
+ // Gunakan koordinat yang sudah ada. Jika belum ada, kirim nilai kosong/null.
+ let gps = state.gps ? {
+   latitude:Number(state.gps.latitude),
+   longitude:Number(state.gps.longitude),
+   accuracy:Number(state.gps.accuracy)
+ } : null;
+ let gpsCheck = {distance:Infinity, nearestPoint:'', lat:null, lng:null};
+ let nearSchool = false;
+ let locationClass = 'LOKASI_BELUM_TERBACA';
+
+ // Coba ambil posisi terbaru secara paralel, tetapi jangan menunggu hasilnya.
+ if(navigator.geolocation){
+   getCurrentPositionBestEffort_(pos=>{
+     if(pos && pos.coords) updateGPSUI_(pos.coords);
+   }, ()=>{});
  }
 
- const gpsCheck=validateGPS_(gps);
- const nearSchool=Number.isFinite(Number(gpsCheck.distance)) && Number(gpsCheck.distance)<=GPS_RADIUS_METERS;
- const locationClass=nearSchool?'DEKAT_SEKOLAH':'JAUH_DARI_SEKOLAH';
+ if(gps && Number.isFinite(gps.latitude) && Number.isFinite(gps.longitude)){
+   const nearest=getNearestAttendanceLocation_(gps.latitude,gps.longitude);
+   const distance=nearest ? Number(nearest.distance) : Infinity;
+   gpsCheck={distance,nearestPoint:nearest?.name||'',lat:gps.latitude,lng:gps.longitude};
+   nearSchool=Number.isFinite(distance) && distance<=GPS_RADIUS_METERS;
+   locationClass=nearSchool?'DEKAT_SEKOLAH':'JAUH_DARI_SEKOLAH';
+ }
 
  const c=document.createElement('canvas');c.width=video.videoWidth;c.height=video.videoHeight;
  c.getContext('2d').drawImage(video,0,0,c.width,c.height);
@@ -1558,14 +1581,14 @@ async function captureAttendance(type){
   const record={
     userId:state.user.id,
     type,
-    lat:gps.latitude,
-    lng:gps.longitude,
-    accuracy:gps.accuracy,
+    lat:gpsCheck.lat,
+    lng:gpsCheck.lng,
+    accuracy:(gps && Number.isFinite(gps.accuracy))?gps.accuracy:null,
     distance:gpsCheck.distance,
     jarak:gpsCheck.distance,
     nearestPoint:gpsCheck.nearestPoint,
     locationClass,
-    locationStatus:nearSchool?'DEKAT SEKOLAH':'JAUH DARI SEKOLAH',
+    locationStatus:locationClass==='LOKASI_BELUM_TERBACA'?'LOKASI BELUM TERBACA':(nearSchool?'DEKAT SEKOLAH':'JAUH DARI SEKOLAH'),
     withinRadius:nearSchool,
     radius:GPS_RADIUS_METERS,
     photo,
@@ -1611,6 +1634,7 @@ async function loadData(){
   }else{
    state.data.users=INITIAL_STUDENTS;
    state.data.attendance=JSON.parse(localStorage.getItem('sidet_att')||'[]');
+   if(state.user?.role==='siswa') updateAttendanceButtons_(!!state.gps);
   }
  }catch(e){toast(e.message)}
  if(state.user?.role==='siswa')renderEmpHistory();else renderAdminDashboard()
