@@ -115,6 +115,17 @@ table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:10px 8px;
 .presensi-lock-reason.bad{background:#fff0f0;border-color:#f0cccc;color:#a33a3a}
 .presensi-lock-reason.hidden{display:none}
 
+/* Admin controls */
+.admin-toolbar{display:grid;grid-template-columns:1.2fr repeat(3,minmax(140px,.55fr)) auto;gap:10px;align-items:end;margin:14px 0}
+.admin-toolbar .field{margin:0}.admin-toolbar label{font-size:11px;color:var(--muted)}
+.admin-summary{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}.admin-summary .badge{font-size:12px;padding:7px 10px}
+.table-actions{display:flex;gap:6px;flex-wrap:wrap}.table-actions .btn{padding:7px 10px;font-size:11px}
+.photo-btn{display:inline-flex;align-items:center;gap:5px;text-decoration:none;padding:7px 10px;border-radius:999px;background:#eaf2ff;color:#1758a8;font-weight:800;white-space:nowrap}
+.sync-state{display:inline-flex;align-items:center;gap:7px;font-size:12px;color:var(--muted)}.sync-state:before{content:"";width:8px;height:8px;border-radius:50%;background:#35a76f}
+.empty-cell{text-align:center!important;padding:28px!important;color:var(--muted)}
+@media(max-width:900px){.admin-toolbar{grid-template-columns:1fr 1fr}.admin-toolbar .search-field{grid-column:1/-1}}
+@media(max-width:560px){.admin-toolbar{grid-template-columns:1fr}.admin-toolbar .search-field{grid-column:auto}.admin-toolbar .btn{width:100%}}
+
 
 .gps-countdown{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:9px;padding:8px 10px;border-radius:9px;background:#fff;border:1px solid #dbe7f0;font-size:12px}
 .gps-countdown-label{color:#66788a}
@@ -297,6 +308,7 @@ function isInsideAttendanceArea_(lat, lng) {
 <button id="gpsReadyAction" class="gps-ready-action" onclick="openCameraForAttendance()">📍 Perbarui Lokasi GPS</button><div class="gps-live-note">Kamera/presensi dapat digunakan di mana pun. GPS dan jarak ke sekolah tetap dicatat untuk laporan.</div>
         <div class="mapbox" style="margin-top:14px"><iframe id="googleMapFrame" title="Lokasi GPS saat ini" style="position:absolute;inset:0;width:100%;height:100%;border:0" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe><div class="circle" style="pointer-events:none"></div><div class="pin" style="pointer-events:none">📍</div><div id="gpsDot" class="dot" style="left:50%;top:50%;pointer-events:none"></div></div>
         <div class="map-caption"><span id="distanceText">Belum ada lokasi.</span><span>Radius 100 m dari salah satu titik</span></div>
+        <button class="btn" style="width:100%;margin-top:10px" type="button" onclick="openCurrentLocationInMaps_()">🗺️ Buka Lokasi di Google Maps</button>
         <div class="progress"><i id="radiusProgress"></i></div>
       </div>
 
@@ -680,31 +692,6 @@ function showGPSDiagnostic_(code,message){
     reason.textContent='🔒 '+message;
   }
 }
-
-function resumeGPSAfterReturn_(){
-  if(!state.user || state.user.role!=='siswa')return;
-  if(document.visibilityState!=='visible')return;
-  if(state.gps)return;
-
-  // Hanya mengecek status izin. Tidak memulai request GPS secara otomatis
-  // agar Android tetap menganggap pembacaan berasal dari tindakan pengguna.
-  try{
-    if(navigator.permissions && navigator.permissions.query){
-      navigator.permissions.query({name:'geolocation'}).then(p=>{
-        if(p.state==='granted'){
-          showGPSDiagnostic_(
-            'READY',
-            'Izin lokasi sudah aktif. Tekan tombol Coba GPS Lagi untuk membaca posisi perangkat.'
-          );
-        }
-      }).catch(()=>{});
-    }
-  }catch(e){}
-}
-
-document.addEventListener('visibilitychange',resumeGPSAfterReturn_);
-window.addEventListener('focus',resumeGPSAfterReturn_);
-
 
 function showLogin(t,bad=false){$('loginMsg').textContent=t;$('loginMsg').className='alert '+(bad?'bad':'ok')}
 function resumeGPSAfterReturn_(){
@@ -1234,6 +1221,16 @@ function retryGPS(){
   );
 }
 
+function openCurrentLocationInMaps_(){
+ const g=state.gps;
+ if(!g||!Number.isFinite(Number(g.latitude))||!Number.isFinite(Number(g.longitude))){
+   toast('Lokasi belum terbaca. Tekan Perbarui Lokasi GPS terlebih dahulu.');
+   return;
+ }
+ const url='https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(Number(g.latitude)+','+Number(g.longitude));
+ window.open(url,'_blank','noopener,noreferrer');
+}
+
 
 function validateGPS_(coords){
  if(!coords||!Number.isFinite(Number(coords.latitude))||!Number.isFinite(Number(coords.longitude)))throw Error('Koordinat GPS tidak valid.');
@@ -1638,22 +1635,59 @@ function renderEmpHistory(){
 function toggleHistoryAll(){historyState.showAll=!historyState.showAll;renderEmpHistory();}
 document.addEventListener('change',e=>{if(e.target&&e.target.id==='historyMonth'&&e.target.value){historyState.month=e.target.value;historyState.showAll=false;renderEmpHistory();}});
 
+const adminView={tab:'',query:'',date:'',kelas:'',status:''};
+function esc_(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function rowDate_(x){return historyDateKey_(x)||String(x?.tanggal||'')}
+function photoUrl_(x){return String(x?.photoUrl||x?.fotoUrl||x?.photoDriveUrl||x?.linkFotoDrive||x?.foto||'').trim()}
 function renderAdminDashboard(){
- const a=state.data.attendance||[],today=new Date().toISOString().slice(0,10),td=a.filter(x=>(x.tanggal||String(x.timestamp||'').slice(0,10))===today);
- const hadir=td.filter(x=>(x.type||x.jenis)==='MASUK').length, pulang=td.filter(x=>(x.type||x.jenis)==='PULANG').length;
- $('adminDashboard').innerHTML=`<div class="hero"><div><h2>Dashboard Admin</h2><div class="muted">${new Date().toLocaleDateString('id-ID',{dateStyle:'full'})}</div></div></div><div class="grid cards" style="margin-top:16px"><div class="card stat"><div class="muted">Siswa</div><b>${(state.data.users||[]).length}</b></div><div class="card stat"><div class="muted">Masuk Hari Ini</div><b>${hadir}</b></div><div class="card stat"><div class="muted">Pulang Hari Ini</div><b>${pulang}</b></div><div class="card stat"><div class="muted">Izin Menunggu</div><b>${(state.data.leave||[]).filter(x=>x.status==='MENUNGGU').length}</b></div></div>`
+ const a=Array.isArray(state.data.attendance)?state.data.attendance:[],today=localDateKey_(),td=a.filter(x=>rowDate_(x)===today);
+ const masuk=new Set(td.filter(x=>(x.type||x.jenis)==='MASUK').map(x=>String(x.nisn||x.userId||x.name))).size;
+ const pulang=new Set(td.filter(x=>(x.type||x.jenis)==='PULANG').map(x=>String(x.nisn||x.userId||x.name))).size;
+ const jauh=td.filter(x=>String(x.locationClass||x.locationStatus||'').toUpperCase().includes('JAUH')).length;
+ $('adminDashboard').innerHTML=`<div class="hero"><div><h2>Dashboard Admin</h2><div class="muted">${new Date().toLocaleDateString('id-ID',{dateStyle:'full'})}</div></div><div class="sync-state">Data tersinkron dengan server</div></div><div class="grid cards" style="margin-top:16px"><div class="card stat"><div class="muted">Total Siswa</div><b>${(state.data.users||[]).length}</b></div><div class="card stat"><div class="muted">Masuk Hari Ini</div><b>${masuk}</b></div><div class="card stat"><div class="muted">Pulang Hari Ini</div><b>${pulang}</b></div><div class="card stat"><div class="muted">Lokasi Jauh Hari Ini</div><b>${jauh}</b></div></div>`
 }
 function adminTab(tab){
- const c=$('adminContent');
- if(tab==='users') c.innerHTML=`<div class="card"><div class="hero"><h3>Kelola Siswa</h3><button class="btn primary" onclick="userForm()">+ Tambah</button></div><div class="tablewrap"><table><thead><tr><th>NISN</th><th>Nama</th><th>Sekolah</th><th>Kelas</th><th>Status</th></tr></thead><tbody>${(state.data.users||[]).map(u=>`<tr><td>${u.nisn||u.id}</td><td>${u.name}</td><td>${u.sekolah||'-'}</td><td>${u.kelas||'-'}</td><td>${u.active===false?'Nonaktif':'Aktif'}</td></tr>`).join('')||'<tr><td colspan="5">Belum ada data.</td></tr>'}</tbody></table></div></div>`;
- if(tab==='attendance') c.innerHTML=`<div class="card"><div class="hero"><h3>Data Presensi</h3><button class="btn ok" onclick="exportExcel()">Ekspor</button></div><div class="tablewrap"><table><thead><tr><th>Tanggal</th><th>NISN</th><th>Nama</th><th>Jenis</th><th>Jam</th><th>Status</th><th>Jarak</th></tr></thead><tbody>${(state.data.attendance||[]).slice().reverse().map(x=>`<tr><td>${x.tanggal||'-'}</td><td>${x.nip||'-'}</td><td>${x.name||'-'}</td><td>${x.type||x.jenis||'-'}</td><td>${x.jam||'-'}</td><td><span class="badge ok">${x.status||'VALID'}</span></td><td>${x.jarak?Math.round(x.jarak)+' m':'-'}</td></tr>`).join('')||'<tr><td colspan="7">Belum ada data.</td></tr>'}</tbody></table></div></div>`;
+ adminView.tab=tab; const c=$('adminContent');
+ if(tab==='users'){
+   const classes=[...new Set((state.data.users||[]).map(u=>u.kelas).filter(Boolean))].sort();
+   c.innerHTML=`<div class="card"><div class="hero"><div><h3 style="margin:0">Kelola Siswa</h3><div class="muted">${(state.data.users||[]).length} akun siswa</div></div><button class="btn primary" onclick="userForm()">+ Tambah Siswa</button></div><div class="admin-toolbar"><div class="field search-field"><label>Cari nama atau NISN</label><input id="userSearch" placeholder="Ketik nama / NISN" oninput="renderUsersTable_()"></div><div class="field"><label>Kelas</label><select id="userClass" onchange="renderUsersTable_()"><option value="">Semua kelas</option>${classes.map(k=>`<option>${esc_(k)}</option>`).join('')}</select></div><button class="btn" onclick="loadData().then(()=>adminTab('users'))">🔄 Muat Ulang</button></div><div id="usersResult"></div></div>`;
+   renderUsersTable_();
+ }
+ if(tab==='attendance'){
+   const classes=[...new Set((state.data.attendance||[]).map(x=>x.kelas).filter(Boolean))].sort();
+   c.innerHTML=`<div class="card"><div class="hero"><div><h3 style="margin:0">Data Presensi</h3><div class="muted">Filter laporan berdasarkan tanggal, kelas, status, nama, atau NISN.</div></div><div class="actions"><button class="btn" onclick="loadData().then(()=>adminTab('attendance'))">🔄 Muat Ulang</button><button class="btn ok" onclick="exportFilteredAttendance_()">📊 Ekspor Hasil Filter</button></div></div><div class="admin-toolbar"><div class="field search-field"><label>Cari nama / NISN</label><input id="attSearch" placeholder="Nama atau NISN" oninput="renderAttendanceTable_()"></div><div class="field"><label>Tanggal</label><input id="attDate" type="date" onchange="renderAttendanceTable_()"></div><div class="field"><label>Kelas</label><select id="attClass" onchange="renderAttendanceTable_()"><option value="">Semua kelas</option>${classes.map(k=>`<option>${esc_(k)}</option>`).join('')}</select></div><div class="field"><label>Status / Jenis</label><select id="attStatus" onchange="renderAttendanceTable_()"><option value="">Semua status</option><option value="MASUK">Masuk</option><option value="PULANG">Pulang</option><option value="DEKAT">Dekat sekolah</option><option value="JAUH">Jauh dari sekolah</option><option value="VALID">Valid</option></select></div><button class="btn" onclick="resetAttendanceFilters_()">Reset</button></div><div id="attendanceResult"></div></div>`;
+   renderAttendanceTable_();
+ }
  if(tab==='leave') c.innerHTML=`<div class="card"><h3>Persetujuan Izin</h3><div class="tablewrap"><table><thead><tr><th>Nama</th><th>Jenis</th><th>Tanggal</th><th>Alasan</th><th>Status</th><th>Aksi</th></tr></thead><tbody>${(state.data.leave||[]).map(x=>`<tr><td>${x.name||x.nip}</td><td>${x.type}</td><td>${x.tanggalMulai||''} s/d ${x.tanggalSelesai||''}</td><td>${x.alasan||'-'}</td><td>${x.status}</td><td>${x.status==='MENUNGGU'?`<button class="btn ok" onclick="approveLeave('${x.id}','DISETUJUI')">Setujui</button> <button class="btn danger" onclick="approveLeave('${x.id}','DITOLAK')">Tolak</button>`:'-'}</td></tr>`).join('')||'<tr><td colspan="6">Belum ada pengajuan.</td></tr>'}</tbody></table></div></div>`;
  if(tab==='settings') c.innerHTML=`<div class="card"><h3>Pengaturan Sistem</h3><div class="field"><label>URL Google Apps Script Web App</label><input id="apiInput" value="${state.api||DEFAULT_API_URL}" placeholder="https://script.google.com/macros/s/.../exec" autocomplete="off"></div><div class="grid two"><div class="field"><label>Radius Geofence (meter)</label><input id="radius" type="number" min="10" value="${state.data.settings?.radius||100}"></div><div class="field"><label>Jam Masuk</label><input id="jamMasuk" type="time" value="${state.data.settings?.jamMasuk||'07:30'}"></div></div><div class="actions"><button class="btn primary" onclick="saveSettings()">Simpan Pengaturan</button><button class="btn" onclick="testApi()">Tes Koneksi</button><button class="btn warn" onclick="setCenter()">Ambil Titik Geofence dari GPS</button></div><div id="setMsg" class="alert">Masukkan URL Web App /exec yang ingin digunakan, lalu tekan <b>Simpan Pengaturan</b>. URL tersimpan di perangkat ini.</div></div>`;
+}
+
+function renderUsersTable_(){
+ const q=String($('userSearch')?.value||'').trim().toLowerCase(),kelas=$('userClass')?.value||'';
+ const rows=(state.data.users||[]).filter(u=>(!kelas||u.kelas===kelas)&&(!q||`${u.name||''} ${u.nisn||u.id||u.nip||''}`.toLowerCase().includes(q)));
+ $('usersResult').innerHTML=`<div class="admin-summary"><span class="badge info">Ditampilkan: ${rows.length}</span></div><div class="tablewrap"><table><thead><tr><th>No.</th><th>NISN</th><th>Nama</th><th>Kelas</th><th>Jenis Kelamin</th><th>Status</th></tr></thead><tbody>${rows.map((u,i)=>`<tr><td>${i+1}</td><td>${esc_(u.nisn||u.id||u.nip||'-')}</td><td><b>${esc_(u.name||'-')}</b></td><td>${esc_(u.kelas||'-')}</td><td>${esc_(u.gender||u.jenisKelamin||'-')}</td><td><span class="badge ${u.active===false?'bad':'ok'}">${u.active===false?'Nonaktif':'Aktif'}</span></td></tr>`).join('')||'<tr><td colspan="6" class="empty-cell">Data siswa tidak ditemukan.</td></tr>'}</tbody></table></div>`;
+}
+function filteredAttendance_(){
+ const q=String($('attSearch')?.value||'').trim().toLowerCase(),date=$('attDate')?.value||'',kelas=$('attClass')?.value||'',status=($('attStatus')?.value||'').toUpperCase();
+ return (state.data.attendance||[]).filter(x=>{
+   const hay=`${x.name||''} ${x.nisn||x.nip||x.userId||''}`.toLowerCase();
+   const combined=`${x.type||x.jenis||''} ${x.status||''} ${x.locationClass||''} ${x.locationStatus||''}`.toUpperCase();
+   return (!q||hay.includes(q))&&(!date||rowDate_(x)===date)&&(!kelas||x.kelas===kelas)&&(!status||combined.includes(status));
+ }).sort((a,b)=>`${rowDate_(b)} ${historyTime_(b)}`.localeCompare(`${rowDate_(a)} ${historyTime_(a)}`));
+}
+function renderAttendanceTable_(){
+ const rows=filteredAttendance_(),near=rows.filter(x=>String(x.locationClass||x.locationStatus||'').toUpperCase().includes('DEKAT')).length,far=rows.filter(x=>String(x.locationClass||x.locationStatus||'').toUpperCase().includes('JAUH')).length;
+ $('attendanceResult').innerHTML=`<div class="admin-summary"><span class="badge info">${rows.length} catatan</span><span class="badge ok">Dekat: ${near}</span><span class="badge warn">Jauh: ${far}</span></div><div class="tablewrap"><table><thead><tr><th>Tanggal</th><th>NISN</th><th>Nama / Kelas</th><th>Jenis</th><th>Jam</th><th>Status</th><th>Lokasi</th><th>Foto Drive</th></tr></thead><tbody>${rows.map(x=>{const url=photoUrl_(x),distance=Number(x.jarak??x.distance);return `<tr><td>${esc_(rowDate_(x)||'-')}</td><td>${esc_(x.nisn||x.nip||x.userId||'-')}</td><td><b>${esc_(x.name||'-')}</b><br><span class="muted">${esc_(x.kelas||'-')}</span></td><td>${esc_(x.type||x.jenis||'-')}</td><td>${esc_(historyTime_(x))}</td><td><span class="badge ok">${esc_(x.status||'VALID')}</span></td><td>${Number.isFinite(distance)?Math.round(distance)+' m':'-'}<br><span class="muted">${esc_(x.locationStatus||x.nearestPoint||'')}</span></td><td>${url?`<a class="photo-btn" href="${esc_(url)}" target="_blank" rel="noopener noreferrer">📷 Buka Foto</a>`:'<span class="muted">Belum tersedia</span>'}</td></tr>`}).join('')||'<tr><td colspan="8" class="empty-cell">Data presensi tidak ditemukan.</td></tr>'}</tbody></table></div>`;
+}
+function resetAttendanceFilters_(){['attSearch','attDate','attClass','attStatus'].forEach(id=>{if($(id))$(id).value=''});renderAttendanceTable_()}
+function exportFilteredAttendance_(){
+ const rows=filteredAttendance_();if(!rows.length)return toast('Tidak ada data pada hasil filter.');
+ const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(rows.map((x,i)=>({No:i+1,Tanggal:rowDate_(x),Jam:historyTime_(x),NISN:x.nisn||x.nip||'',Nama:x.name||'',Kelas:x.kelas||'',Jenis:x.type||x.jenis||'',Status:x.status||'VALID',Lokasi:x.locationStatus||'',JarakMeter:x.jarak??x.distance??'',AkurasiGPS:x.accuracy??'',LinkFotoDrive:photoUrl_(x)}))),'PRESENSI');XLSX.writeFile(wb,'SiDEt_Hasil_Filter_'+localDateKey_()+'.xlsx');
 }
 function userForm(){
  $('modal').classList.remove('hidden');$('modalBox').innerHTML=`<h3>Tambah Siswa</h3><div class="field"><label>NISN / Username</label><input id="uNisn"></div><div class="field"><label>Nama Lengkap</label><input id="uName"></div><div class="grid two"><div class="field"><label>Sekolah</label><input id="uSekolah" value="Sekolah"></div><div class="field"><label>Kelas</label><input id="uKelas" value="Siswa"></div></div><div class="field"><label>Password</label><input id="uPass" value="123456"></div><div class="actions"><button class="btn" onclick="closeModal()">Batal</button><button class="btn primary" onclick="addUser()">Simpan</button></div>`
 }
-async function addUser(){const u={nip:$('uNisn').value.trim(),name:$('uName').value.trim(),sekolah:$('uSekolah').value,kelas:$('uKelas').value,password:$('uPass').value};if(!u.nisn||!u.name)return toast('NISN dan nama wajib diisi');try{if(apiReady())await api('userSave',u);else{state.data.users.push({...u,id:u.nisn});}closeModal();toast('Siswa disimpan',true);loadData()}catch(e){toast(e.message)}}
+async function addUser(){const nisn=$('uNisn').value.trim(),u={nisn,nip:nisn,id:nisn,name:$('uName').value.trim(),sekolah:$('uSekolah').value.trim(),kelas:$('uKelas').value.trim(),password:$('uPass').value,active:true};if(!u.nisn||!u.name)return toast('NISN dan nama wajib diisi');try{if(apiReady())await api('userSave',u);else state.data.users.push(u);closeModal();toast('Siswa berhasil disimpan',true);await loadData();adminTab('users')}catch(e){toast(e.message||'Gagal menyimpan siswa')}}
 async function approveLeave(id,status){try{await api('leaveApprove',{id,status,adminId:state.user.id});toast('Status izin diperbarui',true);loadData();adminTab('leave')}catch(e){toast(e.message)}}
 function saveSettings(){saveApi($('apiInput').value);state.data.settings.radius=Number($('radius').value||100);state.data.settings.jamMasuk=$('jamMasuk').value||'07:30';localStorage.setItem('sidet_settings',JSON.stringify(state.data.settings));toast('Pengaturan tersimpan',true)}
 async function testApi(){try{const j=await api('ping');$('setMsg').textContent='Koneksi berhasil: '+(j.message||'OK');$('setMsg').className='alert ok'}catch(e){$('setMsg').textContent=e.message;$('setMsg').className='alert bad'}}
@@ -1661,17 +1695,12 @@ function setCenter(){if(!navigator.geolocation)return toast('GPS tidak tersedia'
 
 function exportExcel(){
  const wb=XLSX.utils.book_new(),a=state.data.attendance||[],u=state.data.users||[],l=state.data.leave||[];
- XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(a.map((x,i)=>({No:i+1,Tanggal:x.tanggal||'',Jam:x.jam||'',NISN:x.nisn||x.nip||'',Nama:x.name||'',Jenis:x.type||x.jenis||'',Status:x.status||'',TerlambatMenit:x.terlambatMenit||0,Latitude:x.lat||'',Longitude:x.lng||'',AkurasiGPS:x.accuracy||'',JarakMeter:x.jarak||'',Foto:x.photoUrl||x.photo||''}))),"PRESENSI");
- XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(u.map((x,i)=>({No:i+1,NISN:x.nip||x.id,Nama:x.name,Sekolah:x.sekolah||'',Kelas:x.kelas||'',Aktif:x.active!==false}))),"PEGAWAI");
+ XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(a.map((x,i)=>({No:i+1,Tanggal:rowDate_(x),Jam:historyTime_(x),NISN:x.nisn||x.nip||'',Nama:x.name||'',Kelas:x.kelas||'',Jenis:x.type||x.jenis||'',Status:x.status||'',Lokasi:x.locationStatus||'',TerlambatMenit:x.terlambatMenit||0,Latitude:x.lat??'',Longitude:x.lng??'',AkurasiGPS:x.accuracy??'',JarakMeter:x.jarak??x.distance??'',LinkFotoDrive:photoUrl_(x)}))),"PRESENSI");
+ XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(u.map((x,i)=>({No:i+1,NISN:x.nisn||x.nip||x.id,Nama:x.name,Sekolah:x.sekolah||'',Kelas:x.kelas||'',JenisKelamin:x.gender||x.jenisKelamin||'',Aktif:x.active!==false}))),"SISWA");
  XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(l.map((x,i)=>({No:i+1,NISN:x.nisn||x.nip||'',Nama:x.name||'',Jenis:x.type||'',Mulai:x.tanggalMulai||'',Selesai:x.tanggalSelesai||'',Alasan:x.alasan||'',Status:x.status||''}))),"IZIN");
  XLSX.writeFile(wb,'SiDEt_v2_Laporan_'+new Date().toISOString().slice(0,10)+'.xlsx')
 }
 function exportSummary(){const a=state.data.attendance||[],m={};a.forEach(x=>{const k=x.tanggal||'';m[k]=(m[k]||0)+1});const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(Object.entries(m).map(([Tanggal,Jumlah])=>({Tanggal,Jumlah}))),"RINGKASAN");XLSX.writeFile(wb,'SiDEt_v2_Ringkasan.xlsx')}
 </script>
 
-<script>
-</script>
 </body></html>
-<script>
-/* GPS permission is requested from an explicit user action to allow the browser/device permission prompt. */
-</script>
