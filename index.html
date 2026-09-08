@@ -197,6 +197,44 @@ html[data-theme="dark"] .badge.bad{background:#3b1e23;color:#ff9696}
 html[data-theme="dark"] .presensi-lock-reason{background:#352816!important;border-color:#5b4320!important;color:#e9c77b!important}
 
 </style>
+<style id="sidet-simple-theme">
+/* SiDEt — tampilan sederhana, warna netral dengan aksen hijau tua. */
+html body{--bg:#f5f6f5;--card:#fff;--ink:#23332f;--muted:#60706a;--primary:#285a4c;--line:#dde4e0;--soft:#f0f4f2;--accent-soft:#e8f0ec;--ok:#276047;--bad:#983d3d;--warn:#825d27;--shadow:0 2px 8px #243a2e05;--text:var(--ink);--border:var(--line);font-family:'Segoe UI',system-ui,sans-serif;line-height:1.55}
+html[data-theme="dark"] body{--bg:#151c19;--card:#1c2521;--ink:#e5ece7;--muted:#a4b3a9;--primary:#a2c9b5;--line:#344139;--soft:#242f28;--accent-soft:#2e4036;--ok:#aed4bb;--bad:#efb0a9;--warn:#e2c391;--shadow:none}
+html .login{background:var(--bg)!important}.loginbox{padding:36px;width:min(420px,100%)}
+html .loginbox,html .card,html .modalbox,html .permission-box{background:var(--card)!important;color:var(--ink);border:1px solid var(--line)!important;border-radius:14px;box-shadow:var(--shadow)!important}
+html .loginbox{box-shadow:0 12px 40px #172d2010!important}.loginbox h1{font-size:26px;font-weight:650;letter-spacing:-.7px;margin:18px 0 3px}.loginbox p{line-height:1.7}
+html .logo{background:var(--primary);color:var(--card);border-radius:10px;font-weight:650;width:36px;height:36px}
+html .top{height:auto;min-height:68px;background:var(--card)!important;border-color:var(--line);padding:12px 28px;gap:16px}.top .actions{align-items:center}.brand{font-weight:650;letter-spacing:-.4px}.brand .muted{display:none}
+.container{max-width:1200px;padding:28px 24px}.card{padding:22px}.card-title{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:18px}h2,h3{font-weight:650;letter-spacing:-.4px}h2{font-size:24px}h3{font-size:18px}
+html .btn,html .nav button{border:1px solid var(--line)!important;background:var(--card)!important;color:var(--ink)!important;border-radius:9px;padding:10px 14px;font-size:13px;font-weight:600;box-shadow:none!important;transition:background .15s,border-color .15s}
+html .btn:hover:not(:disabled),html .nav button:hover{background:var(--soft)!important;border-color:var(--muted)!important;transform:none}
+html .btn.primary,html .role .active,html .gps-ready-action{background:var(--primary)!important;color:var(--card)!important;border:1px solid var(--primary)!important}
+html .btn.primary:hover:not(:disabled){background:var(--primary)!important;filter:brightness(.94)}
+html .btn.ok,html .nav button.active{background:var(--accent-soft)!important;color:var(--ink)!important;border-color:var(--line)!important}
+html .btn.danger{color:var(--bad)!important}html .btn.warn{color:var(--warn)!important}.btn:disabled{opacity:.5}
+.role{background:var(--soft);padding:4px;gap:4px;border-radius:11px;margin:24px 0}.role .btn{border:0!important}
+html input,html select,html textarea{background:var(--card)!important;color:var(--ink)!important;border:1px solid var(--line)!important;border-radius:9px;font-size:14px;min-height:42px;padding:10px 12px}textarea{resize:vertical;min-height:90px}label{font-size:12px;font-weight:600;color:var(--muted)}
+html :is(input,select,textarea):focus{border-color:var(--primary)!important;box-shadow:0 0 0 3px var(--accent-soft)!important}button:focus-visible,a:focus-visible{outline:2px solid var(--primary);outline-offset:3px}
+html .student-hero{background:var(--card)!important;color:var(--ink);border-left:3px solid var(--primary)!important;padding:24px}.student-hero:after{display:none}.student-hero .muted{color:var(--muted)!important}.student-name{font-size:26px;font-weight:650;letter-spacing:-.6px}.student-meta{gap:6px 16px}.student-meta span{border:0;background:none;padding:0;color:var(--muted)}
+.livebox .time{font-size:24px;font-weight:600;font-variant-numeric:tabular-nums}.livebox .date{color:var(--muted)}.section-label{font-size:10px;font-weight:600;letter-spacing:1px;margin-bottom:5px;color:var(--muted)}
+html .today-item,html .gps-card,html .gps-metric{background:var(--soft)!important;border:1px solid var(--line)!important;border-radius:10px}.today-item>b{display:block;margin:12px 0 5px;font-size:24px;font-weight:600;font-variant-numeric:tabular-nums}.today-item small{font-size:12px}
+.attendance-actions{display:grid;grid-template-columns:1fr 1fr;gap:12px}.presensi-action-wrap{min-width:0}.bigbtn{min-height:98px;align-items:center;gap:4px;font-size:15px!important}.bigbtn>span{display:none}.bigbtn strong{font-weight:600}.bigbtn small{font-size:11px;opacity:.8;font-weight:400}
+html .presensi-lock-reason,html .presensi-lock-reason.ok,html .presensi-lock-reason.bad{background:transparent!important;border:0!important;color:var(--muted)!important;font-size:11px;padding:3px 0;text-align:left}
+html .badge{border-radius:6px;padding:4px 8px;font-weight:600;font-size:11px}html .badge.info{background:var(--accent-soft)!important;color:var(--ink)!important}html .badge.ok{background:var(--accent-soft)!important;color:var(--ok)!important}html .badge.warn{background:var(--soft)!important;color:var(--warn)!important}html .badge.bad{background:var(--soft)!important;color:var(--bad)!important}
+html .alert,html .notice-info,html .permission-note{border-radius:9px;border:1px solid var(--line);background:var(--soft)!important;color:var(--muted)!important;line-height:1.65}html .alert.bad{color:var(--bad)!important}html .alert.ok{color:var(--ok)!important}.notice-info>div:first-child{display:none}
+html .history-day{background:var(--card)!important;color:var(--ink);box-shadow:none;border:1px solid var(--line);border-radius:9px;min-height:76px;padding:12px 16px;grid-template-columns:minmax(0,1fr) 100px 100px}.history-date{font-size:14px;font-weight:500}.history-time{border-color:var(--line);padding-left:16px}.history-time span{font-size:11px;color:var(--muted)}.history-time b{font-size:19px;font-weight:600;color:var(--ink);font-variant-numeric:tabular-nums}.history-title-row{flex-wrap:wrap}.history-title-row h3{font-size:18px}.history-all-btn{color:var(--primary);font-size:12px;font-weight:600}.history-empty{font-size:13px}
+.gps-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.gps-card{padding:12px}.gps-icon{display:none}.gps-metric b{font-size:13px}.gps-metric b.ok{color:var(--ok)}.gps-metric b.warn{color:var(--warn)}.gps-metric b.bad{color:var(--bad)}html .gps-ready-action{border-radius:9px;font-size:13px;font-weight:600;padding:11px}.gps-live-note{color:var(--muted)}
+html .gps-visual,html .gps-countdown,html .permission-steps{background:var(--soft)!important;border:1px solid var(--line)!important;border-radius:9px;color:var(--muted)}html .gps-visual-head{color:var(--ink)!important;font-weight:600}html .gps-visual-text{color:var(--muted)!important}.gps-progress,.progress{background:var(--line)!important;height:4px}.gps-progress-bar,.progress>i{background:var(--primary)!important}.gps-countdown-time{color:var(--primary)}
+.mapbox{height:210px;border-radius:10px;border:1px solid var(--line);background:var(--soft)!important}.mapbox>.circle,.mapbox>.pin,.mapbox>.dot{display:none}.map-caption{font-size:11px;flex-wrap:wrap}.profile-avatar{background:var(--accent-soft)!important;color:var(--primary);border-radius:10px;width:44px;height:44px;font-size:16px}
+html th{background:var(--soft)!important;color:var(--muted)!important;font-size:11px;text-transform:uppercase;letter-spacing:.4px;font-weight:600;top:0}td{font-size:13px;padding:13px 10px}td b{font-weight:600}tbody tr:hover{background:var(--soft)}.tablewrap{border:1px solid var(--line);border-radius:10px}th,td{border-color:var(--line)!important}.stat b{font-size:30px;font-weight:600;display:block;margin-top:8px}.stat .muted{font-size:12px}
+html .photo-btn{background:var(--accent-soft);color:var(--ink);border:1px solid var(--line);border-radius:7px;font-size:12px;font-weight:600}.admin-summary .badge{font-size:11px}.admin-toolbar{gap:12px;margin:20px 0}.sync-state{font-size:11px}.sync-state:before{background:var(--primary)}
+.theme-toggle{min-width:0!important}.theme-toggle .theme-icon{font-size:13px}.theme-toggle .theme-text{font-size:11px}html .toast{border-radius:10px;background:var(--ink)!important;color:var(--bg)!important;font-size:13px;line-height:1.6}.modalbox .hero{gap:8px}.permission-icon{background:var(--soft);width:42px;height:42px;font-size:22px;border-radius:10px}.permission-box h2{font-size:20px}.permission-steps b{color:var(--ink)}
+@media(max-width:900px){.side-stack{grid-template-columns:1fr}.student-hero{flex-direction:row;flex-wrap:wrap}.livebox{text-align:left}.admin-toolbar{grid-template-columns:1fr 1fr}}
+@media(max-width:560px){html .top{padding:10px 14px;gap:10px;flex-wrap:wrap}.top .actions{gap:6px;flex:1;justify-content:flex-end}#who{max-width:135px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px}.container{padding:16px 12px}.card{padding:16px}.loginbox{padding:26px}.student-name{font-size:22px}.student-hero{padding:20px!important}.student-meta span{font-size:11px}.today-grid{grid-template-columns:1fr 1fr;gap:8px}.today-item{padding:11px}.today-item .row{flex-wrap:wrap}.today-item small{font-size:11px}.history-day{grid-template-columns:minmax(0,1fr) 75px 75px;padding:10px;gap:0}.history-date{font-size:12px}.history-time{padding-left:8px}.history-time b{font-size:15px}.gps-metrics{grid-template-columns:1fr 1fr}.admin-toolbar{grid-template-columns:1fr}.cards{gap:10px}.stat b{font-size:25px}.card-title{gap:8px}.toast{left:12px;right:12px;max-width:none}.modalbox{padding:16px}.top .btn{padding:8px 10px}.theme-toggle{width:34px!important}}
+@media(prefers-reduced-motion:reduce){*,*:before,*:after{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
+
+</style>
 </head>
 
 <script>
@@ -272,9 +310,9 @@ function isInsideAttendanceArea_(lat, lng) {
 
       <div class="card">
         <div class="card-title"><div><div class="section-label">Aksi utama</div><h3 style="margin:0">Lakukan Presensi</h3></div></div>
-        <div class="grid two">
-          <button id="btnMasuk" class="btn primary bigbtn" onclick="openAttendance('MASUK')"><span>📸</span><strong>Presensi Masuk</strong><small>Selfie + GPS</small></button><div id="btnMasukReason" class="presensi-lock-reason">🔒 Terkunci: menunggu GPS memenuhi syarat.</div>
-          <button id="btnPulang" class="btn bigbtn" onclick="openAttendance('PULANG')"><span>🏁</span><strong>Presensi Pulang</strong><small>Selfie + GPS</small></button><div id="btnPulangReason" class="presensi-lock-reason">🔒 Terkunci: menunggu GPS memenuhi syarat.</div>
+        <div class="attendance-actions">
+          <div class="presensi-action-wrap"><button id="btnMasuk" class="btn primary bigbtn" onclick="openAttendance('MASUK')"><span>📸</span><strong>Presensi Masuk</strong><small>Selfie + GPS</small></button><div id="btnMasukReason" class="presensi-lock-reason">Lokasi dicatat saat pengiriman.</div></div>
+          <div class="presensi-action-wrap"><button id="btnPulang" class="btn bigbtn" onclick="openAttendance('PULANG')"><span>🏁</span><strong>Presensi Pulang</strong><small>Selfie + GPS</small></button><div id="btnPulangReason" class="presensi-lock-reason">Lokasi dicatat saat pengiriman.</div></div>
         </div>
         <div class="notice-info"><div>📷</div><div><strong>Foto otomatis dikompres</strong>Foto selfie diproses maksimal <b>100 KB</b> sebelum dikirim ke server dan Drive sekolah.</div></div>
         <div id="empNotice" class="alert">Kamera dapat digunakan di mana pun. GPS dicatat untuk membedakan lokasi dekat dan jauh.</div>
@@ -1417,27 +1455,16 @@ async function captureAttendance(type){
    if(!job.id){info('1/3 — Menyimpan presensi…');const r=await api('attendanceQuick',job.record);if(!r.record?.id)throw Error('ID presensi tidak diterima.');job.id=r.record.id;}
    if(!job.photoDone){info('2/3 — Mengunggah foto ke Drive…');const r=await api('uploadPhoto',{...job.record,attendanceId:job.id,photo:job.photo});if(!r.photoUrl)throw Error('Tautan foto belum diterima. Pastikan Apps Script V5 sudah diterapkan.');job.photoDone=true;}
    info('3/3 — Mengirim Google Form…');await api('submitGoogleForm',{...job.record,attendanceId:job.id});
-   state.pendingAttendance=null;state.sending=false;closeModal();autoLogoutAfterAttendance_();
+   state.pendingAttendance=null;state.sending=false;closeModal();await returnToStudentAfterAttendance_();
  }catch(e){info('Presensi '+(state.pendingAttendance?.id?'sudah tercatat. ':'belum terkonfirmasi. ')+(e.message||'Proses gagal.')+' Sesi tetap terbuka; coba lagi untuk melanjutkan.');if($('attInfo'))$('attInfo').className='alert bad';}
  finally{state.sending=false;buttons.forEach(b=>b.disabled=false);}
 }
-function autoLogoutAfterAttendance_(){
- try{
-   if(state.stream)state.stream.getTracks().forEach(x=>x.stop());
-   state.stream=null;clearGPSWatch_();stopGPSCountdown_();state.gps=null;localStorage.removeItem('sidet_user');
-   state.user=null;
-   state.today={masuk:null,pulang:null};
-   state.data={attendance:[],users:INITIAL_STUDENTS,leave:[],settings:{}};
-   if($('app'))$('app').classList.add('hidden');
-   if($('loginView'))$('loginView').classList.remove('hidden');
-   if($('loginUser'))$('loginUser').value='';
-   if($('loginPass'))$('loginPass').value='';
-   if($('loginMsg')){
-     $('loginMsg').textContent='Presensi berhasil dikirim. Anda telah keluar otomatis.';
-     $('loginMsg').className='alert ok';
-   }
-   window.scrollTo({top:0,behavior:'smooth'});
- }catch(e){ location.reload(); }
+async function returnToStudentAfterAttendance_(){
+ state.stream=null;
+ showPage('siswaPage');
+ window.scrollTo({top:0,behavior:'smooth'});
+ toast('Presensi, foto, dan Google Form berhasil dikirim.',true);
+ await loadData();
 }
 function closeModal(){if(state.sending)return;if(state.stream)state.stream.getTracks().forEach(x=>x.stop());$('modal').classList.add('hidden')}
 
