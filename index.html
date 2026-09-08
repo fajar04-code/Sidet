@@ -288,7 +288,7 @@ function isInsideAttendanceArea_(lat, lng) {
           </div>
         </div>
         <div class="history-filter-row">
-          <select id="historyMonth" aria-label="Pilih bulan riwayat" onchange="renderEmpHistory()"></select>
+          <select id="historyMonth" aria-label="Pilih bulan riwayat" onchange="historyState.month=this.value;historyState.showAll=false;renderEmpHistory()"></select>
           <div class="history-counts"><span>Hadir <b id="historyHadir">0</b></span><span>Lengkap <b id="historyLengkap">0</b></span></div>
         </div>
         <div id="empHistory" class="history-list"></div>
@@ -375,18 +375,18 @@ function apiReady(){return /^https:\/\//i.test(state.api)}
 function apiViaIframe_(action,payload={}){
   return new Promise((resolve,reject)=>{
     const requestId='sidet_api_'+Date.now()+'_'+Math.random().toString(36).slice(2);
-    let frame=document.getElementById('sidetApiFrame');
+    let frame=null;
     if(!frame){
       frame=document.createElement('iframe');
-      frame.id='sidetApiFrame';
-      frame.name='sidetApiFrame';
+      frame.id=requestId;
+      frame.name=requestId;
       frame.style.display='none';
       frame.setAttribute('aria-hidden','true');
       document.body.appendChild(frame);
     }
     let form=null;
     const timeout=setTimeout(()=>{cleanup();reject(Error('Server tidak mengirim respons dalam 45 detik. Silakan coba lagi.'));},45000);
-    function cleanup(){clearTimeout(timeout);window.removeEventListener('message',onMessage);if(form&&form.parentNode)form.parentNode.removeChild(form);}
+    function cleanup(){clearTimeout(timeout);if(frame)frame.remove();window.removeEventListener('message',onMessage);if(form&&form.parentNode)form.parentNode.removeChild(form);}
     function onMessage(ev){
       const d=ev.data;
       if(!d||d.type!=='SIDET_API_RESULT'||d.requestId!==requestId)return;
@@ -397,7 +397,7 @@ function apiViaIframe_(action,payload={}){
     form=document.createElement('form');
     form.method='POST';
     form.action=state.api;
-    form.target='sidetApiFrame';
+    form.target=requestId;
     form.style.display='none';
     const data={...payload,action,transport:'iframe_api',requestId};
     Object.entries(data).forEach(([name,value])=>{
@@ -413,7 +413,7 @@ function apiViaIframe_(action,payload={}){
 
 async function api(action,payload={}){
   if(!apiReady()) throw Error('URL Google Apps Script belum dikonfigurasi.');
-  return apiViaIframe_(action,payload);
+  return apiViaIframe_(action,{...payload,sessionToken:state.user?.sessionToken||''});
 }
 function loginViaForm_(username,password){
   return new Promise((resolve,reject)=>{
@@ -498,8 +498,8 @@ async function login(){
       String(x.id)===String(j.user.id)
     )||{};
 
-    state.user={...j.user,link:local.link||''};
-    localStorage.setItem('sidet_user',JSON.stringify(state.user));
+    state.user={...j.user,link:j.user.link||local.link||''};
+    localStorage.removeItem('sidet_user');
     startApp();
   }catch(e){
     showLogin(e.message||'Login gagal.',true);
@@ -738,7 +738,7 @@ function startApp(){
  else{showPage('adminPage');renderAdminDashboard();loadData()}
 }
 function showPage(id){['siswaPage','adminPage'].forEach(x=>$(x).classList.toggle('hidden',x!==id))}
-function logout(){location.reload()}
+function logout(){if(state.sending)return toast('Tunggu pengiriman selesai.');location.reload()}
 function updateStudentClock(){const d=new Date();if($('clockTime'))$('clockTime').textContent=d.toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit',second:'2-digit'});if($('clockDate'))$('clockDate').textContent=d.toLocaleDateString('id-ID',{weekday:'long',day:'2-digit',month:'long',year:'numeric'})} setInterval(updateStudentClock,1000);updateStudentClock();
 
 function renderStudentProfile(){
@@ -1249,6 +1249,7 @@ function getFreshGPS_(){return new Promise((resolve,reject)=>{if(!gpsBrowserRead
 
 async function openAttendance(type){
   const doneKey=type==='MASUK'?'masuk':'pulang';
+  if(state.pendingAttendance&&state.pendingAttendance.record.type!==type)return toast('Selesaikan presensi '+state.pendingAttendance.record.type+' yang tertunda terlebih dahulu.');
   if(state.today && state.today[doneKey]){
     return toast('Presensi '+type+' hari ini sudah tercatat.');
   }
@@ -1396,110 +1397,34 @@ async function uploadPhotoBackground_(record,photo){
 }
 
 async function captureAttendance(type){
- const video=$('cam');if(!video.videoWidth)return toast('Kamera belum siap.');
-
- // GPS bersifat OPSIONAL. Presensi tetap dapat dikirim bila GPS belum tersedia.
- let gps={latitude:'',longitude:'',accuracy:''};
+ if(state.sending)return;
+ const video=$('cam');if(!video?.videoWidth&&!state.pendingAttendance)return toast('Kamera belum siap.');
+ state.sending=true;
+ const buttons=[...document.querySelectorAll('#modalBox button')];buttons.forEach(b=>b.disabled=true);
+ const info=t=>{if($('attInfo'))$('attInfo').textContent=t;};
  try{
-   const g=await getFreshGPS_();
-   if(g) gps={latitude:Number(g.latitude),longitude:Number(g.longitude),accuracy:Number(g.accuracy)};
- }catch(e){
-   if(state.gps && Number.isFinite(Number(state.gps.latitude)) && Number.isFinite(Number(state.gps.longitude))){
-     gps={latitude:Number(state.gps.latitude),longitude:Number(state.gps.longitude),accuracy:Number(state.gps.accuracy)};
+   let job=state.pendingAttendance;
+   if(!job){
+     info('Menyiapkan foto dan lokasi…');
+     const canvas=document.createElement('canvas');canvas.width=video.videoWidth;canvas.height=video.videoHeight;canvas.getContext('2d').drawImage(video,0,0);
+     const photo=(await compressCanvasMax100KB(canvas)).dataUrl;
+     let gps=state.gps;
+     try{gps=await Promise.race([getFreshGPS_(),new Promise((_,reject)=>setTimeout(()=>reject(Error('GPS belum tersedia')),8000))]);}catch(e){}
+     const valid=gps&&gps.latitude!==''&&gps.longitude!==''&&Number.isFinite(Number(gps.latitude))&&Number.isFinite(Number(gps.longitude));
+     const record={userId:state.user.id,nisn:state.user.nisn,name:state.user.name,kelas:state.user.kelas,type,link:state.user.link||'',lat:valid?Number(gps.latitude):'',lng:valid?Number(gps.longitude):'',accuracy:valid?gps.accuracy:'',timestamp:new Date().toISOString()};
+     job={record,photo};state.pendingAttendance=job;
    }
- }
-
- let locationClass='LOKASI_BELUM_TERBACA', locationStatus='LOKASI BELUM TERBACA', nearSchool=false;
- let distance='', nearestPoint='';
- if(Number.isFinite(Number(gps.latitude)) && Number.isFinite(Number(gps.longitude))){
-   try{
-     const gpsCheck=validateGPS_(gps);
-     distance=gpsCheck.distance;
-     nearestPoint=gpsCheck.nearestPoint||'';
-     nearSchool=Number.isFinite(Number(distance)) && Number(distance)<=GPS_RADIUS_METERS;
-     locationClass=nearSchool?'DEKAT_SEKOLAH':'JAUH_DARI_SEKOLAH';
-     locationStatus=nearSchool?'DEKAT SEKOLAH':'JAUH DARI SEKOLAH';
-   }catch(e){}
- }
-
- const c=document.createElement('canvas');
- c.width=video.videoWidth; c.height=video.videoHeight;
- c.getContext('2d').drawImage(video,0,0,c.width,c.height);
- const button=document.querySelector('#modalBox .btn.primary');
- if(button){button.disabled=true;button.textContent='Menyiapkan presensi…';}
-
- try{
-  $('attInfo').textContent='Mengoptimalkan foto untuk pengiriman cepat…';
-  $('attInfo').className='alert ok';
-  const compressed=await compressCanvasMax100KB(c);
-  const photo=compressed.dataUrl;
-
-  const record={
-    userId:state.user.id,
-    type,
-    lat:Number.isFinite(Number(gps.latitude))?Number(gps.latitude):'',
-    lng:Number.isFinite(Number(gps.longitude))?Number(gps.longitude):'',
-    accuracy:Number.isFinite(Number(gps.accuracy))?Number(gps.accuracy):'',
-    distance:distance===''?'':distance,
-    jarak:distance===''?'':distance,
-    nearestPoint,
-    locationClass,
-    locationStatus,
-    withinRadius:nearSchool,
-    radius:GPS_RADIUS_METERS,
-    link:state.user.link||'',
-    name:state.user.name,
-    nisn:state.user.nisn,
-    kelas:state.user.kelas,
-    timestamp:new Date().toISOString()
-  };
-
-  if(apiReady()){
-    $('attInfo').textContent='Menyimpan presensi…';
-    // CEPAT: kirim metadata presensi TANPA foto. Respons server kembali lebih dulu.
-    const result=await api('attendanceQuick',record);
-    const attendanceId=result?.record?.id;
-    if(!attendanceId) throw Error('Server tidak mengembalikan ID presensi.');
-
-    const immediateRecord={...record,id:attendanceId,attendanceId,tanggal:result?.record?.date||'',jam:result?.record?.time||'',type:result?.record?.type||type,jenis:result?.record?.type||type,status:result?.record?.status||'VALID'};
-    state.data.attendance=Array.isArray(state.data.attendance)?state.data.attendance:[];
-    state.data.attendance=state.data.attendance.filter(x=>String(x.id||x.attendanceId||'')!==String(attendanceId));
-    state.data.attendance.push(immediateRecord);
-    state.today={masuk:type==='MASUK'?immediateRecord:(state.today?.masuk||null),pulang:type==='PULANG'?immediateRecord:(state.today?.pulang||null)};
-
-    // Tutup kamera dan beri hasil ke siswa SEGERA setelah presensi tersimpan.
-    if(state.stream)state.stream.getTracks().forEach(x=>x.stop());
-    closeModal();
-
-    // Jalankan proses latar belakang terlebih dahulu agar tidak terputus saat sesi ditutup.
-    setTimeout(()=>uploadPhotoBackground_({...record,attendanceId},photo),50);
-    setTimeout(()=>sendGoogleFormAsync_(record.link),100);
-
-    toast('Presensi '+type+' berhasil tersimpan.',true);
-    loadData();
-
-    // Setelah presensi berhasil dicatat, siswa otomatis keluar.
-    setTimeout(()=>autoLogoutAfterAttendance_(),1200);
-  }else{
-    // Fallback lokal.
-    const localRecord={...record,photo,timestamp:new Date().toISOString(),status:'VALID'};
-    let a=JSON.parse(localStorage.getItem('sidet_att')||'[]');
-    a.push(localRecord);localStorage.setItem('sidet_att',JSON.stringify(a));
-    if(state.stream)state.stream.getTracks().forEach(x=>x.stop());
-    closeModal();
-    toast('Presensi tersimpan di perangkat.',true);
-  }
- }catch(e){
-  if(state.stream)state.stream.getTracks().forEach(x=>x.stop());
-  if(button){button.disabled=false;button.textContent='Ambil Selfie & Simpan';}
-  $('attInfo').textContent=e.message||'Gagal menyimpan presensi.';$('attInfo').className='alert bad';
-  toast(e.message||'Gagal menyimpan presensi.');
- }
+   if(!job.id){info('1/3 — Menyimpan presensi…');const r=await api('attendanceQuick',job.record);if(!r.record?.id)throw Error('ID presensi tidak diterima.');job.id=r.record.id;}
+   if(!job.photoDone){info('2/3 — Mengunggah foto ke Drive…');const r=await api('uploadPhoto',{...job.record,attendanceId:job.id,photo:job.photo});if(!r.photoUrl)throw Error('Tautan foto belum diterima. Pastikan Apps Script V5 sudah diterapkan.');job.photoDone=true;}
+   info('3/3 — Mengirim Google Form…');await api('submitGoogleForm',{...job.record,attendanceId:job.id});
+   state.pendingAttendance=null;state.sending=false;closeModal();autoLogoutAfterAttendance_();
+ }catch(e){info('Presensi '+(state.pendingAttendance?.id?'sudah tercatat. ':'belum terkonfirmasi. ')+(e.message||'Proses gagal.')+' Sesi tetap terbuka; coba lagi untuk melanjutkan.');if($('attInfo'))$('attInfo').className='alert bad';}
+ finally{state.sending=false;buttons.forEach(b=>b.disabled=false);}
 }
 function autoLogoutAfterAttendance_(){
  try{
    if(state.stream)state.stream.getTracks().forEach(x=>x.stop());
-   state.stream=null;
+   state.stream=null;clearGPSWatch_();stopGPSCountdown_();state.gps=null;localStorage.removeItem('sidet_user');
    state.user=null;
    state.today={masuk:null,pulang:null};
    state.data={attendance:[],users:INITIAL_STUDENTS,leave:[],settings:{}};
@@ -1514,7 +1439,7 @@ function autoLogoutAfterAttendance_(){
    window.scrollTo({top:0,behavior:'smooth'});
  }catch(e){ location.reload(); }
 }
-function closeModal(){if(state.stream)state.stream.getTracks().forEach(x=>x.stop());$('modal').classList.add('hidden')}
+function closeModal(){if(state.sending)return;if(state.stream)state.stream.getTracks().forEach(x=>x.stop());$('modal').classList.add('hidden')}
 
 function sameStudent_(x){
  const idA=String(x?.userId??x?.UserID??'').trim();
@@ -1526,11 +1451,13 @@ function sameStudent_(x){
  return !!nA && !!nB && nA===nB;
 }
 async function loadData(){
+ const currentUser=state.user;if(!currentUser)return;
  try{
   if(apiReady()){
     if(state.user?.role==='siswa'){
       // Riwayat siswa mengambil sumber khusus server agar tidak tersaring oleh dashboard.
       const h=await api('attendanceHistory',{userId:state.user?.id,nisn:state.user?.nisn});
+      if(state.user!==currentUser)return;
       const ha=h?.data?.attendance ?? h?.attendance;
       if(Array.isArray(ha)){
         const immediate=Array.isArray(state.data.attendance)?state.data.attendance:[];
@@ -1544,13 +1471,15 @@ async function loadData(){
     }else{
       // Admin harus melihat seluruh presensi.
       const j=await api('dashboard',{});
-      state.data=j?.data||state.data;
+      if(state.user!==currentUser)return;state.data=j?.data||state.data;
     }
   }else{
     state.data.users=INITIAL_STUDENTS;
     state.data.attendance=JSON.parse(localStorage.getItem('sidet_att')||'[]');
   }
+ state.syncMessage='Sinkronisasi terakhir: '+new Date().toLocaleTimeString('id-ID');
  }catch(e){
+   state.syncMessage='Gagal sinkronisasi: '+e.message;toast(state.syncMessage);
    console.warn('Sinkronisasi data:',e);
  }
  if(state.user?.role==='siswa')renderEmpHistory();else renderAdminDashboard()
@@ -1559,13 +1488,13 @@ async function loadData(){
 const historyState={showAll:false,month:'',initialized:false};
 function localDateKey_(){
  const d=new Date();
- return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+ return d.toLocaleDateString('sv-SE',{timeZone:'Asia/Makassar'});
 }
 function historyDateKey_(x){
- const raw=x?.tanggal||'';
+ const raw=x?.tanggal||x?.date||'';
  if(/^\d{4}-\d{2}-\d{2}$/.test(String(raw))) return String(raw);
  const ts=x?.timestamp?new Date(x.timestamp):null;
- if(ts&&!isNaN(ts))return ts.toISOString().slice(0,10);
+ if(ts&&!isNaN(ts))return ts.toLocaleDateString('sv-SE',{timeZone:'Asia/Makassar'});
  const s=String(raw).trim();
  const m=s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
  return m?`${m[3]}-${String(m[2]).padStart(2,'0')}-${String(m[1]).padStart(2,'0')}`:s;
@@ -1638,13 +1567,13 @@ document.addEventListener('change',e=>{if(e.target&&e.target.id==='historyMonth'
 const adminView={tab:'',query:'',date:'',kelas:'',status:''};
 function esc_(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 function rowDate_(x){return historyDateKey_(x)||String(x?.tanggal||'')}
-function photoUrl_(x){return String(x?.photoUrl||x?.fotoUrl||x?.photoDriveUrl||x?.linkFotoDrive||x?.foto||'').trim()}
+function photoUrl_(x){const u=String(x?.photoUrl||x?.FotoURL||x?.fotoUrl||x?.photoDriveUrl||x?.linkFotoDrive||'').trim();return /^https:\/\/drive\.google\.com\//i.test(u)?u:'';}
 function renderAdminDashboard(){
  const a=Array.isArray(state.data.attendance)?state.data.attendance:[],today=localDateKey_(),td=a.filter(x=>rowDate_(x)===today);
  const masuk=new Set(td.filter(x=>(x.type||x.jenis)==='MASUK').map(x=>String(x.nisn||x.userId||x.name))).size;
  const pulang=new Set(td.filter(x=>(x.type||x.jenis)==='PULANG').map(x=>String(x.nisn||x.userId||x.name))).size;
  const jauh=td.filter(x=>String(x.locationClass||x.locationStatus||'').toUpperCase().includes('JAUH')).length;
- $('adminDashboard').innerHTML=`<div class="hero"><div><h2>Dashboard Admin</h2><div class="muted">${new Date().toLocaleDateString('id-ID',{dateStyle:'full'})}</div></div><div class="sync-state">Data tersinkron dengan server</div></div><div class="grid cards" style="margin-top:16px"><div class="card stat"><div class="muted">Total Siswa</div><b>${(state.data.users||[]).length}</b></div><div class="card stat"><div class="muted">Masuk Hari Ini</div><b>${masuk}</b></div><div class="card stat"><div class="muted">Pulang Hari Ini</div><b>${pulang}</b></div><div class="card stat"><div class="muted">Lokasi Jauh Hari Ini</div><b>${jauh}</b></div></div>`
+ $('adminDashboard').innerHTML=`<div class="hero"><div><h2>Dashboard Admin</h2><div class="muted">${new Date().toLocaleDateString('id-ID',{dateStyle:'full'})}</div></div><div class="sync-state">${esc_(state.syncMessage||'Menunggu sinkronisasi server')}</div></div><div class="grid cards" style="margin-top:16px"><div class="card stat"><div class="muted">Total Siswa</div><b>${(state.data.users||[]).length}</b></div><div class="card stat"><div class="muted">Masuk Hari Ini</div><b>${masuk}</b></div><div class="card stat"><div class="muted">Pulang Hari Ini</div><b>${pulang}</b></div><div class="card stat"><div class="muted">Lokasi Jauh Hari Ini</div><b>${jauh}</b></div></div>`
 }
 function adminTab(tab){
  adminView.tab=tab; const c=$('adminContent');
@@ -1677,7 +1606,7 @@ function filteredAttendance_(){
 }
 function renderAttendanceTable_(){
  const rows=filteredAttendance_(),near=rows.filter(x=>String(x.locationClass||x.locationStatus||'').toUpperCase().includes('DEKAT')).length,far=rows.filter(x=>String(x.locationClass||x.locationStatus||'').toUpperCase().includes('JAUH')).length;
- $('attendanceResult').innerHTML=`<div class="admin-summary"><span class="badge info">${rows.length} catatan</span><span class="badge ok">Dekat: ${near}</span><span class="badge warn">Jauh: ${far}</span></div><div class="tablewrap"><table><thead><tr><th>Tanggal</th><th>NISN</th><th>Nama / Kelas</th><th>Jenis</th><th>Jam</th><th>Status</th><th>Lokasi</th><th>Foto Drive</th></tr></thead><tbody>${rows.map(x=>{const url=photoUrl_(x),distance=Number(x.jarak??x.distance);return `<tr><td>${esc_(rowDate_(x)||'-')}</td><td>${esc_(x.nisn||x.nip||x.userId||'-')}</td><td><b>${esc_(x.name||'-')}</b><br><span class="muted">${esc_(x.kelas||'-')}</span></td><td>${esc_(x.type||x.jenis||'-')}</td><td>${esc_(historyTime_(x))}</td><td><span class="badge ok">${esc_(x.status||'VALID')}</span></td><td>${Number.isFinite(distance)?Math.round(distance)+' m':'-'}<br><span class="muted">${esc_(x.locationStatus||x.nearestPoint||'')}</span></td><td>${url?`<a class="photo-btn" href="${esc_(url)}" target="_blank" rel="noopener noreferrer">📷 Buka Foto</a>`:'<span class="muted">Belum tersedia</span>'}</td></tr>`}).join('')||'<tr><td colspan="8" class="empty-cell">Data presensi tidak ditemukan.</td></tr>'}</tbody></table></div>`;
+ $('attendanceResult').innerHTML=`<div class="admin-summary"><span class="badge info">${rows.length} catatan</span><span class="badge ok">Dekat: ${near}</span><span class="badge warn">Jauh: ${far}</span></div><div class="tablewrap"><table><thead><tr><th>Tanggal</th><th>NISN</th><th>Nama / Kelas</th><th>Jenis</th><th>Jam</th><th>Status</th><th>Lokasi</th><th>Foto Drive</th></tr></thead><tbody>${rows.map(x=>{const url=photoUrl_(x),rawDistance=x.jarak??x.distance,distance=rawDistance===''||rawDistance==null?NaN:Number(rawDistance);return `<tr><td>${esc_(rowDate_(x)||'-')}</td><td>${esc_(x.nisn||x.nip||x.userId||'-')}</td><td><b>${esc_(x.name||'-')}</b><br><span class="muted">${esc_(x.kelas||'-')}</span></td><td>${esc_(x.type||x.jenis||'-')}</td><td>${esc_(historyTime_(x))}</td><td><span class="badge ok">${esc_(x.status||'VALID')}</span></td><td>${Number.isFinite(distance)?Math.round(distance)+' m':'-'}<br><span class="muted">${esc_(x.locationStatus||x.nearestPoint||'')}</span></td><td>${url?`<a class="photo-btn" href="${esc_(url)}" target="_blank" rel="noopener noreferrer">📷 Buka Foto</a>`:'<span class="muted">Belum tersedia</span>'}</td></tr>`}).join('')||'<tr><td colspan="8" class="empty-cell">Data presensi tidak ditemukan.</td></tr>'}</tbody></table></div>`;
 }
 function resetAttendanceFilters_(){['attSearch','attDate','attClass','attStatus'].forEach(id=>{if($(id))$(id).value=''});renderAttendanceTable_()}
 function exportFilteredAttendance_(){
@@ -1685,7 +1614,7 @@ function exportFilteredAttendance_(){
  const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(rows.map((x,i)=>({No:i+1,Tanggal:rowDate_(x),Jam:historyTime_(x),NISN:x.nisn||x.nip||'',Nama:x.name||'',Kelas:x.kelas||'',Jenis:x.type||x.jenis||'',Status:x.status||'VALID',Lokasi:x.locationStatus||'',JarakMeter:x.jarak??x.distance??'',AkurasiGPS:x.accuracy??'',LinkFotoDrive:photoUrl_(x)}))),'PRESENSI');XLSX.writeFile(wb,'SiDEt_Hasil_Filter_'+localDateKey_()+'.xlsx');
 }
 function userForm(){
- $('modal').classList.remove('hidden');$('modalBox').innerHTML=`<h3>Tambah Siswa</h3><div class="field"><label>NISN / Username</label><input id="uNisn"></div><div class="field"><label>Nama Lengkap</label><input id="uName"></div><div class="grid two"><div class="field"><label>Sekolah</label><input id="uSekolah" value="Sekolah"></div><div class="field"><label>Kelas</label><input id="uKelas" value="Siswa"></div></div><div class="field"><label>Password</label><input id="uPass" value="123456"></div><div class="actions"><button class="btn" onclick="closeModal()">Batal</button><button class="btn primary" onclick="addUser()">Simpan</button></div>`
+ $('modal').classList.remove('hidden');$('modalBox').innerHTML=`<h3>Tambah Siswa</h3><div class="field"><label>NISN / Username</label><input id="uNisn"></div><div class="field"><label>Nama Lengkap</label><input id="uName"></div><div class="grid two"><div class="field"><label>Sekolah</label><input id="uSekolah" value="Sekolah"></div><div class="field"><label>Kelas</label><input id="uKelas" value="Siswa"></div></div><div class="field"><label>Password</label><input id="uPass" value="0123SMAN2Nusa"></div><div class="actions"><button class="btn" onclick="closeModal()">Batal</button><button class="btn primary" onclick="addUser()">Simpan</button></div>`
 }
 async function addUser(){const nisn=$('uNisn').value.trim(),u={nisn,nip:nisn,id:nisn,name:$('uName').value.trim(),sekolah:$('uSekolah').value.trim(),kelas:$('uKelas').value.trim(),password:$('uPass').value,active:true};if(!u.nisn||!u.name)return toast('NISN dan nama wajib diisi');try{if(apiReady())await api('userSave',u);else state.data.users.push(u);closeModal();toast('Siswa berhasil disimpan',true);await loadData();adminTab('users')}catch(e){toast(e.message||'Gagal menyimpan siswa')}}
 async function approveLeave(id,status){try{await api('leaveApprove',{id,status,adminId:state.user.id});toast('Status izin diperbarui',true);loadData();adminTab('leave')}catch(e){toast(e.message)}}
