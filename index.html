@@ -17,6 +17,8 @@ const ATTENDANCE_LOCATIONS = [
 const GPS_RADIUS_METERS = 100;
 </script>
 <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.4/jspdf.plugin.autotable.min.js"></script>
 <style>
 :root{--bg:#f4f7fb;--card:#fff;--ink:#182230;--muted:#6b7788;--primary:#1769e0;--primary2:#0d47a1;--ok:#16834b;--bad:#c62828;--warn:#b56a00;--line:#e4e9f0;--shadow:0 10px 30px #1d355715}
 *{box-sizing:border-box}body{margin:0;font-family:Inter,system-ui,-apple-system,Segoe UI,Arial,sans-serif;background:var(--bg);color:var(--ink)}
@@ -196,6 +198,11 @@ html[data-theme="dark"] .badge.warn{background:#3b2b15;color:#efbd66}
 html[data-theme="dark"] .badge.bad{background:#3b1e23;color:#ff9696}
 html[data-theme="dark"] .presensi-lock-reason{background:#352816!important;border-color:#5b4320!important;color:#e9c77b!important}
 
+
+/* Rekap kelas bulanan */
+.classrecap{margin-top:14px}.classrecap-toolbar{display:flex;gap:10px;align-items:end;flex-wrap:wrap;margin:12px 0}.classrecap-toolbar .field{min-width:150px}.classrecap-wrap{overflow:auto;max-width:100%;border:1px solid var(--line);border-radius:16px;background:var(--card);max-height:68vh}.classrecap-table{border-collapse:separate;border-spacing:0;min-width:max-content;font-size:11px}.classrecap-table th,.classrecap-table td{border-right:1px solid var(--line);border-bottom:1px solid var(--line);padding:4px;text-align:center;vertical-align:middle}.classrecap-table thead th{position:sticky;top:0;z-index:4;background:#eef5ff;font-weight:800}.classrecap-table .sticky-no{position:sticky;left:0;z-index:3;min-width:42px;background:var(--card)}.classrecap-table .sticky-name{position:sticky;left:42px;z-index:3;min-width:190px;max-width:190px;text-align:left;background:var(--card);font-weight:750}.classrecap-table thead .sticky-no,.classrecap-table thead .sticky-name{z-index:7;background:#e7f0ff}.classrecap-table .daycell{width:55px;min-width:55px;height:52px;border-radius:8px;font-weight:800}.classrecap-table .daycell small{display:block;font-size:8.5px;line-height:1.25;font-weight:700;white-space:nowrap;margin-top:1px}.cr-h{background:#dff6e8;color:#116b3b}.cr-t{background:#ffe8c7;color:#9a4d00}.cr-b{background:#ead7c4;color:#6b3f1d}.cr-a{background:#ffd9dd;color:#a71929}.cr-i{background:#fff3bd;color:#785d00}.cr-s{background:#dbeafe;color:#174ea6}.cr-off{background:#edf0f4;color:#7a8491}.cr-pending{background:transparent;color:#9aa3ad}.classrecap-table .sum{min-width:64px;font-size:12px;font-weight:900}.classrecap-legend{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0;font-size:11px}.classrecap-legend span{padding:5px 9px;border-radius:999px;font-weight:800}.classrecap-title{display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap}.classrecap-note{font-size:11px}.classrecap-loading{padding:20px;text-align:center;color:var(--muted)}
+@media(max-width:700px){.classrecap-table{font-size:10px}.classrecap-table .sticky-name{min-width:145px;max-width:145px}.classrecap-table .daycell{width:49px;min-width:49px}.classrecap-table .daycell small{font-size:8px}}
+
 </style>
 <style id="sidet-simple-theme">
 /* SiDEt — tampilan sederhana, warna netral dengan aksen hijau tua. */
@@ -287,6 +294,18 @@ html .nav button.active{background:var(--accent-soft)!important;color:var(--prim
 html .gps-progress-bar,html .progress>i{background:linear-gradient(90deg,#1486ff,#1bc58d)!important}.stat:first-child{border-bottom-color:#1680f7!important}.stat:nth-child(2){border-bottom-color:#17bc86!important}.stat:nth-child(3){border-bottom-color:#18a2dc!important}.stat:nth-child(4){border-bottom-color:#19bbae!important}.stat:first-child b,.stat:nth-child(3) b{color:var(--primary)}.stat:nth-child(2) b,.stat:nth-child(4) b{color:var(--ok)}
 html .photo-btn{background:#e2faf0;color:#087247;border-color:#b6ecd5}html[data-theme="dark"] .photo-btn{background:#123e35;color:#7de7bd;border-color:#286653}.mapbox{border-color:var(--line)}
 
+</style>
+<style id="individual-report-styles">
+.individual-report{scroll-margin-top:95px}.report-controls{display:flex;align-items:end;gap:10px;flex-wrap:wrap}.report-controls>div{flex:1;min-width:160px}.report-controls button{white-space:nowrap}.report-summary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin:15px 0}.report-summary>div{background:var(--soft);border:1px solid var(--line);border-radius:10px;padding:10px}.report-summary span{display:block;font-size:10px;color:var(--muted)}.report-summary b{display:block;font-size:23px;color:var(--primary)}.report-table{max-height:540px}.report-table table{min-width:1140px}.report-table th{text-align:center;vertical-align:middle;position:static}.report-table thead{position:sticky;top:0;z-index:2}.report-table td{font-variant-numeric:tabular-nums;font-size:12px}.report-table td:nth-child(n+4):nth-child(-n+11){text-align:center}.report-table .report-weekend{background:var(--soft)}.report-future{color:var(--muted)}.report-nowrap{white-space:nowrap}.report-note{font-size:11px;line-height:1.7}#reportSync,#reportIdentity{overflow-wrap:anywhere}#reportWarning:empty{display:none}@media(max-width:560px){.report-summary{grid-template-columns:repeat(2,minmax(0,1fr))}.report-controls>div{flex-basis:100%}.report-controls button{flex:1}.individual-report{scroll-margin-top:125px}}
+</style>
+<style id="sidet-compact-layout">
+html .container{max-width:1180px;padding:20px 20px 30px}.student-shell,.student-layout,.side-stack{gap:16px}.student-layout>.grid{gap:16px!important}.student-layout>*{min-width:0}.student-layout{grid-template-columns:minmax(0,1.35fr) minmax(290px,.85fr)}html .card{padding:18px;border-radius:14px}.card-title{margin-bottom:14px;align-items:center}.card-title h3{font-size:16px}.section-label{font-size:9px;letter-spacing:1px;margin-bottom:4px}html .student-hero{min-height:128px;padding:22px 24px!important}.student-name{font-size:25px;margin:6px 0 10px}.livebox .time{font-size:24px}.nav{gap:8px!important;margin-bottom:16px!important}
+html .attendance-actions{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:12px!important;align-items:start}.presensi-action-wrap{display:flex;flex-direction:column;min-width:0;gap:6px;overflow-wrap:anywhere}html .attendance-actions .bigbtn{width:100%;height:92px;min-height:92px!important;max-width:100%;margin:0;padding:12px 8px!important;border-radius:12px;font-size:15px!important;line-height:1.35;gap:7px;display:flex;align-items:center;justify-content:center;text-align:center;box-sizing:border-box}.attendance-actions .bigbtn:after{display:none}.attendance-actions .bigbtn strong{display:block;font-size:inherit;font-weight:650;white-space:normal}.attendance-actions .bigbtn small{font-size:10px;letter-spacing:.25px}.attendance-actions .bigbtn>span{display:none}html .presensi-lock-reason{margin:0!important;padding:2px 3px!important;font-size:10px!important;line-height:1.5;text-align:left;min-height:0;word-break:normal;overflow-wrap:anywhere}
+html .notice-info,html .alert{font-size:11px;padding:10px 12px}.today-grid{gap:10px}html .today-item{padding:12px 13px}.today-item>b{font-size:23px;margin:9px 0 5px}.today-item small{font-size:11px}.gps-metrics{gap:8px}.gps-metric{padding:10px}.mapbox{height:180px}.history-head{min-width:0}.history-title-row h3{font-size:17px}.history-filter-row{gap:10px;margin:12px 0}.history-day{min-height:68px!important}.history-time b{font-size:17px}.profile-row{gap:10px}
+.report-launch{display:flex;align-items:center;gap:12px;width:100%;min-width:0;text-align:left;padding:16px 18px;border:1px solid var(--line);border-radius:13px;background:var(--card);color:var(--ink);box-shadow:var(--shadow)}.report-launch:hover{background:var(--soft);border-color:var(--primary)}.report-launch-icon{width:37px;height:37px;display:grid;place-items:center;border-radius:10px;background:var(--accent-soft);color:var(--primary);font-size:23px;flex-shrink:0}.report-launch strong{display:block;font-size:14px;font-weight:650}.report-launch small{display:block;color:var(--muted);font-size:11px;margin-top:3px}.report-launch-arrow{margin-left:auto;font-size:21px;color:var(--primary);flex-shrink:0}.report-page{min-width:0}.report-back-row{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px}.report-page .individual-report{width:100%;min-width:0}.report-page .report-controls{display:grid;grid-template-columns:minmax(180px,300px) auto auto;justify-content:start;align-items:end;gap:10px}.report-controls>div{min-width:0}.report-controls button{height:42px}.report-page .report-summary{max-width:660px;margin:12px 0}.report-summary>div{padding:8px 12px}.report-summary b{font-size:21px}.report-page .report-table{max-width:100%;max-height:65vh;overflow:auto}.report-page .report-table td{padding:10px 9px}.report-page .report-table th{padding:9px 8px}.report-note{max-width:900px;font-size:11px}.report-page #reportSync{margin:10px 0}.report-page .report-table table{min-width:1080px}.report-page .report-table th:last-child{min-width:190px}
+@media(max-width:900px){.student-layout{grid-template-columns:1fr}.side-stack{grid-template-columns:1fr 1fr}.history-day{grid-template-columns:minmax(0,1fr) 100px 100px!important}}
+@media(max-width:600px){html .container{padding:14px 12px 24px}.student-layout,.student-shell,.side-stack{gap:12px}.student-layout>.grid{gap:12px!important}html .card{padding:15px}.side-stack{grid-template-columns:1fr}html .student-hero{padding:18px!important;gap:13px;min-height:0}.student-name{font-size:22px}.student-meta{gap:5px}.student-meta span{font-size:10px}.livebox{padding:8px 10px}.livebox .time{font-size:21px}.card-title{gap:8px;flex-wrap:wrap}html .attendance-actions{gap:10px!important}html .attendance-actions .bigbtn{height:84px;min-height:84px!important;font-size:14px!important;padding:10px 5px!important}.today-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.today-item .row{flex-wrap:wrap}.today-item>b{font-size:21px}.history-day{grid-template-columns:minmax(0,1fr) 70px 70px!important}.history-time b{font-size:15px}.report-launch{padding:14px;gap:10px}.report-launch strong{font-size:13px}.report-page .report-controls{grid-template-columns:1fr 1fr;justify-content:stretch;gap:8px}.report-page .report-controls>div{grid-column:1/-1}.report-page .report-controls .btn{font-size:12px;padding:8px}.report-back-row{align-items:flex-start;flex-direction:column;gap:7px}.report-back-row>.muted{font-size:11px}.report-page .report-summary{grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}.report-page .card-title{align-items:flex-start}.report-page .card-title>div{min-width:0;flex:1}#reportIdentity{font-size:11px}.report-page .report-table{max-height:60vh}}
+@media(max-width:360px){html .attendance-actions .bigbtn{font-size:12px!important}.today-item .row .muted{font-size:9px}.history-day{grid-template-columns:minmax(0,1fr) 64px 64px!important}.report-launch strong{font-size:12px}}
 </style>
 </head>
 
@@ -385,6 +404,10 @@ function isInsideAttendanceArea_(lat, lng) {
         <div class="actions" style="align-items:center;margin-bottom:12px"><button id="historyRefresh" class="btn" type="button" onclick="loadData()">Muat ulang riwayat</button><span id="historySync" class="muted" role="status" aria-live="polite">Menunggu data server.</span></div>
         <div id="empHistory" class="history-list"></div>
       </div>
+      <button class="report-launch" type="button" onclick="openIndividualReport_()"><span class="report-launch-icon" aria-hidden="true">▤</span><span><strong>Laporan Individu Bulanan</strong><small>Lihat rekap dan unduh Excel</small></span><span class="report-launch-arrow" aria-hidden="true">→</span></button>
+      <button class="report-launch" type="button" onclick="toggleStudentClassRecap_()"><span class="report-launch-icon" aria-hidden="true">▦</span><span><strong>Rekap Kelas Bulanan</strong><small>Lihat kehadiran seluruh teman sekelas per tanggal</small></span><span class="report-launch-arrow" aria-hidden="true">→</span></button>
+      <section id="studentClassRecap" class="card classrecap hidden"><div id="studentClassRecapContent"></div></section>
+
     </div>
 
     <div class="side-stack">
@@ -413,6 +436,21 @@ function isInsideAttendanceArea_(lat, lng) {
   </div>
 </section>
 
+<section id="reportPage" class="hidden report-page">
+  <div class="report-back-row"><button class="btn" type="button" onclick="closeIndividualReport_()">← Kembali ke Presensi</button><span class="muted">Laporan pribadi siswa</span></div>
+      <section id="individualReport" class="card individual-report">
+        <div class="card-title"><div><div class="section-label">Laporan saya</div><h3 style="margin:0">Laporan Individu Bulanan</h3><div id="reportIdentity" class="muted" style="margin-top:6px"></div></div><span class="badge info">Pribadi</span></div>
+        <div class="report-controls"><div><label for="reportMonth">Bulan / Periode</label><input id="reportMonth" type="month" min="2000-01" max="2100-12" onchange="renderIndividualReport_()"></div><button id="reportReload" class="btn" onclick="loadData()">Muat ulang</button><button id="reportPrint" class="btn" onclick="printIndividualReport_()" disabled>🖨️ Cetak</button><button id="reportPdf" class="btn primary" onclick="downloadIndividualReportPdf_()" disabled>📄 Unduh PDF</button><button id="reportExcel" class="btn" onclick="exportIndividualReport_()" disabled>📊 Unduh Excel</button></div>
+        <p id="reportSync" class="muted" role="status" aria-live="polite">Menunggu data server.</p>
+        <div id="reportSummary" class="report-summary"></div>
+        <p class="muted">Bulan/Periode: <strong id="reportPeriod"></strong> · WITA</p>
+        <div class="tablewrap report-table" tabindex="0" role="region" aria-label="Laporan individu bulanan, geser untuk semua kolom"><table><thead><tr><th rowspan="2">No.</th><th rowspan="2">Hari</th><th rowspan="2">Tanggal</th><th colspan="2">Jam</th><th rowspan="2">Tidak<br>Absen</th><th rowspan="2">Tepat<br>Waktu</th><th rowspan="2">Tidak Absen<br>Datang</th><th rowspan="2">Tidak Absen<br>Pulang</th><th rowspan="2">Sakit</th><th rowspan="2">Izin</th><th rowspan="2">Keterangan</th></tr><tr><th>Masuk</th><th>Pulang</th></tr></thead><tbody id="reportBody"></tbody></table></div>
+        <p id="reportRules" class="muted report-note"></p>
+        <p id="reportWarning" class="muted"></p>
+        <p class="muted report-note">1 = memenuhi kondisi, 0 = tidak. Tanda — = belum jatuh tempo atau di luar hari sekolah. Tidak Absen berarti belum masuk maupun pulang setelah batas pulang. Tidak Absen Datang/Pulang dihitung setelah batas masing-masing jam. Izin/sakit yang disetujui tidak dihitung sebagai tidak absen. Tekan Muat ulang sebelum mengunduh untuk mengambil data server terbaru.</p>
+      </section>
+</section>
+
 <section id="adminPage" class="hidden">
   <div id="adminDashboard"></div>
   <div class="card" style="margin-top:16px">
@@ -420,7 +458,8 @@ function isInsideAttendanceArea_(lat, lng) {
     <div class="grid three" style="margin-top:12px">
       <button class="btn" onclick="adminTab('users')">👥 Kelola Siswa</button>
       <button class="btn" onclick="adminTab('attendance')">📋 Data Presensi</button>
-      <button class="btn" onclick="adminTab('leave')">📝 Persetujuan Izin</button>
+      <button class="btn" onclick="adminTab('classrecap')">🗓️ Rekap Kelas Bulanan</button>
+      <button class="btn" onclick="adminTab('leave')">📝 Izin & Sakit Siswa</button>
       <button class="btn" onclick="adminTab('settings')">⚙️ Pengaturan</button>
       <button class="btn ok" onclick="exportExcel()">📊 Ekspor Excel Lengkap</button>
       <button class="btn" onclick="exportSummary()">📈 Ekspor Ringkasan</button>
@@ -601,7 +640,7 @@ async function login(){
     )||{};
 
     state.user={...j.user,link:j.user.link||local.link||''};
-    Object.assign(historyState,{showAll:false,month:'',initialized:false});state.data.attendance=[];state.historyStatus='loading';
+    Object.assign(historyState,{showAll:false,month:'',initialized:false});state.data.attendance=[];state.data.leave=[];state.reportReady=false;state.historyStatus='loading';
     localStorage.removeItem('sidet_user');
     startApp();
   }catch(e){
@@ -837,10 +876,18 @@ function startApp(){
  applyTheme(getTheme(),false);
  $('loginView').classList.add('hidden');$('app').classList.remove('hidden');$('who').textContent=(state.user.name||'')+' · '+state.user.role;
  const nav=$('nav');nav.innerHTML=state.user.role==='admin'?'<button class="active" onclick="showPage(\'adminPage\')">Dashboard Admin</button>':'<button class="active" onclick="showPage(\'siswaPage\')">Presensi Saya</button>';
- if(state.user.role==='siswa'){showPage('siswaPage');renderStudentProfile();loadData();showLocationPermissionPrompt_()}
+ if(state.user.role==='siswa'){nav.insertAdjacentHTML('beforeend','<button onclick="openIndividualReport_()">Laporan Bulanan</button>');showPage('siswaPage');renderStudentProfile();loadData();showLocationPermissionPrompt_()}
  else{showPage('adminPage');renderAdminDashboard();loadData()}
 }
-function showPage(id){['siswaPage','adminPage'].forEach(x=>$(x).classList.toggle('hidden',x!==id))}
+function showPage(id){
+ ['siswaPage','reportPage','adminPage'].forEach(x=>$(x).classList.toggle('hidden',x!==id));
+ document.querySelectorAll('#nav button').forEach(b=>{
+  const action=b.getAttribute('onclick')||'';
+  const active=id==='reportPage'?action.includes('openIndividualReport_'):action.includes(id);
+  b.classList.toggle('active',active);
+  if(active)b.setAttribute('aria-current','page');else b.removeAttribute('aria-current');
+ });
+}
 function logout(){if(state.sending)return toast('Tunggu pengiriman selesai.');location.reload()}
 function updateStudentClock(){const d=new Date();if($('clockTime'))$('clockTime').textContent=d.toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit',second:'2-digit'});if($('clockDate'))$('clockDate').textContent=d.toLocaleDateString('id-ID',{weekday:'long',day:'2-digit',month:'long',year:'numeric'})} setInterval(updateStudentClock,1000);updateStudentClock();
 
@@ -1533,7 +1580,7 @@ async function returnToStudentAfterAttendance_(){
  toast('Presensi, foto, dan Google Form berhasil dikirim.',true);
  await loadData();
 }
-function closeModal(){if(state.sending)return;if(state.stream)state.stream.getTracks().forEach(x=>x.stop());$('modal').classList.add('hidden')}
+function closeModal(){if(state.sending||state.studentSaving||state.bulkBusy)return;if(state.stream)state.stream.getTracks().forEach(x=>x.stop());$('modal').classList.add('hidden')}
 
 function pickHistory_(row,...names){
  const normalized={};Object.keys(row||{}).forEach(k=>normalized[k.toLowerCase().replace(/[^a-z0-9]/g,'')]=row[k]);
@@ -1557,6 +1604,7 @@ function historyStatus_(status,message){
  state.historyStatus=status;state.historyMessage=message;
  if($('historySync'))$('historySync').textContent=message;
  if($('historyRefresh'))$('historyRefresh').disabled=status==='loading';
+ renderIndividualReport_();
 }
 async function loadData(){
  const currentUser=state.user;if(!currentUser)return;
@@ -1567,6 +1615,9 @@ async function loadData(){
   if(currentUser.role==='siswa'){
    const h=await api('attendanceHistory',{userId:currentUser.id,nisn:currentUser.nisn});
    if(state.user!==currentUser||request!==state.dataRequest)return;
+   state.reportReady=h?.data?.reportVersion>=2&&Array.isArray(h?.data?.leave)&&!!h?.data?.settings;
+   state.data.leave=Array.isArray(h?.data?.leave)?h.data.leave:[];
+   if(h?.data?.settings)state.data.settings=h.data.settings;
    const ha=h?.data?.attendance??h?.attendance;
    if(!Array.isArray(ha))throw Error('Format respons riwayat tidak sesuai. Perbarui Apps Script dengan file pasangan HTML ini.');
    const receipts=(state.data.attendance||[]).filter(x=>x._serverReceipt&&sameStudent_(x));
@@ -1677,14 +1728,196 @@ function renderEmpHistory(){
  }).join(''):'<div class="history-empty">'+(state.historyStatus==='error'?'Riwayat belum berhasil dimuat. Periksa pesan di atas, lalu tekan Muat ulang riwayat.':state.historyStatus==='loading'?'Memuat data server…':'Server belum mengembalikan catatan pada periode ini.')+'</div>';
  const unknown=all.filter(x=>!historyDateKey_(x));
  if(unknown.length)$('empHistory').insertAdjacentHTML('beforeend','<div class="alert">'+unknown.length+' catatan diterima, tetapi tanggalnya tidak dapat dibaca. Periksa format Tanggal/Timestamp di server.</div>');
+ renderIndividualReport_();
 }
 function toggleHistoryAll(){historyState.showAll=!historyState.showAll;renderEmpHistory();}
 document.addEventListener('change',e=>{if(e.target&&e.target.id==='historyMonth'&&e.target.value){historyState.month=e.target.value;historyState.showAll=false;renderEmpHistory();}});
 
+// Laporan pribadi: hanya memakai riwayat akun yang sedang masuk.
+function monthlyBaseRows_(month){
+ if(!state.user||state.user.role==='admin')return [];
+ if(!/^\d{4}-(0[1-9]|1[0-2])$/.test(month))return [];
+ const [year,m]=month.split('-').map(Number),count=new Date(Date.UTC(year,m,0)).getUTCDate();
+ const all=(state.data.attendance||[]).map(normalizeHistory_).filter(sameStudent_);
+ const today=localDateKey_();
+ const dayNames=['Ahad','Senin','Selasa','Rabu','Kamis',"Jum'at",'Sabtu'];
+ const seconds=t=>/^\d{2}:\d{2}:\d{2}$/.test(t)?t.split(':').reduce((v,n)=>v*60+Number(n),0):null;
+ return Array.from({length:count},(_,i)=>{
+   const date=month+'-'+String(i+1).padStart(2,'0'),weekday=new Date(date+'T12:00:00Z').getUTCDay();
+   const records=all.filter(x=>historyDateKey_(x)===date);
+   const choose=(type,last)=>{
+    const list=records.filter(x=>x.type===type).sort((a,b)=>historyTime_(a).localeCompare(historyTime_(b)));
+    const timed=list.filter(x=>seconds(historyTime_(x))!==null);return (last?timed[timed.length-1]:timed[0])||list[0]||null;
+   };
+   const masuk=choose('MASUK',false),pulang=choose('PULANG',true),inTime=masuk?historyTime_(masuk):'',outTime=pulang?historyTime_(pulang):'';
+   const a=seconds(inTime),b=seconds(outTime),duration=a!==null&&b!==null&&b>=a?b-a:null;
+   const future=date>today,notes=[];
+   if(!records.length)notes.push(future?'Belum berlangsung':'Belum ada catatan');
+   else if(masuk&&pulang)notes.push('Lengkap');
+   else if(masuk)notes.push('Masuk saja');else if(pulang)notes.push('Pulang saja');else notes.push('Jenis presensi lain');
+   if(a!==null&&b!==null&&b<a)notes.push('Jam pulang mendahului masuk');
+   if(records.filter(x=>x.type==='MASUK').length>1||records.filter(x=>x.type==='PULANG').length>1)notes.push('Beberapa catatan: masuk pertama, pulang terakhir');
+   const other=[...new Set(records.filter(x=>!['MASUK','PULANG'].includes(x.type)).map(x=>x.type||'Jenis belum tersedia'))];if(other.length)notes.push(other.join(', '));
+   return {no:i+1,date,day:dayNames[weekday],weekend:weekday===0||weekday===6,future,masuk,pulang,inTime,outTime,duration,records,status:notes.join(' · ')};
+ });
+}
+function reportDuration_(seconds){return seconds==null?'—':Math.floor(seconds/3600)+' j '+String(Math.floor(seconds/60)%60).padStart(2,'0')+' m';}
+function reportRules_(){
+ const s=state.data.settings||{};
+ return {masuk:/^\d{2}:\d{2}$/.test(s.jamMasuk||'')?s.jamMasuk:'07:30',pulang:/^\d{2}:\d{2}$/.test(s.jamPulang||'')?s.jamPulang:'15:30',days:String(s.hariKerja||'1,2,3,4,5').split(',').map(Number),holidays:String(s.hariLibur||'').split(',').filter(Boolean)};
+}
+function monthlyReportRows_(month){
+ const rules=reportRules_(),today=localDateKey_(),now=new Date().toLocaleTimeString('en-GB',{timeZone:'Asia/Makassar',hour12:false});
+ const leaves=(state.data.leave||[]).filter(sameStudent_).filter(x=>String(x.status||'').toUpperCase()==='DISETUJUI');
+ return monthlyBaseRows_(month).map(r=>{
+  const weekday=new Date(r.date+'T12:00:00Z').getUTCDay(),school=rules.days.includes(weekday)&&!rules.holidays.includes(r.date);
+  const excused=leaves.filter(x=>String(x.tanggalMulai||'').slice(0,10)<=r.date&&String(x.tanggalSelesai||'').slice(0,10)>=r.date);
+  const sakit=excused.some(x=>['S','SAKIT'].includes(String(x.type||'').toUpperCase()))||r.records.some(x=>['S','SAKIT'].includes(x.type));
+  const izin=excused.some(x=>['I','IZIN'].includes(String(x.type||'').toUpperCase()))||r.records.some(x=>['I','IZIN'].includes(x.type));
+  const exempt=sakit||izin,pastIn=r.date<today||(r.date===today&&now>rules.masuk+':59'),pastOut=r.date<today||(r.date===today&&now>rules.pulang+':59');
+  const inDue=school&&pastIn&&!r.future,outDue=school&&pastOut&&!r.future;
+  const ta=outDue?(!r.masuk&&!r.pulang&&!exempt?1:0):null;
+  const tad=inDue?(!r.masuk&&!exempt?1:0):null,tap=outDue?(!r.pulang&&!exempt?1:0):null;
+  const tw=r.masuk&&/^\d{2}:\d{2}:\d{2}$/.test(r.inTime)?(r.inTime.slice(0,5)<=rules.masuk?1:0):inDue?0:null;
+  let status=r.status;
+  if(!r.records.length)status=exempt?(sakit?'Sakit':'Izin'):r.future?'Belum berlangsung':!school?'Di luar hari sekolah':!pastOut?'Menunggu batas waktu':'Tidak absen';
+  else if(exempt)status+=' · '+[sakit?'Sakit':'',izin?'Izin':''].filter(Boolean).join(' / ');
+  return {...r,school,ta,tad,tap,tw,sakit:sakit?1:r.future?null:0,izin:izin?1:r.future?null:0,excused,status};
+ });
+}
+function renderIndividualReport_(){
+ if(!$('individualReport')||!state.user||state.user.role==='admin')return;
+ const owner=String(state.user.id||state.user.nisn);if(state.reportOwner!==owner){state.reportOwner=owner;$('reportMonth').value=localDateKey_().slice(0,7);}
+ const month=$('reportMonth').value,rows=monthlyReportRows_(month),rules=reportRules_();
+ $('reportIdentity').textContent=(state.user.name||'')+' · NISN '+(state.user.nisn||'—')+' · Kelas '+(state.user.kelas||'—');
+ $('reportPeriod').textContent=month?historyMonthLabel_(month):'Pilih bulan';
+ $('reportSync').textContent=state.historyMessage||'Memuat data server…';
+ const reportDisabled=state.historyStatus!=='ready'||!state.reportReady||!rows.length;
+ $('reportExcel').disabled=reportDisabled;
+ if($('reportPrint'))$('reportPrint').disabled=reportDisabled;
+ if($('reportPdf'))$('reportPdf').disabled=reportDisabled;
+ $('reportReload').disabled=state.historyStatus==='loading';
+ const stats=[['Masuk',rows.filter(r=>r.masuk).length],['Tidak absen',rows.reduce((n,r)=>n+(r.ta||0),0)],['Sakit',rows.reduce((n,r)=>n+(r.sakit||0),0)],['Izin',rows.reduce((n,r)=>n+(r.izin||0),0)]];
+ $('reportSummary').innerHTML=stats.map(([label,n])=>'<div><span>'+label+'</span><b>'+(state.reportReady?n:'—')+'</b></div>').join('');
+ const cell=v=>state.reportReady&&v!==null?v:'—';
+ $('reportBody').innerHTML=rows.map(r=>`<tr class="${!r.school?'report-weekend ':''}${r.future?'report-future':''}"><td>${r.no}</td><td>${r.day}</td><td class="report-nowrap">${r.date.split('-').reverse().join('-')}</td><td>${esc_(r.inTime||'—')}</td><td>${esc_(r.outTime||'—')}</td>${[r.ta,r.tw,r.tad,r.tap,r.sakit,r.izin].map(v=>'<td>'+cell(v)+'</td>').join('')}<td>${esc_(state.reportReady?r.status:'Menunggu data jadwal dan izin/sakit')}</td></tr>`).join('')||'<tr><td colspan="12">Pilih bulan laporan.</td></tr>';
+ $('reportRules').textContent='Masuk '+rules.masuk+' · Pulang '+rules.pulang+' WITA. Ketepatan masuk dinilai hingga akhir menit '+rules.masuk+'. Perhitungan menggunakan jadwal admin saat laporan dibuat.';
+ const invalid=(state.data.attendance||[]).filter(sameStudent_).filter(x=>!historyDateKey_(x)).length;
+ $('reportWarning').textContent=!state.reportReady?'Perbarui Apps Script pasangan HTML ini lalu muat ulang agar jadwal dan izin/sakit dapat dibaca.':invalid?invalid+' catatan memiliki tanggal yang belum dapat dibaca.':'';
+}
+function individualReportPdfData_(){
+ if(!state.user||state.user.role!=='siswa')throw Error('Laporan hanya tersedia untuk siswa.');
+ if(state.historyStatus!=='ready'||!state.reportReady)throw Error('Muat ulang riwayat sampai data laporan berhasil dibaca.');
+ const month=$('reportMonth')?.value||'',rows=monthlyReportRows_(month);if(!rows.length)throw Error('Pilih bulan laporan.');
+ const u=state.user,rules=reportRules_();
+ const stats={masuk:rows.filter(r=>r.masuk).length,terlambat:rows.filter(r=>r.masuk&&r.tw===0).length,alfa:rows.reduce((n,r)=>n+(r.ta||0),0),sakit:rows.reduce((n,r)=>n+(r.sakit||0),0),izin:rows.reduce((n,r)=>n+(r.izin||0),0),bolos:rows.filter(r=>r.masuk&&r.tap===1&&!r.sakit&&!r.izin).length};
+ return {u,rules,month,rows,stats};
+}
+function downloadIndividualReportPdf_(){
+ try{
+  if(!window.jspdf?.jsPDF)throw Error('Komponen PDF belum dimuat. Periksa internet.');
+  const {u,rules,month,rows,stats}=individualReportPdfData_(),{jsPDF}=window.jspdf;
+  const doc=new jsPDF({orientation:'landscape',unit:'mm',format:'a4'});
+  doc.setFontSize(14);doc.text('LAPORAN PRESENSI INDIVIDU SiDEt',14,12);
+  doc.setFontSize(9);doc.text(`Nama: ${String(u.name||'-')}   NISN: ${String(u.nisn||'-')}   Kelas: ${String(u.kelas||'-')}`,14,18);
+  doc.text(`Periode: ${historyMonthLabel_(month)}   Jadwal WITA: Masuk ${rules.masuk} · Pulang ${rules.pulang}`,14,23);
+  doc.text(`Ringkasan: Hadir/Masuk ${stats.masuk} · Terlambat ${stats.terlambat} · Bolos ${stats.bolos} · Alfa ${stats.alfa} · Izin ${stats.izin} · Sakit ${stats.sakit}`,14,28);
+  const head=[['No','Hari','Tanggal','Masuk','Pulang','Tdk Absen','Tepat Waktu','Tdk Datang','Tdk Pulang','Sakit','Izin','Keterangan']];
+  const body=rows.map(r=>[r.no,r.day,r.date.split('-').reverse().join('-'),r.inTime||'—',r.outTime||'—',r.ta??'—',r.tw??'—',r.tad??'—',r.tap??'—',r.sakit??'—',r.izin??'—',r.status||'']);
+  doc.autoTable({head,body,startY:33,theme:'grid',styles:{fontSize:6.6,cellPadding:1.2,valign:'middle'},headStyles:{fontStyle:'bold'},columnStyles:{11:{cellWidth:48}},margin:{left:8,right:8}});
+  const safe=String(u.nisn||u.id||'siswa').replace(/[^a-zA-Z0-9_-]/g,'_');
+  doc.save(`SiDet_Rekap_${safe}_${month}.pdf`);toast('PDF rekap pribadi berhasil dibuat.',true);
+ }catch(e){toast('Gagal membuat PDF: '+e.message);}
+}
+function printIndividualReport_(){
+ try{
+  const {u,rules,month,rows,stats}=individualReportPdfData_();
+  const w=window.open('','_blank','width=1200,height=800');if(!w)throw Error('Jendela cetak diblokir browser. Izinkan pop-up untuk SiDet.');
+  const cell=v=>v===null||v===undefined?'—':v;
+  const trs=rows.map(r=>`<tr><td>${r.no}</td><td>${esc_(r.day)}</td><td>${esc_(r.date.split('-').reverse().join('-'))}</td><td>${esc_(r.inTime||'—')}</td><td>${esc_(r.outTime||'—')}</td><td>${cell(r.ta)}</td><td>${cell(r.tw)}</td><td>${cell(r.tad)}</td><td>${cell(r.tap)}</td><td>${cell(r.sakit)}</td><td>${cell(r.izin)}</td><td class="left">${esc_(r.status||'')}</td></tr>`).join('');
+  w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>Rekap Presensi ${esc_(u.name||'Siswa')}</title><style>@page{size:A4 landscape;margin:10mm}*{box-sizing:border-box}body{font-family:Arial,sans-serif;color:#111;margin:0}h1{font-size:18px;margin:0 0 6px}.meta{font-size:11px;line-height:1.6;margin-bottom:8px}.summary{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0 12px}.summary span{border:1px solid #bbb;border-radius:7px;padding:5px 8px;font-size:10px}table{width:100%;border-collapse:collapse;font-size:8px}th,td{border:1px solid #aaa;padding:3px;text-align:center}th{background:#f1f5f9}.left{text-align:left}.note{font-size:9px;margin-top:8px;color:#444}</style></head><body><h1>LAPORAN PRESENSI INDIVIDU SiDEt</h1><div class="meta"><b>${esc_(u.name||'-')}</b> · NISN ${esc_(u.nisn||'-')} · ${esc_(u.kelas||'-')}<br>Periode ${esc_(historyMonthLabel_(month))} · Masuk ${esc_(rules.masuk)} · Pulang ${esc_(rules.pulang)} WITA</div><div class="summary"><span>Hadir/Masuk <b>${stats.masuk}</b></span><span>Terlambat <b>${stats.terlambat}</b></span><span>Bolos <b>${stats.bolos}</b></span><span>Alfa <b>${stats.alfa}</b></span><span>Izin <b>${stats.izin}</b></span><span>Sakit <b>${stats.sakit}</b></span></div><table><thead><tr><th>No</th><th>Hari</th><th>Tanggal</th><th>Masuk</th><th>Pulang</th><th>Tdk Absen</th><th>Tepat Waktu</th><th>Tdk Datang</th><th>Tdk Pulang</th><th>Sakit</th><th>Izin</th><th>Keterangan</th></tr></thead><tbody>${trs}</tbody></table><div class="note">Dicetak dari dashboard siswa SiDet · ${new Date().toLocaleString('id-ID',{timeZone:'Asia/Makassar'})} WITA</div><script>window.onload=()=>{setTimeout(()=>window.print(),250)}<\/script></body></html>`);
+  w.document.close();
+ }catch(e){toast('Gagal menyiapkan cetak: '+e.message);}
+}
+function exportIndividualReport_(){
+ if(!state.user||state.user.role==='admin')return;
+ if(state.historyStatus!=='ready'||!state.reportReady)return toast('Muat ulang riwayat sampai jadwal dan izin/sakit berhasil dibaca.');
+ if(typeof XLSX==='undefined')return toast('Komponen Excel belum dimuat. Periksa internet lalu buka ulang halaman.');
+ const month=$('reportMonth').value,rows=monthlyReportRows_(month);if(!rows.length)return toast('Pilih bulan laporan.');
+ try{
+  const u=state.user,rules=reportRules_(),wb=XLSX.utils.book_new();
+  const headers=['No.','Hari','Tanggal','Jam Masuk','Jam Pulang','Tidak Absen','Tepat Waktu','Tidak Absen Datang','Tidak Absen Pulang','Sakit','Izin','Keterangan'];
+  const data=[['LAPORAN PRESENSI INDIVIDU'],['Nama',String(u.name||'')],['NISN',String(u.nisn||'')],['Kelas',String(u.kelas||'')],['Periode',historyMonthLabel_(month)],['Jadwal WITA','Masuk '+rules.masuk+' · Pulang '+rules.pulang],['Dibuat',new Date().toLocaleString('id-ID',{timeZone:'Asia/Makassar'})+' WITA'],[],headers];
+  const time=t=>/^\d{2}:\d{2}:\d{2}$/.test(t)?t.split(':').reduce((a,n)=>a*60+Number(n),0)/86400:null;
+  rows.forEach(r=>{const [y,m,d]=r.date.split('-').map(Number);data.push([r.no,r.day,(Date.UTC(y,m-1,d)-Date.UTC(1899,11,30))/86400000,time(r.inTime),time(r.outTime),r.ta,r.tw,r.tad,r.tap,r.sakit,r.izin,r.status]);});
+  const ws=XLSX.utils.aoa_to_sheet(data);rows.forEach((r,i)=>{const n=i+10;ws['C'+n].z='dd-mm-yyyy';for(const col of ['D','E'])if(ws[col+n])ws[col+n].z='hh:mm:ss';});
+  const end=rows.length+9,total=end+1;XLSX.utils.sheet_add_aoa(ws,[['TOTAL']],{origin:'A'+total});
+  const map={F:'ta',G:'tw',H:'tad',I:'tap',J:'sakit',K:'izin'};for(const [col,key]of Object.entries(map))ws[col+total]={t:'n',v:rows.reduce((n,r)=>n+(r[key]||0),0),f:`SUM(${col}10:${col}${end})`,z:'0'};
+  XLSX.utils.sheet_add_aoa(ws,[['1 = memenuhi kondisi kolom; 0 = tidak. Kosong = belum jatuh tempo atau di luar hari sekolah.'],['Tidak Absen = tanpa masuk dan pulang setelah batas pulang, tanpa izin/sakit.'],['Tidak Absen Datang/Pulang = belum ada presensi terkait setelah batas jamnya, tanpa izin/sakit.'],['Tepat Waktu = masuk hingga akhir menit '+rules.masuk+'. Izin/sakit diambil dari catatan yang disetujui.'],['Hari sekolah (0=Ahad, 1=Senin, …, 6=Sabtu)',rules.days.join(',')],['Tanggal libur yang dikecualikan',rules.holidays.join(',')],['Perhitungan adalah potret saat unduh dengan jadwal admin saat ini; bukan penetapan pelanggaran.']],{origin:'A'+(total+2)});
+  ws['!cols']=[{wch:6},{wch:12},{wch:14},{wch:13},{wch:13},{wch:15},{wch:15},{wch:23},{wch:23},{wch:9},{wch:9},{wch:62}];ws['!merges']=[{s:{r:0,c:0},e:{r:0,c:11}}];ws['!autofilter']={ref:'A9:L'+end};XLSX.utils.book_append_sheet(wb,ws,'LAPORAN BULANAN');
+  const records=[['Tanggal','Jenis','Jam WITA','NISN','Nama','Kelas','Status','Link Foto Drive']];rows.forEach(r=>r.records.forEach(x=>records.push([r.date,x.type,historyTime_(x),String(u.nisn||''),String(u.name||''),String(u.kelas||''),String(x.status||''),photoUrl_(x)])));
+  const raw=XLSX.utils.aoa_to_sheet(records);raw['!cols']=[{wch:14},{wch:14},{wch:14},{wch:16},{wch:32},{wch:12},{wch:18},{wch:62}];XLSX.utils.book_append_sheet(wb,raw,'CATATAN PRESENSI');
+  const leaves=(state.data.leave||[]).filter(sameStudent_).filter(x=>x.tanggalMulai<=month+'-31'&&x.tanggalSelesai>=month+'-01');
+  const ls=XLSX.utils.aoa_to_sheet([['NISN','Nama','Jenis','Mulai','Selesai','Keterangan','Status'],...leaves.map(x=>[String(u.nisn||''),String(u.name||''),x.type,x.tanggalMulai,x.tanggalSelesai,x.alasan||'',x.status])]);ls['!cols']=[{wch:16},{wch:32},{wch:12},{wch:14},{wch:14},{wch:50},{wch:18}];XLSX.utils.book_append_sheet(wb,ls,'IZIN SAKIT');
+  XLSX.writeFile(wb,'SiDEt_Laporan_'+String(u.nisn||u.id).replace(/[^a-zA-Z0-9_-]/g,'_')+'_'+month+'.xlsx');toast('Laporan Excel berhasil dibuat.',true);
+ }catch(e){toast('Gagal membuat Excel: '+e.message);}
+}
+
+function openIndividualReport_(){
+ if(!state.user||state.user.role!=='siswa')return;
+ renderIndividualReport_();showPage('reportPage');window.scrollTo({top:0,behavior:'smooth'});
+}
+function closeIndividualReport_(){showPage('siswaPage');window.scrollTo({top:0,behavior:'smooth'});}
 const adminView={tab:'',query:'',date:'',kelas:'',status:''};
 function esc_(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 function rowDate_(x){return historyDateKey_(x)||String(x?.tanggal||'')}
 function photoUrl_(x){const u=String(x?.photoUrl||x?.FotoURL||x?.fotoUrl||x?.photoDriveUrl||x?.linkFotoDrive||'').trim();return /^https:\/\/drive\.google\.com\//i.test(u)?u:'';}
+
+const classRecapState={studentData:null,studentMonth:'',studentOpen:false};
+function recapNormNisn_(v){return String(v??'').trim().replace(/^0+(?=\d)/,'')}
+function recapDate_(x){return historyDateKey_(normalizeHistory_(x))}
+function recapTime_(x){const t=historyTime_(normalizeHistory_(x));return t==='—'?'—':t.slice(0,5)}
+function recapMonthDays_(month){if(!/^\d{4}-\d{2}$/.test(month))return[];const [y,m]=month.split('-').map(Number),n=new Date(Date.UTC(y,m,0)).getUTCDate();return Array.from({length:n},(_,i)=>`${month}-${String(i+1).padStart(2,'0')}`)}
+function recapLeaveFor_(leaves,u,date){const n=recapNormNisn_(u.nisn),id=String(u.id||'');return (leaves||[]).filter(x=>String(x.status||'').toUpperCase()==='DISETUJUI'&&((n&&recapNormNisn_(x.nisn)===n)||(id&&String(x.userId||'')===id))&&String(x.tanggalMulai||'').slice(0,10)<=date&&String(x.tanggalSelesai||'').slice(0,10)>=date)}
+function recapCell_(u,date,data){
+ const rules=(()=>{const s=data.settings||{};return{masuk:/^\d{2}:\d{2}$/.test(s.jamMasuk||'')?s.jamMasuk:'07:30',pulang:/^\d{2}:\d{2}$/.test(s.jamPulang||'')?s.jamPulang:'15:30',days:String(s.hariKerja||'1,2,3,4,5').split(',').map(Number),holidays:String(s.hariLibur||'').split(',').filter(Boolean)}})();
+ const weekday=new Date(date+'T12:00:00Z').getUTCDay(),school=rules.days.includes(weekday)&&!rules.holidays.includes(date),today=localDateKey_();
+ if(!school)return{code:'—',cls:'cr-off',label:'Libur',in:'—',out:'—'};
+ const leaves=recapLeaveFor_(data.leave||[],u,date),sick=leaves.some(x=>['S','SAKIT'].includes(String(x.type||'').toUpperCase())),permit=leaves.some(x=>['I','IZIN'].includes(String(x.type||'').toUpperCase()));
+ if(sick)return{code:'S',cls:'cr-s',label:'Sakit',in:'—',out:'—'};if(permit)return{code:'I',cls:'cr-i',label:'Izin',in:'—',out:'—'};
+ const n=recapNormNisn_(u.nisn),id=String(u.id||''),rows=(data.attendance||[]).map(normalizeHistory_).filter(x=>recapDate_(x)===date&&((n&&recapNormNisn_(x.nisn)===n)||(id&&String(x.userId||'')===id)));
+ const masuk=rows.find(x=>(x.type||x.jenis)==='MASUK'),pulang=rows.find(x=>(x.type||x.jenis)==='PULANG'),tin=masuk?recapTime_(masuk):'—',tout=pulang?recapTime_(pulang):'—';
+ const now=new Date().toLocaleTimeString('en-GB',{timeZone:'Asia/Makassar',hour12:false}).slice(0,5),pastOut=date<today||(date===today&&now>rules.pulang),pastIn=date<today||(date===today&&now>rules.masuk);
+ if(masuk&&pastOut&&!pulang)return{code:'B',cls:'cr-b',label:'Bolos',in:tin,out:'—'};
+ if(masuk&&tin!=='—'&&tin>rules.masuk)return{code:'T',cls:'cr-t',label:'Terlambat',in:tin,out:tout};
+ if(masuk)return{code:'H',cls:'cr-h',label:'Hadir',in:tin,out:tout};
+ if(pastOut&&!masuk&&!pulang)return{code:'A',cls:'cr-a',label:'Alfa',in:'—',out:'—'};
+ if(pastIn&&pulang)return{code:'B',cls:'cr-b',label:'Bolos',in:'—',out:tout};
+ return{code:'',cls:'cr-pending',label:'Belum',in:tin,out:tout};
+}
+function buildClassRecap_(data,kelas,month){
+ const users=(data.users||[]).filter(u=>String(u.kelas||'').trim()===String(kelas||'').trim()&&u.active!==false).sort((a,b)=>String(a.name||'').localeCompare(String(b.name||''),'id'));
+ const days=recapMonthDays_(month),heads=days.map(d=>`<th>${Number(d.slice(-2))}</th>`).join('');
+ const body=users.map((u,i)=>{const sum={H:0,T:0,B:0,A:0,I:0,S:0};const cells=days.map(d=>{const c=recapCell_(u,d,data);if(sum[c.code]!==undefined)sum[c.code]++;return`<td class="daycell ${c.cls}" title="${c.label}"><b>${c.code||'·'}</b>${['H','T','B'].includes(c.code)?`<small>↓ ${c.in}</small><small>↑ ${c.out}</small>`:''}</td>`}).join('');return`<tr><td class="sticky-no">${i+1}</td><td class="sticky-name">${esc_(u.name||'')}<small style="display:block;color:var(--muted);font-weight:600">${esc_(u.nisn||'')}</small></td>${cells}<td class="sum cr-h">${sum.H}</td><td class="sum cr-t">${sum.T}</td><td class="sum cr-b">${sum.B}</td><td class="sum cr-a">${sum.A}</td><td class="sum cr-i">${sum.I}</td><td class="sum cr-s">${sum.S}</td></tr>`}).join('');
+ return `<div class="classrecap-legend"><span class="cr-h">H Hadir</span><span class="cr-t">T Terlambat</span><span class="cr-b">B Bolos</span><span class="cr-a">A Alfa</span><span class="cr-i">I Izin</span><span class="cr-s">S Sakit</span><span class="cr-off">— Libur</span></div><div class="classrecap-wrap"><table class="classrecap-table"><thead><tr><th class="sticky-no">No</th><th class="sticky-name">Nama Siswa</th>${heads}<th>Hadir</th><th>Terlambat</th><th>Bolos</th><th>Alfa</th><th>Izin</th><th>Sakit</th></tr></thead><tbody>${body||`<tr><td colspan="${days.length+8}">Belum ada siswa pada kelas ini.</td></tr>`}</tbody></table></div><p class="muted classrecap-note">Jam kecil: ↓ datang · ↑ pulang. Batas masuk ${esc_(data.settings?.jamMasuk||'07:30')} WITA · pulang ${esc_(data.settings?.jamPulang||'15:30')} WITA.</p>`;
+}
+function renderAdminClassRecap_(){const el=$('adminClassRecapContent');if(!el)return;const k=$('classRecapClass')?.value||'',m=$('classRecapMonth')?.value||localDateKey_().slice(0,7);el.innerHTML=buildClassRecap_(state.data,k,m)}
+async function toggleStudentClassRecap_(){
+ const box=$('studentClassRecap'),content=$('studentClassRecapContent');if(!box||!content)return;classRecapState.studentOpen=!classRecapState.studentOpen;box.classList.toggle('hidden',!classRecapState.studentOpen);if(!classRecapState.studentOpen)return;
+ const month=classRecapState.studentMonth||localDateKey_().slice(0,7);content.innerHTML=`<div class="classrecap-title"><div><div class="section-label">Kelas saya</div><h3 style="margin:0">Rekap Kelas Bulanan</h3></div><div class="field"><label>Bulan</label><input id="studentClassMonth" type="month" value="${month}" onchange="loadStudentClassRecap_(this.value)"></div></div><div class="classrecap-loading">Memuat rekap kelas…</div>`;await loadStudentClassRecap_(month);
+}
+async function loadStudentClassRecap_(month){
+ const content=$('studentClassRecapContent');if(!content||!state.user)return;classRecapState.studentMonth=month||localDateKey_().slice(0,7);const old=content.querySelector('.classrecap-loading');if(old)old.textContent='Memuat rekap kelas…';
+ try{const j=await api('classMonthly',{month:classRecapState.studentMonth,kelas:state.user.kelas});if(!j?.data)throw Error('Data rekap kelas belum tersedia. Perbarui Apps Script SiDet.');classRecapState.studentData=j.data;content.innerHTML=`<div class="classrecap-title"><div><div class="section-label">Kelas saya</div><h3 style="margin:0">${esc_(j.data.kelas||state.user.kelas)} · ${historyMonthLabel_(classRecapState.studentMonth)}</h3></div><div class="field"><label>Bulan</label><input id="studentClassMonth" type="month" value="${classRecapState.studentMonth}" onchange="loadStudentClassRecap_(this.value)"></div></div>${buildClassRecap_(j.data,j.data.kelas||state.user.kelas,classRecapState.studentMonth)}`;}catch(e){content.innerHTML=`<div class="alert bad">${esc_(e.message||'Gagal memuat rekap kelas.')}</div>`;}
+}
+function downloadClassRecapPdf_(){
+ const kelas=$('classRecapClass')?.value,month=$('classRecapMonth')?.value;if(!kelas||!month)return toast('Pilih kelas dan bulan.');if(!window.jspdf?.jsPDF)return toast('Komponen PDF belum dimuat. Periksa internet.');
+ const data=state.data,users=(data.users||[]).filter(u=>String(u.kelas||'').trim()===kelas&&u.active!==false).sort((a,b)=>String(a.name||'').localeCompare(String(b.name||''),'id')),days=recapMonthDays_(month);const head=[['No','Nama',...days.map(d=>String(Number(d.slice(-2)))),'H','T','B','A','I','S']];
+ const body=users.map((u,i)=>{const sum={H:0,T:0,B:0,A:0,I:0,S:0};const cs=days.map(d=>{const c=recapCell_(u,d,data);if(sum[c.code]!==undefined)sum[c.code]++;return['H','T','B'].includes(c.code)?`${c.code}\n${c.in}/${c.out}`:(c.code||'·')});return[i+1,String(u.name||''),...cs,sum.H,sum.T,sum.B,sum.A,sum.I,sum.S]});
+ const {jsPDF}=window.jspdf,doc=new jsPDF({orientation:'landscape',unit:'mm',format:'a3'});doc.setFontSize(13);doc.text(`REKAP PRESENSI BULANAN - ${kelas} - ${historyMonthLabel_(month)}`,14,12);doc.setFontSize(8);doc.text(`Hadir hijau | Terlambat oranye | Bolos cokelat | Alfa merah | Izin kuning | Sakit biru | Jam: datang/pulang`,14,17);
+ doc.autoTable({head,body,startY:20,theme:'grid',styles:{fontSize:5.4,cellPadding:1,halign:'center',valign:'middle'},columnStyles:{1:{cellWidth:35,halign:'left'}},didParseCell:(d)=>{if(d.section!=='body'||d.column.index<2)return;const total=days.length;if(d.column.index>=2&&d.column.index<2+total){const v=String(d.cell.raw||'');if(v.startsWith('H'))d.cell.styles.fillColor=[223,246,232];else if(v.startsWith('T'))d.cell.styles.fillColor=[255,232,199];else if(v.startsWith('B'))d.cell.styles.fillColor=[234,215,196];else if(v==='A')d.cell.styles.fillColor=[255,217,221];else if(v==='I')d.cell.styles.fillColor=[255,243,189];else if(v==='S')d.cell.styles.fillColor=[219,234,254];}},margin:{left:8,right:8}});doc.save(`Rekap_${kelas}_${month}.pdf`);
+}
+
 function renderAdminDashboard(){
  const a=Array.isArray(state.data.attendance)?state.data.attendance:[],today=localDateKey_(),td=a.filter(x=>rowDate_(x)===today);
  const masuk=new Set(td.filter(x=>(x.type||x.jenis)==='MASUK').map(x=>String(x.nisn||x.userId||x.name))).size;
@@ -1696,7 +1929,7 @@ function adminTab(tab){
  adminView.tab=tab; const c=$('adminContent');
  if(tab==='users'){
    const classes=[...new Set((state.data.users||[]).map(u=>u.kelas).filter(Boolean))].sort();
-   c.innerHTML=`<div class="card"><div class="hero"><div><h3 style="margin:0">Kelola Siswa</h3><div class="muted">${(state.data.users||[]).length} akun siswa</div></div><button class="btn primary" onclick="userForm()">+ Tambah Siswa</button></div><div class="admin-toolbar"><div class="field search-field"><label>Cari nama atau NISN</label><input id="userSearch" placeholder="Ketik nama / NISN" oninput="renderUsersTable_()"></div><div class="field"><label>Kelas</label><select id="userClass" onchange="renderUsersTable_()"><option value="">Semua kelas</option>${classes.map(k=>`<option>${esc_(k)}</option>`).join('')}</select></div><button class="btn" onclick="loadData().then(()=>adminTab('users'))">🔄 Muat Ulang</button></div><div id="usersResult"></div></div>`;
+   c.innerHTML=`<div class="card"><div class="hero"><div><h3 style="margin:0">Kelola Siswa</h3><div class="muted">${(state.data.users||[]).length} akun siswa</div></div><div class="actions"><button class="btn" onclick="bulkStudentForm_()">📤 Unggah Massal</button><button class="btn primary" onclick="userForm()">+ Tambah Siswa</button></div></div><div class="admin-toolbar"><div class="field search-field"><label>Cari nama atau NISN</label><input id="userSearch" placeholder="Ketik nama / NISN" oninput="renderUsersTable_()"></div><div class="field"><label>Kelas</label><select id="userClass" onchange="renderUsersTable_()"><option value="">Semua kelas</option>${classes.map(k=>`<option>${esc_(k)}</option>`).join('')}</select></div><button class="btn" onclick="loadData().then(()=>adminTab('users'))">🔄 Muat Ulang</button></div><div id="usersResult"></div></div>`;
    renderUsersTable_();
  }
  if(tab==='attendance'){
@@ -1704,14 +1937,59 @@ function adminTab(tab){
    c.innerHTML=`<div class="card"><div class="hero"><div><h3 style="margin:0">Data Presensi</h3><div class="muted">Filter laporan berdasarkan tanggal, kelas, status, nama, atau NISN.</div></div><div class="actions"><button class="btn" onclick="loadData().then(()=>adminTab('attendance'))">🔄 Muat Ulang</button><button class="btn ok" onclick="exportFilteredAttendance_()">📊 Ekspor Hasil Filter</button></div></div><div class="admin-toolbar"><div class="field search-field"><label>Cari nama / NISN</label><input id="attSearch" placeholder="Nama atau NISN" oninput="renderAttendanceTable_()"></div><div class="field"><label>Tanggal</label><input id="attDate" type="date" onchange="renderAttendanceTable_()"></div><div class="field"><label>Kelas</label><select id="attClass" onchange="renderAttendanceTable_()"><option value="">Semua kelas</option>${classes.map(k=>`<option>${esc_(k)}</option>`).join('')}</select></div><div class="field"><label>Status / Jenis</label><select id="attStatus" onchange="renderAttendanceTable_()"><option value="">Semua status</option><option value="MASUK">Masuk</option><option value="PULANG">Pulang</option><option value="DEKAT">Dekat sekolah</option><option value="JAUH">Jauh dari sekolah</option><option value="VALID">Valid</option></select></div><button class="btn" onclick="resetAttendanceFilters_()">Reset</button></div><div id="attendanceResult"></div></div>`;
    renderAttendanceTable_();
  }
- if(tab==='leave') c.innerHTML=`<div class="card"><h3>Persetujuan Izin</h3><div class="tablewrap"><table><thead><tr><th>Nama</th><th>Jenis</th><th>Tanggal</th><th>Alasan</th><th>Status</th><th>Aksi</th></tr></thead><tbody>${(state.data.leave||[]).map(x=>`<tr><td>${x.name||x.nip}</td><td>${x.type}</td><td>${x.tanggalMulai||''} s/d ${x.tanggalSelesai||''}</td><td>${x.alasan||'-'}</td><td>${x.status}</td><td>${x.status==='MENUNGGU'?`<button class="btn ok" onclick="approveLeave('${x.id}','DISETUJUI')">Setujui</button> <button class="btn danger" onclick="approveLeave('${x.id}','DITOLAK')">Tolak</button>`:'-'}</td></tr>`).join('')||'<tr><td colspan="6">Belum ada pengajuan.</td></tr>'}</tbody></table></div></div>`;
- if(tab==='settings') c.innerHTML=`<div class="card"><h3>Pengaturan Sistem</h3><div class="field"><label>URL Google Apps Script Web App</label><input id="apiInput" value="${state.api||DEFAULT_API_URL}" placeholder="https://script.google.com/macros/s/.../exec" autocomplete="off"></div><div class="grid two"><div class="field"><label>Radius Geofence (meter)</label><input id="radius" type="number" min="10" value="${state.data.settings?.radius||100}"></div><div class="field"><label>Jam Masuk</label><input id="jamMasuk" type="time" value="${state.data.settings?.jamMasuk||'07:30'}"></div></div><div class="actions"><button class="btn primary" onclick="saveSettings()">Simpan Pengaturan</button><button class="btn" onclick="testApi()">Tes Koneksi</button><button class="btn warn" onclick="setCenter()">Ambil Titik Geofence dari GPS</button></div><div id="setMsg" class="alert">Masukkan URL Web App /exec yang ingin digunakan, lalu tekan <b>Simpan Pengaturan</b>. URL tersimpan di perangkat ini.</div></div>`;
+ if(tab==='classrecap'){
+   const classes=[...new Set((state.data.users||[]).map(u=>String(u.kelas||'').trim()).filter(Boolean))].sort();
+   const nowMonth=localDateKey_().slice(0,7);
+   c.innerHTML=`<div class="card classrecap"><div class="classrecap-title"><div><div class="section-label">Rekap per kelas</div><h3 style="margin:0">Rekap Presensi Bulanan</h3><div class="muted">Nama siswa vertikal · tanggal horizontal · jam datang/pulang mini.</div></div></div><div class="classrecap-toolbar"><div class="field"><label>Kelas</label><select id="classRecapClass" onchange="renderAdminClassRecap_()">${classes.map(k=>`<option value="${esc_(k)}">${esc_(k)}</option>`).join('')}</select></div><div class="field"><label>Bulan</label><input id="classRecapMonth" type="month" value="${nowMonth}" onchange="renderAdminClassRecap_()"></div><button class="btn" onclick="loadData().then(()=>adminTab('classrecap'))">🔄 Muat Ulang</button><button class="btn primary" onclick="downloadClassRecapPdf_()">📄 Unduh PDF</button></div><div id="adminClassRecapContent"></div></div>`;
+   renderAdminClassRecap_();
+ }
+ if(tab==='leave')adminLeavePanel_();
+ if(tab==='settings')adminSchedulePanel_();
+}
+
+function adminLeavePanel_(){
+ const items=state.data.leave||[];
+ $('adminContent').innerHTML=`<div class="card"><div class="hero"><h3>Izin & Sakit Siswa</h3><div class="actions"><button class="btn primary" onclick="adminLeaveForm_()">+ Input Izin / Sakit</button><button class="btn" onclick="loadData().then(()=>adminTab('leave'))">Muat ulang</button></div></div><p class="muted">Catatan yang diinput admin langsung berstatus disetujui dan masuk ke laporan pribadi siswa.</p><div class="tablewrap"><table><thead><tr><th>NISN / Nama</th><th>Jenis</th><th>Mulai</th><th>Selesai</th><th>Keterangan</th><th>Status</th><th>Aksi</th></tr></thead><tbody>${items.map((x,i)=>`<tr><td>${esc_(x.nisn||'')}<br><b>${esc_(x.name||'')}</b></td><td>${esc_(x.type)}</td><td>${esc_(x.tanggalMulai)}</td><td>${esc_(x.tanggalSelesai)}</td><td>${esc_(x.alasan)}</td><td>${esc_(x.status)}</td><td>${x.status==='MENUNGGU'?`<button class="btn ok" onclick="processLeaveAt_(${i},'DISETUJUI')">Setujui</button> <button class="btn danger" onclick="processLeaveAt_(${i},'DITOLAK')">Tolak</button>`:'—'}</td></tr>`).join('')||'<tr><td colspan="7">Belum ada catatan izin/sakit.</td></tr>'}</tbody></table></div></div>`;
+}
+function processLeaveAt_(i,status){const x=(state.data.leave||[])[i];if(x)approveLeave(x.id,status);}
+function adminLeaveForm_(){
+ if(state.user?.role!=='admin')return;
+ $('modalBox').innerHTML=`<h3>Input Izin / Sakit</h3><div class="field"><label for="leaveSearch">Cari siswa (nama / NISN / kelas)</label><input id="leaveSearch" oninput="filterLeaveStudents_()" placeholder="Ketik nama atau NISN"></div><div class="field"><label for="leaveStudent">Pilih siswa</label><select id="leaveStudent"></select></div><div class="field"><label for="leaveType">Jenis</label><select id="leaveType"><option value="IZIN">Izin</option><option value="SAKIT">Sakit</option></select></div><div class="grid two"><div class="field"><label for="leaveStart">Tanggal mulai</label><input id="leaveStart" type="date" value="${localDateKey_()}"></div><div class="field"><label for="leaveEnd">Tanggal selesai</label><input id="leaveEnd" type="date" value="${localDateKey_()}"></div></div><div class="field"><label for="leaveReason">Keterangan</label><textarea id="leaveReason" maxlength="1000" placeholder="Tuliskan keterangan izin atau sakit"></textarea></div><div id="leaveMessage" class="muted" role="status"></div><div class="actions"><button class="btn" onclick="closeModal()">Batal</button><button id="leaveSave" class="btn primary" onclick="saveAdminLeave_()">Simpan</button></div>`;
+ $('modal').classList.remove('hidden');filterLeaveStudents_();
+}
+function filterLeaveStudents_(){
+ const q=$('leaveSearch').value.trim().toLowerCase(),old=$('leaveStudent').value;
+ const users=(state.data.users||[]).filter(u=>u.id&&`${u.name} ${u.nisn} ${u.kelas}`.toLowerCase().includes(q));
+ $('leaveStudent').innerHTML='<option value="">— Pilih siswa —</option>'+users.map(u=>`<option value="${esc_(u.id)}">${esc_(u.name)} · ${esc_(u.nisn)} · ${esc_(u.kelas)}</option>`).join('');
+ if(users.some(u=>String(u.id)===old))$('leaveStudent').value=old;
+}
+async function saveAdminLeave_(){
+ if(state.user?.role!=='admin'||state.leaveSaving)return;
+ const p={userId:$('leaveStudent').value,type:$('leaveType').value,tanggalMulai:$('leaveStart').value,tanggalSelesai:$('leaveEnd').value,alasan:$('leaveReason').value.trim()};
+ if(!p.userId||!p.tanggalMulai||!p.tanggalSelesai||p.tanggalSelesai<p.tanggalMulai||!p.alasan){$('leaveMessage').textContent='Pilih siswa, isi tanggal yang benar dan keterangan.';return;}
+ state.leaveSaving=true;$('leaveSave').disabled=true;$('leaveMessage').textContent='Menyimpan di server…';
+ try{await api('adminLeaveSave',p);closeModal();toast('Izin/sakit berhasil disimpan.',true);await loadData();adminTab('leave');}
+ catch(e){if($('leaveMessage'))$('leaveMessage').textContent=e.message;}
+ finally{state.leaveSaving=false;if($('leaveSave'))$('leaveSave').disabled=false;}
+}
+function adminSchedulePanel_(){
+ const s=state.data.settings||{},work=String(s.hariKerja||'1,2,3,4,5');
+ $('adminContent').innerHTML=`<div class="card"><h3>Pengaturan Presensi</h3><div class="field"><label>URL Google Apps Script Web App</label><input id="apiInput" value="${esc_(state.api||DEFAULT_API_URL)}"></div><div class="grid two"><div class="field"><label for="jamMasuk">Batas Absen Datang (WITA)</label><input id="jamMasuk" type="time" value="${esc_(s.jamMasuk||'07:30')}"></div><div class="field"><label for="jamPulang">Batas Absen Pulang (WITA)</label><input id="jamPulang" type="time" value="${esc_(s.jamPulang||'15:30')}"></div></div><div class="field"><label for="workDays">Hari sekolah untuk perhitungan tidak absen</label><select id="workDays"><option value="1,2,3,4,5" ${work==='1,2,3,4,5'?'selected':''}>Senin–Jumat</option><option value="1,2,3,4,5,6" ${work==='1,2,3,4,5,6'?'selected':''}>Senin–Sabtu</option><option value="0,1,2,3,4,5,6" ${work==='0,1,2,3,4,5,6'?'selected':''}>Setiap hari</option></select></div><div class="field"><label for="schoolHolidays">Tanggal libur (opsional, YYYY-MM-DD dipisah koma)</label><textarea id="schoolHolidays" placeholder="2026-09-16, 2026-09-17">${esc_(s.hariLibur||'')}</textarea></div><p class="muted">Jadwal disimpan di server dan dipakai untuk menghitung laporan. Presensi tetap dapat dikirim di luar jam tersebut. Laporan bulan lampau dihitung menggunakan jadwal yang berlaku saat laporan dibuka.</p><div class="field"><label>Radius referensi lokasi (meter)</label><input id="radius" type="number" value="100" readonly></div><div class="actions"><button id="scheduleSave" class="btn primary" onclick="saveSettings()">Simpan Pengaturan</button><button class="btn" onclick="testApi()">Tes Koneksi</button><button class="btn" onclick="setCenter()">Ambil Titik GPS Admin</button></div><div id="setMsg" class="alert" role="status">Batas awal: datang 07.30 dan pulang 15.30 WITA.</div></div>`;
+}
+async function saveSettings(){
+ if(state.user?.role!=='admin'||state.settingsSaving)return;
+ const p={jamMasuk:$('jamMasuk').value,jamPulang:$('jamPulang').value,hariKerja:$('workDays').value,hariLibur:$('schoolHolidays').value.trim()};
+ if(!p.jamMasuk||!p.jamPulang||p.jamPulang<=p.jamMasuk){$('setMsg').textContent='Jam pulang harus setelah jam datang.';return;}
+ state.settingsSaving=true;$('scheduleSave').disabled=true;
+ try{saveApi($('apiInput').value);const r=await api('settingsSave',p);if(!r.data?.settings)throw Error('Server belum mengembalikan pengaturan. Perbarui Apps Script pasangan HTML ini.');state.data.settings=r.data.settings;$('setMsg').textContent='Jadwal berhasil disimpan di server. URL Web App disimpan pada perangkat ini.';$('setMsg').className='alert ok';}
+ catch(e){$('setMsg').textContent=e.message;$('setMsg').className='alert bad';}
+ finally{state.settingsSaving=false;if($('scheduleSave'))$('scheduleSave').disabled=false;}
 }
 
 function renderUsersTable_(){
  const q=String($('userSearch')?.value||'').trim().toLowerCase(),kelas=$('userClass')?.value||'';
  const rows=(state.data.users||[]).filter(u=>(!kelas||u.kelas===kelas)&&(!q||`${u.name||''} ${u.nisn||u.id||u.nip||''}`.toLowerCase().includes(q)));
- $('usersResult').innerHTML=`<div class="admin-summary"><span class="badge info">Ditampilkan: ${rows.length}</span></div><div class="tablewrap"><table><thead><tr><th>No.</th><th>NISN</th><th>Nama</th><th>Kelas</th><th>Jenis Kelamin</th><th>Status</th></tr></thead><tbody>${rows.map((u,i)=>`<tr><td>${i+1}</td><td>${esc_(u.nisn||u.id||u.nip||'-')}</td><td><b>${esc_(u.name||'-')}</b></td><td>${esc_(u.kelas||'-')}</td><td>${esc_(u.gender||u.jenisKelamin||'-')}</td><td><span class="badge ${u.active===false?'bad':'ok'}">${u.active===false?'Nonaktif':'Aktif'}</span></td></tr>`).join('')||'<tr><td colspan="6" class="empty-cell">Data siswa tidak ditemukan.</td></tr>'}</tbody></table></div>`;
+ $('usersResult').innerHTML=`<div class="admin-summary"><span class="badge info">Ditampilkan: ${rows.length}</span></div><div class="tablewrap"><table><thead><tr><th>No.</th><th>NISN</th><th>Nama</th><th>Kelas</th><th>Jenis Kelamin</th><th>Status</th><th>Aksi</th></tr></thead><tbody>${rows.map((u,i)=>`<tr><td>${i+1}</td><td>${esc_(u.nisn||u.id||u.nip||'-')}</td><td><b>${esc_(u.name||'-')}</b></td><td>${esc_(u.kelas||'-')}</td><td>${esc_(u.gender||u.jenisKelamin||'-')}</td><td><span class="badge ${u.active===false?'bad':'ok'}">${u.active===false?'Nonaktif':'Aktif'}</span></td><td><button class="btn" data-student-id="${esc_(u.id)}" onclick="editStudent_(this.dataset.studentId)">✏️ Edit</button></td></tr>`).join('')||'<tr><td colspan="7" class="empty-cell">Data siswa tidak ditemukan.</td></tr>'}</tbody></table></div>`;
 }
 function filteredAttendance_(){
  const q=String($('attSearch')?.value||'').trim().toLowerCase(),date=$('attDate')?.value||'',kelas=$('attClass')?.value||'',status=($('attStatus')?.value||'').toUpperCase();
@@ -1730,12 +2008,137 @@ function exportFilteredAttendance_(){
  const rows=filteredAttendance_();if(!rows.length)return toast('Tidak ada data pada hasil filter.');
  const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(rows.map((x,i)=>({No:i+1,Tanggal:rowDate_(x),Jam:historyTime_(x),NISN:x.nisn||x.nip||'',Nama:x.name||'',Kelas:x.kelas||'',Jenis:x.type||x.jenis||'',Status:x.status||'VALID',Lokasi:x.locationStatus||'',JarakMeter:x.jarak??x.distance??'',AkurasiGPS:x.accuracy??'',LinkFotoDrive:photoUrl_(x)}))),'PRESENSI');XLSX.writeFile(wb,'SiDEt_Hasil_Filter_'+localDateKey_()+'.xlsx');
 }
+function bulkStudentExport_(current=false){
+ if(typeof XLSX==='undefined')return toast('Pustaka Excel belum termuat. Periksa koneksi internet.');
+ const headers=['NISN','Nama','Kelas','Sekolah','JenisKelamin','Aktif','Password'];
+ const rows=current?(state.data.users||[]).map(u=>[String(u.nisn||''),u.name||'',u.kelas||'',u.sekolah||'',u.gender||'',u.active===false?'Nonaktif':'Aktif','']):[];
+ const sheet=XLSX.utils.aoa_to_sheet([headers,...rows]);
+ for(let i=0;i<rows.length;i++){const cell=sheet['A'+(i+2)];if(cell){cell.t='s';cell.z='@';}}
+ sheet['!cols']=[{wch:16},{wch:35},{wch:14},{wch:35},{wch:20},{wch:14},{wch:20}];
+ const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,sheet,'SISWA');
+ XLSX.writeFile(wb,current?'SiDEt_Daftar_Siswa_Untuk_Pembaruan.xlsx':'SiDEt_Template_Unggah_Siswa.xlsx');
+}
+function bulkStudentForm_(){
+ if(state.user?.role!=='admin'||state.bulkBusy)return;
+ state.bulkImport={rows:[],token:'',workbook:null};
+ $('modalBox').innerHTML=`<h3>Unggah Massal Siswa</h3>
+ <p class="muted">NISN yang sudah terdaftar akan diperbarui; NISN baru akan ditambahkan. ID dan catatan presensi lama tetap tersimpan. Siswa yang tidak tercantum dalam file tidak diubah.</p>
+ <div class="actions"><button class="btn" onclick="bulkStudentExport_()">Unduh Template Excel</button><button class="btn" onclick="bulkStudentExport_(true)">Unduh Daftar Saat Ini</button></div>
+ <p class="muted">Kolom wajib: <b>NISN, Nama, Kelas</b>. NISN harus 10 digit dengan format teks, termasuk nol di depan. Kolom opsional: Sekolah, JenisKelamin, Aktif, Password. Kolom opsional kosong mempertahankan nilai siswa lama. Isi Aktif dengan <b>Nonaktif</b> untuk siswa berhenti atau lulus.</p>
+ <div class="field"><label for="bulkFile">File Excel / CSV (maks. 5 MB, 1.000 siswa per lembar)</label><input id="bulkFile" type="file" accept=".xlsx,.xls,.csv" onchange="bulkReadFile_()"></div>
+ <div class="field"><label for="bulkSheet">Lembar yang akan diunggah</label><select id="bulkSheet" onchange="bulkInvalidate_()"></select></div>
+ <div class="field"><label for="bulkDefaultPassword">Password awal untuk siswa baru tanpa password</label><input id="bulkDefaultPassword" type="password" autocomplete="new-password" value="0123SMAN2Nusa" maxlength="128" oninput="bulkInvalidate_()"></div>
+ <div id="bulkMessage" class="muted" role="status">Pilih file, lalu periksa pratinjau sebelum menyimpan.</div>
+ <div class="actions"><button id="bulkPreviewButton" class="btn" onclick="bulkPreview_()" disabled>Periksa & Pratinjau</button><button id="bulkSaveButton" class="btn primary" onclick="bulkApply_()" disabled>Simpan Perubahan Massal</button><button class="btn" onclick="closeModal()">Tutup</button></div><div id="bulkPreviewResult"></div>`;
+ $('modal').classList.remove('hidden');
+}
+function bulkInvalidate_(){
+ if(!state.bulkImport)return;state.bulkImport.token='';state.bulkImport.rows=[];
+ $('bulkSaveButton').disabled=true;$('bulkPreviewResult').innerHTML='';
+ $('bulkMessage').textContent='Jalankan pratinjau untuk memeriksa data terbaru.';
+}
+function bulkSetBusy_(busy){
+ state.bulkBusy=busy;
+ $('modalBox').querySelectorAll('input,select,button').forEach(x=>x.disabled=busy);
+ if(!busy){$('bulkPreviewButton').disabled=!state.bulkImport?.workbook;$('bulkSaveButton').disabled=!state.bulkImport?.token;}
+}
+async function bulkReadFile_(){
+ bulkInvalidate_();state.bulkImport.workbook=null;$('bulkSheet').innerHTML='';
+ const file=$('bulkFile').files[0];if(!file){$('bulkPreviewButton').disabled=true;return;}
+ bulkSetBusy_(true);
+ try{
+  if(!/\.(xlsx|xls|csv)$/i.test(file.name))throw Error('Pilih file .xlsx, .xls, atau .csv.');
+  if(file.size>5*1024*1024)throw Error('Ukuran file maksimal 5 MB.');
+  if(typeof XLSX==='undefined')throw Error('Pustaka Excel belum termuat. Periksa koneksi internet.');
+  const bytes=await file.arrayBuffer();const wb=XLSX.read(bytes,{type:'array',raw:true,cellText:true,sheetRows:1002});
+  if(!wb.SheetNames.length)throw Error('File tidak memiliki lembar data.');
+  state.bulkImport.workbook=wb;
+  wb.SheetNames.forEach(name=>{const o=document.createElement('option');o.value=name;o.textContent=name;$('bulkSheet').appendChild(o);});
+  $('bulkMessage').textContent='File siap. Pilih lembar data dan klik Periksa & Pratinjau.';
+ }catch(e){$('bulkMessage').textContent=e.message;}
+ finally{bulkSetBusy_(false);}
+}
+function bulkParseSheet_(sheet){
+ const range=XLSX.utils.decode_range(sheet['!fullref']||sheet['!ref']||'A1');
+ if(range.s.r!==0||range.s.c!==0)throw Error('Letakkan judul kolom mulai dari sel A1.');
+ if(range.e.r>1000)throw Error('Maksimal 1.000 baris siswa. Hapus baris kosong berformat di bawah data atau pisahkan file.');
+ const matrix=XLSX.utils.sheet_to_json(sheet,{header:1,raw:false,defval:'',blankrows:true});
+ if(!matrix.length)throw Error('Lembar kosong.');
+ const aliases={nisn:'nisn',nama:'name',namalengkap:'name',kelas:'kelas',sekolah:'sekolah',jeniskelamin:'gender',gender:'gender',aktif:'active',status:'active',password:'password'};
+ const seen=new Set();
+ const keys=matrix[0].map(v=>{const key=aliases[String(v).trim().toLowerCase().replace(/[\s_]+/g,'')];if(key&&seen.has(key))throw Error('Kolom ganda: '+v);if(key)seen.add(key);return key;});
+ if(['nisn','name','kelas'].some(k=>!keys.includes(k)))throw Error('Baris pertama harus memuat kolom NISN, Nama, dan Kelas.');
+ const rows=[];
+ matrix.slice(1).forEach((r,n)=>{
+  if(!r.some(v=>String(v).trim()))return;
+  const obj={sourceLine:n+2};keys.forEach((k,c)=>{if(!k)return;const cell=sheet[XLSX.utils.encode_cell({r:n+1,c})];if(cell?.f)throw Error('Baris '+(n+2)+': gunakan nilai biasa, bukan rumus.');obj[k]=String(r[c]??'');});
+  rows.push(obj);
+ });
+ if(!rows.length||rows.length>1000)throw Error('Isi 1 sampai 1.000 siswa.');return rows;
+}
+async function bulkPreview_(){
+ if(state.bulkBusy||!state.bulkImport?.workbook)return;
+ bulkInvalidate_();bulkSetBusy_(true);
+ try{
+  const rows=bulkParseSheet_(state.bulkImport.workbook.Sheets[$('bulkSheet').value]);
+  const defaultPassword=$('bulkDefaultPassword').value;
+  $('bulkMessage').textContent='Memeriksa data dengan Spreadsheet…';
+  const r=await api('userBulkPreview',{rows,defaultPassword});const d=r.data;
+  if(!d||!Array.isArray(d.preview)||!Array.isArray(d.errors))throw Error('Perbarui Apps Script ke versi yang mendukung unggah massal.');
+  state.bulkImport.rows=rows;state.bulkImport.defaultPassword=defaultPassword;state.bulkImport.token=d.token||'';
+  const c=d.counts;
+  $('bulkMessage').textContent=d.errors.length?`${d.errors.length} baris bermasalah. Belum ada data disimpan; perbaiki file lalu unggah ulang.`:`${rows.length} siswa diperiksa: ${c.added} baru, ${c.updated} diperbarui, ${c.unchanged} tetap. ${c.deactivated} akun akan dinonaktifkan. Periksa rincian sebelum menyimpan. Pratinjau berlaku 10 menit.`;
+  $('bulkPreviewResult').innerHTML=(d.errors.length?`<div class="alert bad">${d.errors.map(e=>`Baris ${esc_(e.line)}: ${esc_(e.message)}`).join('<br>')}</div>`:'')+`<div class="tablewrap" style="max-height:340px;overflow:auto"><table><thead><tr><th>NISN</th><th>Nama</th><th>Kelas lama</th><th>Kelas baru</th><th>Tindakan</th><th>Kolom berubah</th></tr></thead><tbody>${d.preview.map(x=>`<tr><td>${esc_(x.nisn)}</td><td>${esc_(x.name)}</td><td>${esc_(x.oldClass)}</td><td>${esc_(x.kelas)}</td><td>${esc_(x.action)}</td><td>${esc_(x.fields||'—')}</td></tr>`).join('')}</tbody></table></div>`;
+ }catch(e){$('bulkMessage').textContent=e.message||'Pratinjau gagal.';}
+ finally{bulkSetBusy_(false);}
+}
+async function bulkApply_(){
+ if(state.bulkBusy||!state.bulkImport?.token)return;
+ bulkSetBusy_(true);$('bulkMessage').textContent='Menyimpan data siswa ke Spreadsheet…';
+ let saved=false;
+ try{
+  const b=state.bulkImport;const r=await api('userBulkApply',{token:b.token,rows:b.rows,defaultPassword:b.defaultPassword});
+  const d=r.data;if(!d||typeof d.added!=='number')throw Error('Respons server tidak lengkap. Muat ulang data sebelum mencoba lagi.');
+  saved=true;b.token='';b.rows=[];b.defaultPassword='';$('bulkDefaultPassword').value='';
+  $('bulkMessage').textContent=`Selesai: ${d.added} siswa baru, ${d.updated} siswa diperbarui, ${d.unchanged} tetap. ${d.deactivated} akun dinonaktifkan.`;
+  await loadData();
+ }catch(e){$('bulkMessage').textContent=saved?'Data berhasil disimpan. Tutup formulir lalu klik Muat Ulang untuk memperbarui daftar.':(e.message||'Penyimpanan gagal.')+' Jika respons terputus, klik Simpan lagi untuk memeriksa hasil unggahan yang sama; jangan membuat unggahan baru sebelum memeriksa data.';}
+ finally{bulkSetBusy_(false);}
+}
+
+function editStudent_(id){
+ if(state.user?.role!=='admin'||state.studentSaving)return;
+ const u=(state.data.users||[]).find(x=>String(x.id)===String(id));
+ if(!u)return toast('Data siswa tidak ditemukan. Muat ulang daftar.');
+ state.editStudentId=String(u.id);
+ $('modalBox').innerHTML=`<h3>Edit Data Siswa</h3><div class="muted">ID: ${esc_(u.id)}</div><form id="studentEditForm" onsubmit="event.preventDefault();saveStudentEdit_()">
+ <div class="grid two"><div class="field"><label for="editNisn">NISN (10 digit)</label><input id="editNisn" inputmode="numeric" pattern="[0-9]{10}" maxlength="10" required></div><div class="field"><label for="editName">Nama lengkap</label><input id="editName" maxlength="150" required></div></div>
+ <div class="grid two"><div class="field"><label for="editSchool">Sekolah</label><input id="editSchool" maxlength="150"></div><div class="field"><label for="editClass">Kelas</label><input id="editClass" maxlength="40" required></div></div>
+ <div class="grid two"><div class="field"><label for="editGender">Jenis kelamin</label><select id="editGender"><option value="">Belum diisi</option><option>LAKI-LAKI</option><option>PEREMPUAN</option></select></div><div class="field"><label for="editActive">Status akun</label><select id="editActive"><option value="true">Aktif</option><option value="false">Nonaktif</option></select></div></div>
+ <div class="field"><label for="editPassword">Password baru (opsional)</label><input id="editPassword" type="password" autocomplete="new-password" maxlength="128" placeholder="Kosongkan untuk mempertahankan password"></div>
+ <div id="studentEditMessage" class="muted" role="status"></div><div class="actions"><button type="button" class="btn" onclick="closeModal()">Batal</button><button type="submit" class="btn primary">Simpan Perubahan</button></div></form>`;
+ const values={editNisn:u.nisn||'',editName:u.name||'',editSchool:u.sekolah||'',editClass:u.kelas||'',editGender:u.gender||u.jenisKelamin||'',editActive:u.active===false?'false':'true'};
+ Object.entries(values).forEach(([k,v])=>{$(k).value=v;});
+ if(!$('editGender').value&&values.editGender){const o=document.createElement('option');o.value=values.editGender;o.textContent=values.editGender;$('editGender').appendChild(o);$('editGender').value=values.editGender;}
+ $('modal').classList.remove('hidden');$('editName').focus();
+}
+async function saveStudentEdit_(){
+ if(state.user?.role!=='admin'||state.studentSaving)return;
+ const p={id:state.editStudentId,nisn:$('editNisn').value.trim(),name:$('editName').value.trim(),sekolah:$('editSchool').value.trim(),kelas:$('editClass').value.trim(),gender:$('editGender').value,active:$('editActive').value==='true',password:$('editPassword').value};
+ const msg=$('studentEditMessage');
+ if(!/^[0-9]{10}$/.test(p.nisn)||!p.name||!p.kelas){msg.textContent='Isi NISN 10 digit, nama, dan kelas.';return;}
+ state.studentSaving=true;const fields=[...$('studentEditForm').querySelectorAll('input,select,button')];fields.forEach(x=>x.disabled=true);msg.textContent='Menyimpan perubahan…';
+ let saved=false;
+ try{await api('userUpdate',p);saved=true;const u=state.data.users.find(x=>String(x.id)===String(p.id));if(u){const {password,...profile}=p;Object.assign(u,profile);}state.studentSaving=false;closeModal();adminTab('users');toast('Data siswa berhasil diperbarui.',true);await loadData();adminTab('users');}
+ catch(e){if(saved)toast('Data tersimpan. Klik Muat Ulang untuk memperbarui daftar.');else{msg.textContent=e.message||'Gagal menyimpan. Silakan coba lagi.';msg.className='alert bad';}}
+ finally{state.studentSaving=false;fields.forEach(x=>x.disabled=false);}
+}
+
 function userForm(){
  $('modal').classList.remove('hidden');$('modalBox').innerHTML=`<h3>Tambah Siswa</h3><div class="field"><label>NISN / Username</label><input id="uNisn"></div><div class="field"><label>Nama Lengkap</label><input id="uName"></div><div class="grid two"><div class="field"><label>Sekolah</label><input id="uSekolah" value="Sekolah"></div><div class="field"><label>Kelas</label><input id="uKelas" value="Siswa"></div></div><div class="field"><label>Password</label><input id="uPass" value="0123SMAN2Nusa"></div><div class="actions"><button class="btn" onclick="closeModal()">Batal</button><button class="btn primary" onclick="addUser()">Simpan</button></div>`
 }
 async function addUser(){const nisn=$('uNisn').value.trim(),u={nisn,nip:nisn,id:nisn,name:$('uName').value.trim(),sekolah:$('uSekolah').value.trim(),kelas:$('uKelas').value.trim(),password:$('uPass').value,active:true};if(!u.nisn||!u.name)return toast('NISN dan nama wajib diisi');try{if(apiReady())await api('userSave',u);else state.data.users.push(u);closeModal();toast('Siswa berhasil disimpan',true);await loadData();adminTab('users')}catch(e){toast(e.message||'Gagal menyimpan siswa')}}
-async function approveLeave(id,status){try{await api('leaveApprove',{id,status,adminId:state.user.id});toast('Status izin diperbarui',true);loadData();adminTab('leave')}catch(e){toast(e.message)}}
-function saveSettings(){saveApi($('apiInput').value);state.data.settings.radius=Number($('radius').value||100);state.data.settings.jamMasuk=$('jamMasuk').value||'07:30';localStorage.setItem('sidet_settings',JSON.stringify(state.data.settings));toast('Pengaturan tersimpan',true)}
+async function approveLeave(id,status){try{await api('leaveApprove',{id,status,adminId:state.user.id});toast('Status izin diperbarui',true);await loadData();adminTab('leave')}catch(e){toast(e.message)}}
 async function testApi(){try{const j=await api('ping');$('setMsg').textContent='Koneksi berhasil: '+(j.message||'OK');$('setMsg').className='alert ok'}catch(e){$('setMsg').textContent=e.message;$('setMsg').className='alert bad'}}
 function setCenter(){if(!navigator.geolocation)return toast('GPS tidak tersedia');navigator.geolocation.getCurrentPosition(async p=>{try{await api('setGeofence',{lat:p.coords.latitude,lng:p.coords.longitude,radius:Number($('radius').value||100),adminId:state.user.id});toast('Titik geofence tersimpan',true)}catch(e){toast(e.message)}},e=>toast(e.message),{enableHighAccuracy:true,timeout:15000})}
 
