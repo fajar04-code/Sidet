@@ -358,7 +358,7 @@ function isInsideAttendanceArea_(lat, lng) {
   <div class="loginbox">
     <div class="logo">S</div>
     <h1>SiDEt Siswa</h1><div class="muted">Sistem Digital Presensi Siswa</div>
-    <div class="role"><button id="rPeg" class="btn active" onclick="setRole('siswa')">Siswa</button><button id="rAdm" class="btn" onclick="setRole('admin')">Admin</button></div>
+    <div class="role"><button id="rPeg" class="btn active" onclick="setRole('siswa')">Siswa</button><button id="rGuru" class="btn" onclick="setRole('guru')">Guru</button><button id="rAdm" class="btn" onclick="setRole('admin')">Admin</button></div>
     <div class="field"><label>Username / NISN</label><input id="loginUser" placeholder="Masukkan username atau NISN"></div>
     <div class="field"><label>Password</label><div class="password-wrap"><input id="loginPass" type="password" placeholder="Password" autocomplete="current-password"><button class="btn" type="button" aria-controls="loginPass" aria-pressed="false" onclick="toggleLoginPassword_(this)">Lihat</button></div></div>
     <button class="btn primary" style="width:100%" onclick="login()">Masuk</button>
@@ -474,6 +474,8 @@ function isInsideAttendanceArea_(lat, lng) {
       <button class="btn" onclick="document.getElementById('schoolAnalytics').scrollIntoView({behavior:'smooth'})">📈 Grafik & Rekap Semester</button>
       <button class="btn" onclick="adminTab('classrecap')">🗓️ Rekap Kelas Bulanan</button>
       <button class="btn" onclick="adminTab('leave')">📝 Izin & Sakit Siswa</button>
+      <button class="btn" onclick="adminTab('teachers')">👨‍🏫 Data Guru</button>
+      <button class="btn" onclick="adminTab('nonEffective')">📅 Hari Tidak Efektif</button>
       <button class="btn" onclick="adminTab('settings')">⚙️ Pengaturan</button>
       <button class="btn ok" onclick="exportExcel()">📊 Ekspor Excel Lengkap</button>
       <button class="btn" onclick="exportSummary()">📈 Ekspor Ringkasan</button>
@@ -522,7 +524,7 @@ const savedApi=(()=>{
 })();
 const state={role:'siswa',user:null,api:API_URL,data:{attendance:[],users:[],leave:[],settings:{}}};
 const $=id=>document.getElementById(id);
-function setRole(r){state.role=r;$('rPeg').classList.toggle('active',r==='siswa');$('rAdm').classList.toggle('active',r==='admin')}
+function setRole(r){state.role=r;$('rPeg').classList.toggle('active',r==='siswa');$('rGuru').classList.toggle('active',r==='guru');$('rAdm').classList.toggle('active',r==='admin');$('loginUser').placeholder=r==='guru'?'Masukkan NIP atau username guru':r==='admin'?'Masukkan username admin':'Masukkan NISN'}
 function toast(t,ok=false){$('toast').textContent=t;$('toast').classList.remove('hidden');setTimeout(()=>$('toast').classList.add('hidden'),3000)}
 function saveApi(v){const url=String(v||'').trim();if(!/^https:\/\//i.test(url))throw Error('URL Web App tidak valid. Gunakan URL https://.../exec');state.api=url;try{localStorage.setItem('sidet_api',url)}catch(e){}return url;}
 function apiReady(){return /^https:\/\//i.test(state.api)}
@@ -898,7 +900,8 @@ function startApp(){
  applyTheme(getTheme(),false);
  $('loginView').classList.add('hidden');$('app').classList.remove('hidden');$('who').textContent=(state.user.name||'')+' · '+state.user.role;
  const nav=$('nav');nav.innerHTML=state.user.role==='admin'?'<button class="active" onclick="showPage(\'adminPage\')">Dashboard Admin</button>':'<button class="active" onclick="showPage(\'siswaPage\')">Presensi Saya</button>';
- if(state.user.role==='siswa'){nav.insertAdjacentHTML('beforeend','<button onclick="openIndividualReport_()">Laporan Bulanan</button>');showPage('siswaPage');renderStudentProfile();loadData();checkStudentPermissions_();resumePendingSync_()}
+ if(state.user.role==='siswa'){nav.insertAdjacentHTML('beforeend','<button onclick="openIndividualReport_()">Laporan Bulanan</button><button onclick="studentLeaveForm_()">Ajukan Izin / Sakit</button>');showPage('siswaPage');renderStudentProfile();loadData();checkStudentPermissions_();resumePendingSync_()}
+ else if(state.user.role==='guru'){nav.innerHTML='<button class="active" onclick="showPage(\'adminPage\');guruDashboard_()">Dasbor Guru</button>';showPage('adminPage');guruDashboard_()}
  else{showPage('adminPage');renderAdminDashboard();loadData()}
 }
 function showPage(id){
@@ -1551,6 +1554,18 @@ async function returnToStudentAfterAttendance_(queued=false){
 }
 function closeModal(){if(state.sending||state.studentSaving||state.bulkBusy)return;state.cameraOpen=false;if(state.stream)state.stream.getTracks().forEach(x=>x.stop());$('modal').classList.add('hidden')}
 
+function studentLeaveForm_(){
+ $('modalBox').innerHTML=`<h3>Ajukan Izin / Sakit</h3><div class="field"><label>Jenis</label><select id="reqLeaveType"><option value="IZIN">Izin</option><option value="SAKIT">Sakit</option></select></div><div class="grid two"><div class="field"><label>Tanggal mulai</label><input id="reqLeaveStart" type="date" value="${localDateKey_()}"></div><div class="field"><label>Tanggal selesai</label><input id="reqLeaveEnd" type="date" value="${localDateKey_()}"></div></div><div class="field"><label>Keterangan</label><textarea id="reqLeaveReason" maxlength="1000" placeholder="Jelaskan keperluan izin/sakit"></textarea></div><div id="reqLeaveMsg" class="muted"></div><div class="actions"><button class="btn" onclick="closeModal()">Batal</button><button class="btn primary" onclick="sendStudentLeave_()">Kirim Pengajuan</button></div>`;$('modal').classList.remove('hidden');
+}
+async function sendStudentLeave_(){try{const r=await api('leaveRequest',{type:$('reqLeaveType').value,tanggalMulai:$('reqLeaveStart').value,tanggalSelesai:$('reqLeaveEnd').value,alasan:$('reqLeaveReason').value.trim()});closeModal();toast(r.message||'Pengajuan terkirim.',true);loadData()}catch(e){$('reqLeaveMsg').textContent=e.message}}
+async function guruDashboard_(){
+ $('adminDashboard').innerHTML='<div class="card"><h2>Dasbor Guru</h2><p class="muted">Memuat rekap kelas dan pengajuan izin/sakit…</p></div>';
+ try{const j=await api('teacherDashboard',{}),d=j.data||{};state.data={...state.data,...d};const pending=(d.leave||[]);const classes=[...new Set((d.users||[]).map(x=>x.kelas).filter(Boolean))].sort();$('adminDashboard').innerHTML=`<div class="card"><div class="hero"><div><h2>Dasbor Guru</h2><p class="muted">${esc_(state.user.name||'Guru')} · Rekap kelas dan verifikasi pengajuan siswa.</p></div><button class="btn primary" onclick="guruClassRecap_()">Lihat Rekap Kelas</button></div><h3>Pengajuan Menunggu Konfirmasi</h3><div class="tablewrap"><table><thead><tr><th>Siswa</th><th>Kelas</th><th>Jenis</th><th>Tanggal</th><th>Keterangan</th><th>Aksi</th></tr></thead><tbody>${pending.map(x=>`<tr><td><b>${esc_(x.name)}</b><br>${esc_(x.nisn)}</td><td>${esc_(x.kelas||'—')}</td><td>${esc_(x.type)}</td><td>${esc_(x.tanggalMulai)} s.d. ${esc_(x.tanggalSelesai)}</td><td>${esc_(x.alasan)}</td><td><button class="btn ok" onclick="guruLeaveDecision_('${esc_(x.id)}','DISETUJUI')">Setujui</button> <button class="btn danger" onclick="guruLeaveDecision_('${esc_(x.id)}','DITOLAK')">Tolak</button></td></tr>`).join('')||'<tr><td colspan="6">Tidak ada pengajuan menunggu.</td></tr>'}</tbody></table></div><div class="actions" style="margin-top:14px"><button class="btn" onclick="guruLeaveInput_()">+ Input Izin / Sakit</button><button class="btn" onclick="guruDashboard_()">Muat ulang</button></div></div>`;}catch(e){$('adminDashboard').innerHTML='<div class="alert bad">'+esc_(e.message)+'</div>'}
+}
+async function guruLeaveDecision_(id,status){try{await api('leaveApprove',{id,status});toast('Pengajuan '+status.toLowerCase(),true);guruDashboard_()}catch(e){toast(e.message)}}
+function guruLeaveInput_(){adminLeaveForm_()}
+function guruClassRecap_(){const k=prompt('Masukkan kelas (contoh: XA, XIB, XIIA):');const m=prompt('Masukkan bulan YYYY-MM (contoh: 2026-09):',localDateKey_().slice(0,7));if(!k||!m)return;api('classMonthly',{kelas:k,month:m}).then(j=>{state.data={...state.data,...j.data};$('adminDashboard').innerHTML='<div class="card">'+buildClassRecap_(state.data,k,m)+'</div>'}).catch(e=>toast(e.message))}
+
 function pickHistory_(row,...names){
  const normalized={};Object.keys(row||{}).forEach(k=>normalized[k.toLowerCase().replace(/[^a-z0-9]/g,'')]=row[k]);
  for(const name of names){const v=normalized[name.toLowerCase().replace(/[^a-z0-9]/g,'')];if(v!==undefined&&v!==null&&String(v).trim()!=='')return v;}
@@ -1733,7 +1748,7 @@ function monthlyBaseRows_(month){
 function reportDuration_(seconds){return seconds==null?'—':Math.floor(seconds/3600)+' j '+String(Math.floor(seconds/60)%60).padStart(2,'0')+' m';}
 function reportRules_(){
  const s=state.data.settings||{};
- return {masuk:'07:30',pulang:'15:30',days:String(s.hariKerja||'1,2,3,4,5').split(',').map(Number),holidays:String(s.hariLibur||'').split(',').filter(Boolean)};
+ return {masuk:'07:30',pulang:'15:30',days:String(s.hariKerja||'1,2,3,4,5').split(',').map(Number),holidays:[...String(s.hariLibur||'').split(',').filter(Boolean),...String(s.hariTidakEfektif||'').split(',').filter(Boolean)]};
 }
 function monthlyReportRows_(month){
  const rules=reportRules_(),today=localDateKey_(),now=new Date().toLocaleTimeString('en-GB',{timeZone:'Asia/Makassar',hour12:false});
@@ -2039,8 +2054,15 @@ function adminTab(tab){
    renderAdminClassRecap_();
  }
  if(tab==='leave')adminLeavePanel_();
+ if(tab==='nonEffective'){$('adminContent').innerHTML=`<div class="card"><h3>Hari Tidak Efektif</h3><p class="muted">Tanggal ini tidak dihitung sebagai alfa, bolos, atau belum hadir.</p><div class="field"><label>Tanggal (pisahkan dengan koma bila lebih dari satu)</label><input id="nonEffectiveDates" placeholder="2026-09-10, 2026-09-11"></div><div class="field"><label>Keterangan</label><input id="nonEffectiveReason" placeholder="Contoh: Libur nasional / kegiatan sekolah"></div><button class="btn primary" onclick="saveNonEffective_()">Simpan Hari Tidak Efektif</button><div id="nonEffectiveMsg" class="alert"></div></div>`;}
+ if(tab==='teachers')renderTeacherPanel_();
  if(tab==='settings')adminSchedulePanel_();
 }
+async function saveNonEffective_(){try{const r=await api('nonEffectiveSave',{dates:$('nonEffectiveDates').value,alasan:$('nonEffectiveReason').value});$('nonEffectiveMsg').textContent=r.message;$('nonEffectiveMsg').className='alert ok';await loadData()}catch(e){$('nonEffectiveMsg').textContent=e.message;$('nonEffectiveMsg').className='alert bad';}}
+function teacherForm_(){$('modalBox').innerHTML=`<h3>Tambah Guru</h3><div class="field"><label>NIP</label><input id="tNip"></div><div class="field"><label>Nama</label><input id="tName"></div><div class="field"><label>Username</label><input id="tUser"></div><div class="field"><label>Password awal</label><input id="tPass" value="0123SMAN2Nusa"></div><div class="actions"><button class="btn" onclick="closeModal()">Batal</button><button class="btn primary" onclick="saveTeacher_()">Simpan</button></div>`;$('modal').classList.remove('hidden')}
+function renderTeacherPanel_(){const rows=state.data.teachers||[];$('adminContent').innerHTML=`<div class="card"><div class="hero"><div><h3>Data Guru</h3><p class="muted">Edit nama, NIP, username, status, dan password guru.</p></div><button class="btn primary" onclick="teacherForm_()">+ Tambah Guru</button></div><div class="tablewrap"><table><thead><tr><th>NIP</th><th>Nama</th><th>Username</th><th>Status</th><th>Aksi</th></tr></thead><tbody>${rows.map((x,i)=>`<tr><td>${esc_(x.nip||'—')}</td><td><b>${esc_(x.name)}</b></td><td>${esc_(x.username)}</td><td>${x.active?'Aktif':'Nonaktif'}</td><td><button class="btn" onclick="editTeacher_(${i})">✏️ Edit</button></td></tr>`).join('')||'<tr><td colspan="5">Muat ulang dasbor untuk data guru.</td></tr>'}</tbody></table></div></div>`;}
+function editTeacher_(i){const x=(state.data.teachers||[])[i];if(!x)return;$('modalBox').innerHTML=`<h3>Edit Guru</h3><input id="tId" type="hidden" value="${esc_(x.id)}"><div class="field"><label>NIP</label><input id="tNip" value="${esc_(x.nip||'')}"></div><div class="field"><label>Nama</label><input id="tName" value="${esc_(x.name)}"></div><div class="field"><label>Username</label><input id="tUser" value="${esc_(x.username)}"></div><div class="field"><label>Password baru (kosongkan bila tidak diubah)</label><input id="tPass" type="password"></div><div class="actions"><button class="btn" onclick="closeModal()">Batal</button><button class="btn primary" onclick="saveTeacher_()">Simpan</button></div>`;$('modal').classList.remove('hidden')}
+async function saveTeacher_(){try{await api('teacherSave',{id:$('tId')?.value||'',nip:$('tNip').value.trim(),name:$('tName').value.trim(),username:$('tUser').value.trim(),password:$('tPass').value});closeModal();toast('Guru tersimpan.',true);await loadData();adminTab('teachers')}catch(e){toast(e.message)}}
 
 function adminLeavePanel_(){
  const items=state.data.leave||[];
@@ -2048,7 +2070,7 @@ function adminLeavePanel_(){
 }
 function processLeaveAt_(i,status){const x=(state.data.leave||[])[i];if(x)approveLeave(x.id,status);}
 function adminLeaveForm_(){
- if(state.user?.role!=='admin')return;
+ if(!['admin','guru'].includes(state.user?.role))return;
  $('modalBox').innerHTML=`<h3>Input Izin / Sakit</h3><div class="field"><label for="leaveSearch">Cari siswa (nama / NISN / kelas)</label><input id="leaveSearch" oninput="filterLeaveStudents_()" placeholder="Ketik nama atau NISN"></div><div class="field"><label for="leaveStudent">Pilih siswa</label><select id="leaveStudent"></select></div><div class="field"><label for="leaveType">Jenis</label><select id="leaveType"><option value="IZIN">Izin</option><option value="SAKIT">Sakit</option></select></div><div class="grid two"><div class="field"><label for="leaveStart">Tanggal mulai</label><input id="leaveStart" type="date" value="${localDateKey_()}"></div><div class="field"><label for="leaveEnd">Tanggal selesai</label><input id="leaveEnd" type="date" value="${localDateKey_()}"></div></div><div class="field"><label for="leaveReason">Keterangan</label><textarea id="leaveReason" maxlength="1000" placeholder="Tuliskan keterangan izin atau sakit"></textarea></div><div id="leaveMessage" class="muted" role="status"></div><div class="actions"><button class="btn" onclick="closeModal()">Batal</button><button id="leaveSave" class="btn primary" onclick="saveAdminLeave_()">Simpan</button></div>`;
  $('modal').classList.remove('hidden');filterLeaveStudents_();
 }
@@ -2059,7 +2081,7 @@ function filterLeaveStudents_(){
  if(users.some(u=>String(u.id)===old))$('leaveStudent').value=old;
 }
 async function saveAdminLeave_(){
- if(state.user?.role!=='admin'||state.leaveSaving)return;
+ if(!['admin','guru'].includes(state.user?.role)||state.leaveSaving)return;
  const p={userId:$('leaveStudent').value,type:$('leaveType').value,tanggalMulai:$('leaveStart').value,tanggalSelesai:$('leaveEnd').value,alasan:$('leaveReason').value.trim()};
  if(!p.userId||!p.tanggalMulai||!p.tanggalSelesai||p.tanggalSelesai<p.tanggalMulai||!p.alasan){$('leaveMessage').textContent='Pilih siswa, isi tanggal yang benar dan keterangan.';return;}
  state.leaveSaving=true;$('leaveSave').disabled=true;$('leaveMessage').textContent='Menyimpan di server…';
