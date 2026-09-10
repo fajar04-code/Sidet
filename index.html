@@ -8,13 +8,13 @@
 try{const t=localStorage.getItem('sidet_theme');if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t);}catch(e){}
 </script>
 <script>
-const ATTENDANCE_LOCATIONS = [
+let ATTENDANCE_LOCATIONS = [
   { lat: 4.048999, lng: 117.726480, name: "Titik 1" },
   { lat: 4.048987, lng: 117.726179, name: "Titik 2" },
   { lat: 4.049306, lng: 117.726132, name: "Titik 3" },
   { lat: 4.049390, lng: 117.727064, name: "Titik 4" }
 ];
-const GPS_RADIUS_METERS = 100;
+let GPS_RADIUS_METERS = 100;
 </script>
 <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -446,8 +446,9 @@ html #loginView{isolation:isolate;overflow:hidden;position:relative;display:flex
         <div id="empHistory" class="history-list"></div>
       </div>
       <button class="report-launch" type="button" onclick="openIndividualReport_()"><span class="report-launch-icon" aria-hidden="true">▤</span><span><strong>Laporan Individu Bulanan</strong><small>Lihat rekap dan unduh Excel</small></span><span class="report-launch-arrow" aria-hidden="true">→</span></button>
-      <button class="report-launch" type="button" onclick="toggleStudentClassRecap_()"><span class="report-launch-icon" aria-hidden="true">▦</span><span><strong>Rekap Kelas Bulanan</strong><small>Ringkasan hadir, terlambat, bolos, alfa, izin, dan sakit</small></span><span class="report-launch-arrow" aria-hidden="true">→</span></button>
+      <button class="report-launch" type="button" onclick="toggleStudentClassRecap_()"><span class="report-launch-icon" aria-hidden="true">▦</span><span><strong>Rekap Kelas Bulanan</strong><small>Ringkasan hadir, terlambat, bolos, alpa, izin, dan sakit</small></span><span class="report-launch-arrow" aria-hidden="true">→</span></button>
       <section id="studentClassRecap" class="card classrecap hidden"><div id="studentClassRecapContent"></div></section>
+      <section class="card"><div class="card-title"><div><div class="section-label">Informasi sekolah</div><h3 style="margin:0">📢 Pengumuman</h3></div><button class="btn" onclick="loadStudentAnnouncements_()">Muat ulang</button></div><div id="studentAnnouncements" class="muted">Memuat pengumuman…</div></section>
 
     </div>
 
@@ -499,6 +500,7 @@ html #loginView{isolation:isolate;overflow:hidden;position:relative;display:flex
     <div class="grid three" style="margin-top:12px">
       <button class="btn" onclick="adminTab('users')">👥 Kelola Siswa</button>
       <button class="btn" onclick="adminTab('attendance')">📋 Data Presensi</button>
+      <button class="btn warn" onclick="adminTab('farVerification')">📍 Verifikasi Lokasi Jauh</button>
       <button class="btn" onclick="adminTab('daily')">📊 Keterangan Harian</button>
       <button class="btn" onclick="adminTab('absence')">🚫 Siswa Tidak Hadir</button>
       <button class="btn" onclick="document.getElementById('schoolAnalytics').scrollIntoView({behavior:'smooth'})">📈 Grafik & Rekap Semester</button>
@@ -509,6 +511,7 @@ html #loginView{isolation:isolate;overflow:hidden;position:relative;display:flex
       <button class="btn" onclick="adminTab('settings')">⚙️ Pengaturan</button>
       <button class="btn" onclick="adminTab('sync')">🔄 Pemantauan Sinkronisasi</button>
       <button class="btn" onclick="adminTab('audit')">🧾 Audit Log & Backup</button>
+      <button class="btn" onclick="adminTab('announcements')">📢 Pengumuman Siswa</button>
       <button class="btn ok" onclick="exportExcel()">📊 Ekspor Excel Lengkap</button>
       <button class="btn" onclick="exportSummary()">📈 Ekspor Ringkasan</button>
     </div>
@@ -538,7 +541,7 @@ html #loginView{isolation:isolate;overflow:hidden;position:relative;display:flex
 </div>
 
 <script>
-/* Data siswa dan tautan Google Form sengaja TIDAK disimpan di HTML.
+/* Data siswa dan tautan presensi sengaja TIDAK disimpan di HTML.
    Seluruh identitas dibaca dari Apps Script setelah login berhasil. */
 const DEFAULT_API_URL='https://script.google.com/macros/s/AKfycbwW9Kwp2a6o5YutbzwHo0fMowKEH99oUjS4KYB1yvhuh6EVEtLXXtD9qJw6nOsCgDE/exec';
 // Endpoint final dikunci ke Web App yang diberikan pengguna.
@@ -556,6 +559,17 @@ const savedApi=(()=>{
 })();
 const state={role:'auto',user:null,api:API_URL,data:{attendance:[],users:[],leave:[],settings:{}}};
 const $=id=>document.getElementById(id);
+function applyServerSettings_(settings){
+ const s=settings||{};
+ state.data.settings={...state.data.settings,...s};
+ const radius=Number(s.radiusMeter??s.radius??s.gpsRadius);
+ if(Number.isFinite(radius)&&radius>0)GPS_RADIUS_METERS=radius;
+ const raw=s.titikLokasi??s.attendanceLocations??s.locations;
+ if(Array.isArray(raw)&&raw.length){
+  const points=raw.map((p,i)=>({lat:Number(p.lat??p.latitude),lng:Number(p.lng??p.longitude),name:String(p.name||p.nama||('Titik '+(i+1)))})).filter(p=>Number.isFinite(p.lat)&&Number.isFinite(p.lng));
+  if(points.length)ATTENDANCE_LOCATIONS=points;
+ }
+}
 function toast(t,ok=false){$('toast').textContent=t;$('toast').classList.remove('hidden');setTimeout(()=>$('toast').classList.add('hidden'),3000)}
 function saveApi(v){const url=String(v||'').trim();if(!/^https:\/\//i.test(url))throw Error('URL Web App tidak valid. Gunakan URL https://.../exec');state.api=url;try{localStorage.setItem('sidet_api',url)}catch(e){}return url;}
 function apiReady(){return /^https:\/\//i.test(state.api)}
@@ -683,9 +697,11 @@ async function login(){
     if(!j?.user) throw Error('Web App tidak mengirim data akun.');
 
     state.user={...j.user};
+    applyServerSettings_(j.data?.settings||j.settings||j.user?.settings);
     Object.assign(historyState,{showAll:false,month:'',initialized:false});state.data.attendance=[];state.data.leave=[];state.reportReady=false;state.historyStatus='loading';
     localStorage.removeItem('sidet_user');
     startApp();
+    if(state.user.mustChangePassword===true||state.user.forcePasswordChange===true)setTimeout(()=>changePasswordForm_(true),250);
   }catch(e){
     showLogin(e.message||'Login gagal.',true);
   }finally{
@@ -930,13 +946,15 @@ applyTheme(getTheme(),false);
 function startApp(){
  applyTheme(getTheme(),false);
  document.body.classList.toggle('guru-mode',state.user?.role==='guru');
- const passwordButton=$('changePasswordBtn');if(passwordButton)passwordButton.hidden=!['guru','siswa'].includes(state.user?.role);
+ const passwordButton=$('changePasswordBtn');if(passwordButton)passwordButton.hidden=!['guru','siswa','kepsek','wakasek'].includes(state.user?.role);
  const guruMode=state.user?.role==='guru';
- ['adminMenuCard','schoolAnalytics','adminContent'].forEach(id=>{const el=$(id);if(el)el.hidden=guruMode;});
+ const leadership=['kepsek','wakasek'].includes(state.user?.role);
+ ['adminMenuCard','schoolAnalytics','adminContent'].forEach(id=>{const el=$(id);if(el)el.hidden=guruMode||leadership;});
  $('loginView').classList.add('hidden');$('app').classList.remove('hidden');$('who').textContent=(state.user.name||'')+' · '+state.user.role;
  const nav=$('nav');nav.innerHTML=state.user.role==='admin'?'<button class="active" onclick="showPage(\'adminPage\')">Dashboard Admin</button>':'<button class="active" onclick="showPage(\'siswaPage\')">Presensi Saya</button>';
- if(state.user.role==='siswa'){nav.insertAdjacentHTML('beforeend','<button onclick="openIndividualReport_()">Laporan Bulanan</button><button onclick="studentLeaveForm_()">Ajukan Izin / Sakit</button>');showPage('siswaPage');renderStudentProfile();loadData();checkStudentPermissions_();resumePendingSync_()}
+ if(state.user.role==='siswa'){nav.insertAdjacentHTML('beforeend','<button onclick="openIndividualReport_()">Laporan Bulanan</button><button onclick="studentLeaveForm_()">Ajukan Izin / Sakit</button>');showPage('siswaPage');renderStudentProfile();loadData();loadStudentAnnouncements_();checkStudentPermissions_();resumePendingSync_()}
  else if(state.user.role==='guru'){nav.innerHTML='<button class="active" onclick="teacherTab_(\'attendance\')">📋 Data Presensi</button><button onclick="teacherTab_(\'absence\')">🚫 Siswa Tidak Hadir</button><button onclick="teacherTab_(\'classrecap\')">🗓️ Rekap Kelas Bulanan</button><button onclick="teacherIndividualPanel_()">📄 Laporan Individu Bulanan</button><button onclick="teacherTab_(\'leave\')">📝 Izin & Sakit Siswa</button>';showPage('adminPage');teacherTab_('attendance')}
+ else if(leadership){nav.innerHTML='<button class="active" onclick="renderLeadershipDashboard_()">📊 Dashboard Sekolah</button><button onclick="leadershipClassRecap_()">🗓️ Rekap Kelas</button>';showPage('adminPage');renderLeadershipDashboard_()}
  else{showPage('adminPage');renderAdminDashboard();loadData()}
 }
 function showPage(id){
@@ -949,7 +967,7 @@ function showPage(id){
  });
 }
 function logout(){if(state.sending)return toast('Tunggu pengiriman selesai.');location.reload()}
-function changePasswordForm_(){if(!['guru','siswa'].includes(state.user?.role))return toast('Menu ini hanya untuk Guru dan Siswa.');$('modalBox').innerHTML=`<h3>🔐 Ubah Password</h3><p class="muted">Gunakan minimal 8 karakter, mengandung huruf dan angka. Setelah disimpan Anda harus masuk kembali.</p><div class="field"><label>Password lama</label><input id="oldPassword" type="password" autocomplete="current-password" maxlength="128"></div><div class="field"><label>Password baru</label><input id="newPassword" type="password" autocomplete="new-password" maxlength="128"></div><div class="field"><label>Ulangi password baru</label><input id="confirmPassword" type="password" autocomplete="new-password" maxlength="128"></div><div id="changePasswordMessage" class="muted"></div><div class="actions"><button class="btn" onclick="closeModal()">Batal</button><button class="btn primary" onclick="saveChangedPassword_()">Simpan Password</button></div>`;$('modal').classList.remove('hidden');}
+function changePasswordForm_(forced=false){if(!['guru','siswa','kepsek','wakasek'].includes(state.user?.role))return toast('Menu ini hanya untuk akun pengguna.');state.mustChangePassword=forced||state.user?.mustChangePassword||state.user?.forcePasswordChange;$('modalBox').innerHTML=`<h3>🔐 ${state.mustChangePassword?'Buat Password Baru':'Ubah Password'}</h3><p class="muted">Gunakan minimal 8 karakter, mengandung huruf dan angka.${state.mustChangePassword?' Password awal hanya berlaku sekali dan wajib diganti sebelum menggunakan aplikasi.':' Setelah disimpan Anda harus masuk kembali.'}</p><div class="field"><label>Password lama</label><input id="oldPassword" type="password" autocomplete="current-password" maxlength="128"></div><div class="field"><label>Password baru</label><input id="newPassword" type="password" autocomplete="new-password" maxlength="128"></div><div class="field"><label>Ulangi password baru</label><input id="confirmPassword" type="password" autocomplete="new-password" maxlength="128"></div><div id="changePasswordMessage" class="muted"></div><div class="actions">${state.mustChangePassword?'':'<button class="btn" onclick="closeModal()">Batal</button>'}<button class="btn primary" onclick="saveChangedPassword_()">Simpan Password</button></div>`;$('modal').classList.remove('hidden');}
 async function saveChangedPassword_(){const oldPassword=$('oldPassword')?.value||'',newPassword=$('newPassword')?.value||'',confirm=$('confirmPassword')?.value||'',msg=$('changePasswordMessage');if(newPassword!==confirm){msg.textContent='Ulangi password baru harus sama.';return;}if(newPassword.length<8||!/[A-Za-z]/.test(newPassword)||!/[0-9]/.test(newPassword)){msg.textContent='Password baru minimal 8 karakter serta mengandung huruf dan angka.';return;}try{await api('changePassword',{oldPassword,newPassword});closeModal();toast('Password berhasil diubah. Silakan masuk kembali.',true);setTimeout(()=>location.reload(),900);}catch(e){msg.textContent=e.message||'Gagal mengubah password.';}}
 function updateStudentClock(){const d=new Date();if($('clockTime'))$('clockTime').textContent=d.toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit',second:'2-digit'});if($('clockDate'))$('clockDate').textContent=d.toLocaleDateString('id-ID',{weekday:'long',day:'2-digit',month:'long',year:'numeric'})} setInterval(updateStudentClock,1000);updateStudentClock();
 
@@ -1470,12 +1488,13 @@ async function captureAttendance(type){
   let gps;
   try{gps=await getFreshGPS_();}
   catch(e){throw Error('GPS belum terbaca. Foto belum dikirim. Aktifkan Lokasi/GPS dan izin lokasi situs, lalu tekan Coba Kirim Lagi. '+e.message);}
-  Object.assign(job.record,{lat:gps.latitude,lng:gps.longitude,accuracy:gps.accuracy,gpsTimestamp:gps.gpsTimestamp});
+  const geo=validateGPS_({latitude:gps.latitude,longitude:gps.longitude});
+  Object.assign(job.record,{lat:gps.latitude,lng:gps.longitude,accuracy:gps.accuracy,gpsTimestamp:gps.gpsTimestamp,locationClass:geo.inside?'DEKAT_SEKOLAH':'JAUH_DARI_SEKOLAH',locationStatus:geo.inside?'VALID':'MENUNGGU_VERIFIKASI',verificationStatus:geo.inside?'OTOMATIS':'MENUNGGU',distance:Math.round(geo.distance),nearestPoint:geo.nearestPoint});
   setSendProgress_(35,'Lokasi terbaca. Menyimpan presensi…');
   if(!job.id){const r=await api('attendanceQuick',job.record);if(!r.record?.id)throw Error('ID presensi belum diterima.');job.id=r.record.id;
    const receipt=normalizeHistory_({...job.record,...r.record,id:r.record.id,tanggal:r.record.date,jam:r.record.time,_serverReceipt:true});state.data.attendance=(state.data.attendance||[]).filter(x=>String(x.id)!==String(receipt.id));state.data.attendance.push(receipt);renderEmpHistory();
   }
-  setSendProgress_(55,'Presensi tersimpan. Foto dan Google Form masuk antrean sinkronisasi.');
+  setSendProgress_(55,'Presensi tersimpan. Foto masuk antrean sinkronisasi.');
   queueAttendanceSync_(job);
   state.pendingAttendance=null;await new Promise(resolve=>setTimeout(resolve,500));state.sending=false;closeModal();await returnToStudentAfterAttendance_(true);
  }catch(e){if($('attInfo')){$('attInfo').textContent=(state.pendingAttendance?.id?'Presensi sudah tersimpan; proses berikutnya belum selesai. ':'Data belum dikirim. ')+(e.message||'Proses gagal.');$('attInfo').className='alert bad';}if($('captureButton'))$('captureButton').textContent=state.pendingAttendance?'Coba Kirim Lagi':'Jepret & Kirim';}
@@ -1531,20 +1550,6 @@ async function compressCanvasMax100KB(canvas){
  const dataUrl=await new Promise((resolve,reject)=>{const r=new FileReader();r.onload=()=>resolve(r.result);r.onerror=reject;r.readAsDataURL(best);});
  return {blob:best,dataUrl,size:best.size,sizeKB:Math.ceil(best.size/1024),width:OUT_W,height:OUT_H};
 }
-async function sendGoogleFormAsync_(link){
-  const url=String(link||'').trim();
-  if(!url) return;
-  // GET tanpa menunggu respons; Google Form menerima request melalui resource image.
-  try{
-    const img=new Image();
-    img.width=1; img.height=1; img.style.position='fixed'; img.style.left='-9999px';
-    img.referrerPolicy='no-referrer';
-    img.src=url+(url.includes('?')?'&':'?')+'_sidet='+Date.now();
-    document.body.appendChild(img);
-    setTimeout(()=>{try{img.remove()}catch(e){}},10000);
-  }catch(e){ console.warn('Google Form async:',e); }
-}
-
 async function uploadPhotoBackground_(record,photo){
   if(!apiReady() || !photo) return;
   try{
@@ -1572,12 +1577,12 @@ function queueAttendanceSync_(job){
 }
 async function runAttendanceSync_(payload){
  try{
-  const r=await api('syncAttendance',{attendanceId:payload.attendanceId,photo:payload.photo});
+  const r=await api('syncAttendance',{attendanceId:payload.attendanceId,photo:payload.photo,skipGoogleForm:true});
   if(!r?.ok)throw Error(r?.message||'Sinkronisasi gagal.');
   try{sessionStorage.removeItem(syncStorageKey_(payload.attendanceId));}catch(e){}
-  toast('Foto dan Google Form sudah tersinkronisasi.',true);
+  toast('Foto presensi sudah tersinkronisasi.',true);
   if(state.user?.role==='siswa')loadData();
- }catch(e){toast('Presensi tersimpan; foto/Form masih menunggu sinkronisasi. Buka kembali aplikasi untuk mencoba ulang.');}
+ }catch(e){toast('Presensi tersimpan; foto masih menunggu sinkronisasi. Buka kembali aplikasi untuk mencoba ulang.');}
 }
 function resumePendingSync_(){
  try{for(let i=0;i<sessionStorage.length;i++){const k=sessionStorage.key(i);if(!k||!k.startsWith('sidet_pending_sync_'))continue;const p=JSON.parse(sessionStorage.getItem(k)||'{}');if(p.attendanceId&&p.photo)setTimeout(()=>runAttendanceSync_(p),700);}}catch(e){}
@@ -1586,7 +1591,7 @@ async function returnToStudentAfterAttendance_(queued=false){
  state.stream=null;
  showPage('siswaPage');
  window.scrollTo({top:0,behavior:'smooth'});
- toast(queued?'Presensi berhasil dicatat. Foto dan Google Form sedang disinkronkan.':'Presensi berhasil dikirim.',true);
+ toast(queued?'Presensi berhasil dicatat. Foto sedang disinkronkan.':'Presensi berhasil dikirim.',true);
  await loadData();
 }
 function closeModal(){if(state.sending||state.studentSaving||state.bulkBusy)return;state.cameraOpen=false;if(state.stream)state.stream.getTracks().forEach(x=>x.stop());$('modal').classList.add('hidden')}
@@ -1662,7 +1667,7 @@ async function loadData(){
    if(state.user!==currentUser||request!==state.dataRequest)return;
    state.reportReady=h?.data?.reportVersion>=2&&Array.isArray(h?.data?.leave)&&!!h?.data?.settings;
    state.data.leave=Array.isArray(h?.data?.leave)?h.data.leave:[];
-   if(h?.data?.settings)state.data.settings=h.data.settings;
+   if(h?.data?.settings)applyServerSettings_(h.data.settings);
    const ha=h?.data?.attendance??h?.attendance;
    if(!Array.isArray(ha))throw Error('Format respons riwayat tidak sesuai. Perbarui Apps Script dengan file pasangan HTML ini.');
    const receipts=(state.data.attendance||[]).filter(x=>x._serverReceipt&&sameStudent_(x));
@@ -1677,7 +1682,7 @@ async function loadData(){
    historyStatus_('ready',n+' catatan dari server · diperbarui '+new Date().toLocaleTimeString('id-ID',{timeZone:'Asia/Makassar'})+' WITA');
   }else{
    const j=await api('dashboard',{date:localDateKey_(),limit:500});if(state.user!==currentUser||request!==state.dataRequest)return;
-   if(!j?.data)throw Error('Respons dasbor tidak lengkap.');state.data=j.data;
+   if(!j?.data)throw Error('Respons dasbor tidak lengkap.');state.data=j.data;applyServerSettings_(j.data.settings);
   }
   state.syncMessage='Sinkronisasi terakhir: '+new Date().toLocaleTimeString('id-ID');
  }catch(e){
@@ -1944,7 +1949,7 @@ function buildClassRecap_(data,kelas,month){
  const users=(data.users||[]).filter(u=>String(u.kelas||'').trim()===String(kelas||'').trim()&&u.active!==false).sort((a,b)=>String(a.name||'').localeCompare(String(b.name||''),'id'));
  const days=recapMonthDays_(month),heads=days.map(d=>`<th>${Number(d.slice(-2))}</th>`).join('');
  const body=users.map((u,i)=>{const sum={H:0,T:0,B:0,A:0,I:0,S:0};const cells=days.map(d=>{const c=recapCell_(u,d,data);if(sum[c.code]!==undefined)sum[c.code]++;return`<td class="daycell ${c.cls}" title="${c.label}"><b>${c.code||'·'}</b>${['H','T','B'].includes(c.code)?`<small>↓ ${c.in}</small><small>↑ ${c.out}</small>`:''}</td>`}).join('');return`<tr><td class="sticky-no">${i+1}</td><td class="sticky-name">${esc_(u.name||'')}<small style="display:block;color:var(--muted);font-weight:600">${esc_(u.nisn||'')}</small></td>${cells}<td class="sum cr-h">${sum.H}</td><td class="sum cr-t">${sum.T}</td><td class="sum cr-b">${sum.B}</td><td class="sum cr-a">${sum.A}</td><td class="sum cr-i">${sum.I}</td><td class="sum cr-s">${sum.S}</td></tr>`}).join('');
- return `<div class="classrecap-legend"><span class="cr-h">H Hadir</span><span class="cr-t">T Terlambat</span><span class="cr-b">B Bolos</span><span class="cr-a">A Alfa</span><span class="cr-i">I Izin</span><span class="cr-s">S Sakit</span><span class="cr-off">— Libur</span></div><div class="classrecap-wrap"><table class="classrecap-table"><thead><tr><th class="sticky-no">No</th><th class="sticky-name">Nama Siswa</th>${heads}<th>Hadir</th><th>Terlambat</th><th>Bolos</th><th>Alfa</th><th>Izin</th><th>Sakit</th></tr></thead><tbody>${body||`<tr><td colspan="${days.length+8}">Belum ada siswa pada kelas ini.</td></tr>`}</tbody></table></div><p class="muted classrecap-note">Jam kecil: ↓ datang · ↑ pulang. Batas masuk ${esc_(data.settings?.jamMasuk||'07:30')} WITA · pulang ${esc_(data.settings?.jamPulang||'15:30')} WITA.</p>`;
+ return `<div class="classrecap-legend"><span class="cr-h">H Hadir</span><span class="cr-t">T Terlambat</span><span class="cr-b">B Bolos</span><span class="cr-a">A Alpa</span><span class="cr-i">I Izin</span><span class="cr-s">S Sakit</span><span class="cr-off">— Libur</span></div><div class="classrecap-wrap"><table class="classrecap-table"><thead><tr><th class="sticky-no">No</th><th class="sticky-name">Nama Siswa</th>${heads}<th>Hadir</th><th>Terlambat</th><th>Bolos</th><th>Alpa</th><th>Izin</th><th>Sakit</th></tr></thead><tbody>${body||`<tr><td colspan="${days.length+8}">Belum ada siswa pada kelas ini.</td></tr>`}</tbody></table></div><p class="muted classrecap-note">Jam kecil: ↓ datang · ↑ pulang. Batas masuk ${esc_(data.settings?.jamMasuk||'07:30')} WITA · pulang ${esc_(data.settings?.jamPulang||'15:30')} WITA.</p>`;
 }
 async function renderAdminClassRecap_(){const el=$('adminClassRecapContent');if(!el)return;const k=$('classRecapClass')?.value||'',m=$('classRecapMonth')?.value||localDateKey_().slice(0,7);if(!k||!m)return;el.innerHTML='<div class="classrecap-loading">Memuat ringkasan kelas…</div>';try{const j=await api('classMonthly',{kelas:k,month:m});const d=j.data||{};el.innerHTML=`<div class="actions" style="margin:12px 0"><button class="btn" onclick="printClassRecap_(window.__sidetAdminRecap,'${esc_(k)}','${esc_(m)}')">🖨️ Cetak</button><button class="btn primary" onclick="classRecapPdf_(window.__sidetAdminRecap,'${esc_(k)}','${esc_(m)}')">📄 Unduh PDF</button></div>${buildStudentClassSummary_(d,k,m)}`;window.__sidetAdminRecap=d;}catch(e){el.innerHTML='<div class="alert bad">'+esc_(e.message||'Gagal memuat rekap kelas.')+'</div>';}}
 async function toggleStudentClassRecap_(){
@@ -1956,7 +1961,7 @@ function buildStudentClassSummary_(data,kelas,month){
  const days=recapMonthDays_(month);
  const rows=users.map((u,i)=>{const sum={H:0,T:0,B:0,A:0,I:0,S:0};days.forEach(d=>{const c=recapCell_(u,d,data);if(sum[c.code]!==undefined)sum[c.code]++;});return {...u,no:i+1,...sum};});
  const totals=rows.reduce((o,r)=>{for(const k of ['H','T','B','A','I','S'])o[k]+=r[k];return o;},{H:0,T:0,B:0,A:0,I:0,S:0});
- return `<div class="student-recap-summary"><div class="recap-mini-stats">${[['Hadir',totals.H,'cr-h'],['Terlambat',totals.T,'cr-t'],['Bolos',totals.B,'cr-b'],['Alfa',totals.A,'cr-a'],['Izin',totals.I,'cr-i'],['Sakit',totals.S,'cr-s']].map(x=>`<div class="${x[2]}"><span>${x[0]}</span><b>${x[1]}</b></div>`).join('')}</div><div class="tablewrap compact-recap"><table><thead><tr><th>No.</th><th>Nama Siswa</th><th>H</th><th>T</th><th>B</th><th>A</th><th>I</th><th>S</th></tr></thead><tbody>${rows.map(r=>`<tr><td>${r.no}</td><td><b>${esc_(r.name)}</b></td><td>${r.H}</td><td>${r.T}</td><td>${r.B}</td><td>${r.A}</td><td>${r.I}</td><td>${r.S}</td></tr>`).join('')||'<tr><td colspan="8">Belum ada data siswa.</td></tr>'}</tbody></table></div><p class="muted compact-note">Ringkasan bulanan dibuat tanpa tabel 31 tanggal agar ringan di ponsel. H = hadir tepat waktu, T = terlambat, B = bolos, A = alfa, I = izin, S = sakit.</p></div>`;
+ return `<div class="student-recap-summary"><div class="recap-mini-stats">${[['Hadir',totals.H,'cr-h'],['Terlambat',totals.T,'cr-t'],['Bolos',totals.B,'cr-b'],['Alpa',totals.A,'cr-a'],['Izin',totals.I,'cr-i'],['Sakit',totals.S,'cr-s']].map(x=>`<div class="${x[2]}"><span>${x[0]}</span><b>${x[1]}</b></div>`).join('')}</div><div class="tablewrap compact-recap"><table><thead><tr><th>No.</th><th>Nama Siswa</th><th>H</th><th>T</th><th>B</th><th>A</th><th>I</th><th>S</th></tr></thead><tbody>${rows.map(r=>`<tr><td>${r.no}</td><td><b>${esc_(r.name)}</b></td><td>${r.H}</td><td>${r.T}</td><td>${r.B}</td><td>${r.A}</td><td>${r.I}</td><td>${r.S}</td></tr>`).join('')||'<tr><td colspan="8">Belum ada data siswa.</td></tr>'}</tbody></table></div><p class="muted compact-note">Ringkasan bulanan dibuat tanpa tabel 31 tanggal agar ringan di ponsel. H = hadir tepat waktu, T = terlambat, B = bolos, A = alpa, I = izin, S = sakit.</p></div>`;
 }
 function classRecapRows_(data,kelas,month){
  const users=(data.users||[]).filter(u=>(!kelas||String(u.kelas||'')===String(kelas))&&u.active!==false).sort((a,b)=>String(a.name||'').localeCompare(String(b.name||''),'id'));
@@ -2102,6 +2107,10 @@ function downloadAbsenceExcel_(){
  const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'Tidak Hadir');XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet([['Laporan','Siswa tidak hadir seluruh kelas'],['Tanggal',date],['Kelas',kelas||'Semua kelas'],['Jumlah',rows.length],['Dibuat',new Date().toLocaleString('id-ID',{timeZone:'Asia/Makassar'})+' WITA'],['Keterangan','Siswa dengan presensi masuk tidak dicantumkan. Status hari berjalan sebelum 15.30 bersifat sementara.']]),'Keterangan');XLSX.writeFile(wb,`SiDEt_Tidak_Hadir_${date}_${kelas||'Semua_Kelas'}.xlsx`);
 }
 
+async function renderLeadershipDashboard_(){
+ const host=$('adminDashboard');host.innerHTML='<div class="card">Memuat ringkasan sekolah…</div>';
+ try{const j=await api('leadershipDashboard',{}),d=j.data||{};state.data={...state.data,...d};applyServerSettings_(d.settings);const k=d.kpi||{};host.innerHTML=`<div class="hero"><div><h2>📊 Dashboard ${state.user.role==='kepsek'?'Kepala Sekolah':'Wakil Kepala Sekolah'}</h2><p class="muted">Ringkasan kehadiran seluruh sekolah · akses baca saja.</p></div><button class="btn" onclick="renderLeadershipDashboard_()">🔄 Muat ulang</button></div><div class="grid cards" style="margin-top:16px"><div class="card stat"><span class="muted">Total Siswa</span><b>${Number(k.totalSiswa||0)}</b></div><div class="card stat"><span class="muted">Hadir Hari Ini</span><b>${Number(k.hadirHariIni||0)}</b></div><div class="card stat"><span class="muted">Terlambat Hari Ini</span><b>${Number(k.terlambatHariIni||0)}</b></div><div class="card stat"><span class="muted">Belum Pulang</span><b>${Number(k.belumPulang||0)}</b></div></div><div class="card" style="margin-top:16px"><h3>Rekap per Kelas</h3><div class="tablewrap"><table><thead><tr><th>Kelas</th><th>Total</th><th>Hadir</th><th>Terlambat</th><th>Izin</th><th>Sakit</th><th>Belum Pulang</th></tr></thead><tbody>${(d.kelas||[]).map(x=>`<tr><td><b>${esc_(x.kelas)}</b></td><td>${Number(x.total||0)}</td><td>${Number(x.hadir||0)}</td><td>${Number(x.terlambat||0)}</td><td>${Number(x.izin||0)}</td><td>${Number(x.sakit||0)}</td><td>${Number(x.belumPulang||0)}</td></tr>`).join('')||'<tr><td colspan="7">Belum ada data rekap.</td></tr>'}</tbody></table></div></div>`;}catch(e){host.innerHTML='<div class="alert bad">'+esc_(e.message||'Gagal memuat dasbor pimpinan.')+'</div>';}}
+async function leadershipClassRecap_(){const m=prompt('Masukkan bulan YYYY-MM',localDateKey_().slice(0,7));if(!m)return;const host=$('adminDashboard');host.innerHTML='<div class="card">Memuat rekap bulanan…</div>';try{const j=await api('leadershipMonthly',{month:m}),d=j.data||{};host.innerHTML=`<div class="card"><div class="hero"><div><h2>🗓️ Rekap Bulanan Sekolah</h2><p class="muted">Periode ${esc_(m)} · akses baca saja.</p></div><button class="btn" onclick="renderLeadershipDashboard_()">Kembali</button></div><div class="tablewrap"><table><thead><tr><th>Kelas</th><th>Total Siswa</th><th>Hadir</th><th>Terlambat</th><th>Alfa/Bolos</th><th>Izin</th><th>Sakit</th></tr></thead><tbody>${(d.rows||[]).map(x=>`<tr><td><b>${esc_(x.kelas)}</b></td><td>${Number(x.total||0)}</td><td>${Number(x.hadir||0)}</td><td>${Number(x.terlambat||0)}</td><td>${Number(x.alfa||0)}</td><td>${Number(x.izin||0)}</td><td>${Number(x.sakit||0)}</td></tr>`).join('')||'<tr><td colspan="7">Belum ada data.</td></tr>'}</tbody></table></div></div>`;}catch(e){host.innerHTML='<div class="alert bad">'+esc_(e.message||'Gagal memuat rekap.')+'</div>';}}
 function renderAdminDashboard(){
  const a=Array.isArray(state.data.attendance)?state.data.attendance:[],today=localDateKey_(),td=a.filter(x=>rowDate_(x)===today);
  const masuk=new Set(td.filter(x=>(x.type||x.jenis)==='MASUK').map(x=>String(x.nisn||x.userId||x.name))).size;
@@ -2122,6 +2131,7 @@ function adminTab(tab){
    c.innerHTML=`<div class="card"><div class="hero"><div><h3 style="margin:0">Data Presensi</h3><div class="muted">Data diminta dari server sesuai tanggal dan kelas agar dasbor tetap cepat.</div></div><div class="actions"><button class="btn" onclick="loadFilteredAdminAttendance_()">🔄 Muat Ulang</button><button class="btn ok" onclick="exportFilteredAttendance_()">📊 Ekspor Hasil Filter</button></div></div><div class="admin-toolbar"><div class="field search-field"><label>Cari nama / NISN</label><input id="attSearch" placeholder="Nama atau NISN" oninput="renderAttendanceTable_()"></div><div class="field"><label>Tanggal</label><input id="attDate" type="date" value="${localDateKey_()}" onchange="loadFilteredAdminAttendance_()"></div><div class="field"><label>Kelas</label><select id="attClass" onchange="loadFilteredAdminAttendance_()"><option value="">Semua kelas</option>${classes.map(k=>`<option>${esc_(k)}</option>`).join('')}</select></div><div class="field"><label>Status / Jenis</label><select id="attStatus" onchange="renderAttendanceTable_()"><option value="">Semua status</option><option value="MASUK">Masuk</option><option value="PULANG">Pulang</option><option value="DEKAT">Dekat sekolah</option><option value="JAUH">Jauh dari sekolah</option><option value="VALID">Valid</option><option value="TERLAMBAT">Terlambat</option></select></div><button class="btn" onclick="resetAttendanceFilters_()">Reset</button></div><div id="attendanceResult"></div></div>`;
    renderAttendanceTable_();
  }
+ if(tab==='farVerification')farVerificationPanel_();
  if(tab==='daily')adminDailySummaryPanel_();
  if(tab==='absence')absencePanel_();
  if(tab==='classrecap'){
@@ -2135,9 +2145,10 @@ function adminTab(tab){
  if(tab==='teachers')renderTeacherPanel_();
  if(tab==='sync')syncMonitorPanel_();
  if(tab==='audit')auditBackupPanel_();
+ if(tab==='announcements')announcementsPanel_();
  if(tab==='settings')adminSchedulePanel_();
 }
-async function syncMonitorPanel_(){const c=$('adminContent');c.innerHTML='<div class="card"><h3>🔄 Pemantauan Sinkronisasi</h3><p class="muted">Memuat status foto dan Google Form…</p></div>';try{const j=await api('syncMonitor',{limit:200}),d=j.data||{},counts=d.counts||{},rows=d.rows||[];c.innerHTML=`<div class="card"><div class="hero"><div><h3>🔄 Pemantauan Sinkronisasi</h3><p class="muted">Presensi tersimpan, foto Drive, dan Google Form.</p></div><button class="btn" onclick="syncMonitorPanel_()">🔄 Muat ulang</button></div><div class="admin-summary">${Object.entries(counts).map(([k,v])=>`<span class="badge ${k==='SELESAI'?'ok':k.includes('GAGAL')?'bad':'warn'}">${esc_(k)}: ${v}</span>`).join('')}</div><div class="tablewrap"><table><thead><tr><th>Tanggal</th><th>Siswa</th><th>Kelas</th><th>Jenis</th><th>Sinkronisasi</th><th>Pesan</th><th>Foto</th><th>Form</th></tr></thead><tbody>${rows.map(x=>`<tr><td>${esc_(x.tanggal)}<br>${esc_(x.jam)}</td><td><b>${esc_(x.name)}</b><br>${esc_(x.nisn)}</td><td>${esc_(x.kelas)}</td><td>${esc_(x.type)}</td><td>${esc_(x.syncStatus)}</td><td>${esc_(x.syncMessage||'—')}</td><td>${x.photoUrl?`<a class="photo-btn" href="${esc_(x.photoUrl)}" target="_blank" rel="noopener">Buka</a>`:'—'}</td><td>${esc_(x.formStatus||'—')}</td></tr>`).join('')||'<tr><td colspan="8">Belum ada data sinkronisasi.</td></tr>'}</tbody></table></div></div>`;}catch(e){c.innerHTML='<div class="alert bad">'+esc_(e.message)+'</div>';}}
+async function syncMonitorPanel_(){const c=$('adminContent');c.innerHTML='<div class="card"><h3>🔄 Pemantauan Sinkronisasi</h3><p class="muted">Memuat status foto presensi…</p></div>';try{const j=await api('syncMonitor',{limit:200}),d=j.data||{},counts=d.counts||{},rows=d.rows||[];c.innerHTML=`<div class="card"><div class="hero"><div><h3>🔄 Pemantauan Sinkronisasi</h3><p class="muted">Presensi tersimpan dan foto Drive.</p></div><button class="btn" onclick="syncMonitorPanel_()">🔄 Muat ulang</button></div><div class="admin-summary">${Object.entries(counts).map(([k,v])=>`<span class="badge ${k==='SELESAI'?'ok':k.includes('GAGAL')?'bad':'warn'}">${esc_(k)}: ${v}</span>`).join('')}</div><div class="tablewrap"><table><thead><tr><th>Tanggal</th><th>Siswa</th><th>Kelas</th><th>Jenis</th><th>Sinkronisasi</th><th>Pesan</th><th>Foto</th></tr></thead><tbody>${rows.map(x=>`<tr><td>${esc_(x.tanggal)}<br>${esc_(x.jam)}</td><td><b>${esc_(x.name)}</b><br>${esc_(x.nisn)}</td><td>${esc_(x.kelas)}</td><td>${esc_(x.type)}</td><td>${esc_(x.syncStatus)}</td><td>${esc_(x.syncMessage||'—')}</td><td>${x.photoUrl?`<a class="photo-btn" href="${esc_(x.photoUrl)}" target="_blank" rel="noopener">Buka</a>`:'—'}</td></tr>`).join('')||'<tr><td colspan="7">Belum ada data sinkronisasi.</td></tr>'}</tbody></table></div></div>`;}catch(e){c.innerHTML='<div class="alert bad">'+esc_(e.message)+'</div>';}}
 async function auditBackupPanel_(){const c=$('adminContent');c.innerHTML='<div class="card">Memuat audit log…</div>';try{const j=await api('auditLog',{limit:120}),rows=j?.data?.rows||[];c.innerHTML=`<div class="card"><div class="hero"><div><h3>🧾 Audit Log & Backup</h3><p class="muted">Merekam perubahan penting beserta nilai sebelum dan sesudah.</p></div><div class="actions"><button class="btn" onclick="createSiDetBackup_(false)">💾 Backup Sekarang</button><button class="btn primary" onclick="createSiDetBackup_(true)">⏰ Aktifkan Backup Harian</button></div></div><div class="tablewrap"><table><thead><tr><th>Waktu</th><th>Aktor</th><th>Aksi</th><th>Detail</th><th>Sebelum</th><th>Sesudah</th></tr></thead><tbody>${rows.map(x=>`<tr><td>${esc_(x.timestamp||'')}</td><td>${esc_(x.userId)}</td><td>${esc_(x.action)}</td><td>${esc_(x.detail)}</td><td><small>${esc_(x.before||'—')}</small></td><td><small>${esc_(x.after||'—')}</small></td></tr>`).join('')||'<tr><td colspan="6">Belum ada audit log.</td></tr>'}</tbody></table></div></div>`;}catch(e){c.innerHTML='<div class="alert bad">'+esc_(e.message)+'</div>';}}
 async function createSiDetBackup_(automatic){try{const r=await api(automatic?'setupBackup':'backupNow',{});toast(r.message||'Backup berhasil dibuat.',true);if(!automatic)auditBackupPanel_();}catch(e){toast(e.message)}}
 async function saveNonEffective_(){try{const r=await api('nonEffectiveSave',{dates:$('nonEffectiveDates').value,alasan:$('nonEffectiveReason').value});$('nonEffectiveMsg').textContent=r.message;$('nonEffectiveMsg').className='alert ok';await loadData()}catch(e){$('nonEffectiveMsg').textContent=e.message;$('nonEffectiveMsg').className='alert bad';}}
@@ -2155,7 +2166,7 @@ async function loadDailyComparison_(){
  el.innerHTML=`<p><b>${esc_(startDate)} — ${esc_(endDate)}</b> · Total siswa: <b>${d.totalStudents}</b></p><div class="grid cards">${cols.map(([k,label])=>`<div class="card stat"><span class="muted">${label}</span><b>${d.totals[k]||0}</b><small>Akumulasi siswa-hari</small></div>`).join('')}</div><p class="muted">Datang sampai 07.30.00 dihitung tepat waktu; lewat 07.30.00 terlambat. Pulang tepat waktu setelah 15.31.00 WITA. Tepat pukul 07.30 termasuk tepat waktu.</p><div class="tablewrap"><table><thead><tr><th>Tanggal (WITA)</th>${cols.map(x=>'<th>'+x[1]+'</th>').join('')}<th>Status hari</th></tr></thead><tbody>${d.rows.map(r=>`<tr><td>${esc_(r.date)}</td>${cols.map(([k])=>'<td>'+((k==='absent'||k==='noDeparture')&&(!r.effective||!r.closed)?'—':r[k])+'</td>').join('')}<td>${!r.effective?'Hari tidak efektif':r.closed?'Selesai':'Sementara'}</td></tr>`).join('')}</tbody></table></div><p class="muted">Satu siswa dihitung sekali per hari untuk setiap kategori. Tidak hadir = belum presensi datang setelah batas pulang, tanpa izin/sakit disetujui. Tidak presensi pulang = sudah datang tetapi belum pulang. Angka gabungan adalah siswa-hari, bukan jumlah siswa unik. Hari libur/tidak efektif dikecualikan dari ketidakhadiran.</p>`;
  }catch(e){if($('dailySummaryResult'))el.textContent=e.message||'Gagal memuat laporan.';}finally{btn.disabled=false;}
 }
-function teacherForm_(){$('modalBox').innerHTML=`<h3>Tambah Guru</h3><div class="field"><label>NIP</label><input id="tNip"></div><div class="field"><label>Nama</label><input id="tName"></div><div class="field"><label>Username</label><input id="tUser"></div><div class="field"><label>Password awal</label><input id="tPass" value="0123SMAN2Nusa"></div><div class="actions"><button class="btn" onclick="closeModal()">Batal</button><button class="btn primary" onclick="saveTeacher_()">Simpan</button></div>`;$('modal').classList.remove('hidden')}
+function teacherForm_(){$('modalBox').innerHTML=`<h3>Tambah Guru</h3><div class="field"><label>NIP</label><input id="tNip"></div><div class="field"><label>Nama</label><input id="tName"></div><div class="field"><label>Username</label><input id="tUser"></div><p class="muted">Password awal dibuat oleh server dan harus diganti saat login pertama.</p><div class="actions"><button class="btn" onclick="closeModal()">Batal</button><button class="btn primary" onclick="saveTeacher_()">Simpan</button></div>`;$('modal').classList.remove('hidden')}
 function renderTeacherPanel_(){const rows=state.data.teachers||[];$('adminContent').innerHTML=`<div class="card"><div class="hero"><div><h3>Data Guru</h3><p class="muted">Edit nama, NIP, username, status, dan password guru.</p></div><button class="btn primary" onclick="teacherForm_()">+ Tambah Guru</button></div><div class="tablewrap"><table><thead><tr><th>NIP</th><th>Nama</th><th>Username</th><th>Status</th><th>Aksi</th></tr></thead><tbody>${rows.map((x,i)=>`<tr><td>${esc_(x.nip||'—')}</td><td><b>${esc_(x.name)}</b></td><td>${esc_(x.username)}</td><td>${x.active?'Aktif':'Nonaktif'}</td><td><button class="btn" onclick="editTeacher_(${i})">✏️ Edit</button></td></tr>`).join('')||'<tr><td colspan="5">Muat ulang dasbor untuk data guru.</td></tr>'}</tbody></table></div></div>`;}
 function editTeacher_(i){const x=(state.data.teachers||[])[i];if(!x)return;$('modalBox').innerHTML=`<h3>Edit Guru</h3><input id="tId" type="hidden" value="${esc_(x.id)}"><div class="field"><label>NIP</label><input id="tNip" value="${esc_(x.nip||'')}"></div><div class="field"><label>Nama</label><input id="tName" value="${esc_(x.name)}"></div><div class="field"><label>Username</label><input id="tUser" value="${esc_(x.username)}"></div><div class="field"><label>Password baru (kosongkan bila tidak diubah)</label><input id="tPass" type="password"></div><div class="actions"><button class="btn" onclick="closeModal()">Batal</button><button class="btn primary" onclick="saveTeacher_()">Simpan</button></div>`;$('modal').classList.remove('hidden')}
 async function saveTeacher_(){try{await api('teacherSave',{id:$('tId')?.value||'',nip:$('tNip').value.trim(),name:$('tName').value.trim(),username:$('tUser').value.trim(),password:$('tPass').value});closeModal();toast('Guru tersimpan.',true);await loadData();adminTab('teachers')}catch(e){toast(e.message)}}
@@ -2191,10 +2202,10 @@ function adminSchedulePanel_(){
 }
 async function saveSettings(){
  if(state.user?.role!=='admin'||state.settingsSaving)return;
- const p={jamMasuk:$('jamMasuk').value,jamPulang:$('jamPulang').value,hariKerja:$('workDays').value,hariLibur:$('schoolHolidays').value.trim()};
+ const p={jamMasuk:$('jamMasuk').value,jamPulang:$('jamPulang').value,hariKerja:$('workDays').value,hariLibur:$('schoolHolidays').value.trim(),radiusMeter:GPS_RADIUS_METERS,titikLokasi:ATTENDANCE_LOCATIONS};
  if(!p.jamMasuk||!p.jamPulang||p.jamPulang<=p.jamMasuk){$('setMsg').textContent='Jam pulang harus setelah jam datang.';return;}
  state.settingsSaving=true;$('scheduleSave').disabled=true;
- try{saveApi($('apiInput').value);const r=await api('settingsSave',p);if(!r.data?.settings)throw Error('Server belum mengembalikan pengaturan. Perbarui Apps Script pasangan HTML ini.');state.data.settings=r.data.settings;$('setMsg').textContent='Jadwal berhasil disimpan di server. URL Web App disimpan pada perangkat ini.';$('setMsg').className='alert ok';}
+ try{const r=await api('settingsSave',p);if(!r.data?.settings)throw Error('Server belum mengembalikan pengaturan. Perbarui Apps Script pasangan HTML ini.');applyServerSettings_(r.data.settings);$('setMsg').textContent='Pengaturan berhasil disimpan dan dipakai dari server.';$('setMsg').className='alert ok';}
  catch(e){$('setMsg').textContent=e.message;$('setMsg').className='alert bad';}
  finally{state.settingsSaving=false;if($('scheduleSave'))$('scheduleSave').disabled=false;}
 }
@@ -2216,6 +2227,13 @@ function renderAttendanceTable_(){
  const rows=filteredAttendance_(),near=rows.filter(x=>String(x.locationClass||x.locationStatus||'').toUpperCase().includes('DEKAT')).length,far=rows.filter(x=>String(x.locationClass||x.locationStatus||'').toUpperCase().includes('JAUH')).length;
  $('attendanceResult').innerHTML=`<div class="admin-summary"><span class="badge info">${rows.length} catatan</span><span class="badge ok">Dekat: ${near}</span><span class="badge warn">Jauh: ${far}</span></div><div class="tablewrap"><table><thead><tr><th>Tanggal</th><th>NISN</th><th>Nama / Kelas</th><th>Jenis</th><th>Jam</th><th>Status</th><th>Lokasi</th><th>Foto Drive</th></tr></thead><tbody>${rows.map(x=>{const url=photoUrl_(x),rawDistance=x.jarak??x.distance,distance=rawDistance===''||rawDistance==null?NaN:Number(rawDistance);return `<tr><td>${esc_(rowDate_(x)||'-')}</td><td>${esc_(x.nisn||x.nip||x.userId||'-')}</td><td><b>${esc_(x.name||'-')}</b><br><span class="muted">${esc_(x.kelas||'-')}</span></td><td>${esc_(x.type||x.jenis||'-')}</td><td>${esc_(historyTime_(x))}</td><td><span class="badge ok">${esc_(x.status||'VALID')}</span></td><td>${Number.isFinite(distance)?Math.round(distance)+' m':'-'}<br><span class="muted">${esc_(x.locationStatus||x.nearestPoint||'')}</span></td><td>${url?`<a class="photo-btn" href="${esc_(url)}" target="_blank" rel="noopener noreferrer">📷 Buka Foto</a>`:'<span class="muted">Belum tersedia</span>'}</td></tr>`}).join('')||'<tr><td colspan="8" class="empty-cell">Data presensi tidak ditemukan.</td></tr>'}</tbody></table></div>`;
 }
+async function verifyFarAttendance_(id,decision){try{await api('attendanceVerify',{attendanceId:id,decision});toast(decision==='SETUJUI'?'Presensi disetujui.':'Presensi ditolak.',true);loadFilteredAdminAttendance_();}catch(e){toast(e.message||'Verifikasi gagal.')}}
+async function farVerificationPanel_(){const c=$('adminContent');c.innerHTML='<div class="card">Memuat daftar tunggu lokasi jauh…</div>';try{const j=await api('attendancePendingFar',{limit:500}),rows=j?.data?.rows||[];c.innerHTML=`<div class="card"><div class="hero"><div><h3>📍 Verifikasi Presensi Lokasi Jauh</h3><p class="muted">Data hanya masuk rekap resmi setelah disetujui admin.</p></div><button class="btn" onclick="farVerificationPanel_()">Muat ulang</button></div><div class="tablewrap"><table><thead><tr><th>Tanggal / Jam</th><th>Siswa</th><th>Kelas</th><th>Jenis</th><th>Jarak</th><th>Foto</th><th>Keputusan</th></tr></thead><tbody>${rows.map(x=>`<tr><td>${esc_(x.tanggal||rowDate_(x))}<br>${esc_(x.jam||historyTime_(x))}</td><td><b>${esc_(x.name)}</b><br>${esc_(x.nisn)}</td><td>${esc_(x.kelas)}</td><td>${esc_(x.type||x.jenis)}</td><td>${Math.round(Number(x.distance??x.jarak??0))} m</td><td>${photoUrl_(x)?`<a class="photo-btn" target="_blank" rel="noopener" href="${esc_(photoUrl_(x))}">Buka Foto</a>`:'—'}</td><td><button class="btn ok" onclick="verifyFarAttendance_('${esc_(x.id)}','SETUJUI')">Setujui</button> <button class="btn danger" onclick="verifyFarAttendance_('${esc_(x.id)}','TOLAK')">Tolak</button></td></tr>`).join('')||'<tr><td colspan="7">Tidak ada presensi lokasi jauh yang menunggu.</td></tr>'}</tbody></table></div></div>`;}catch(e){c.innerHTML='<div class="alert bad">'+esc_(e.message||'Gagal memuat daftar tunggu.')+'</div>';}}
+async function loadStudentAnnouncements_(){const host=$('studentAnnouncements');if(!host)return;host.textContent='Memuat pengumuman…';try{const j=await api('announcements',{kelas:state.user?.kelas||''}),rows=j?.data?.rows||[];host.innerHTML=rows.length?rows.map(x=>`<article style="padding:12px 0;border-bottom:1px solid var(--line)"><b>${esc_(x.judul||'Pengumuman')}</b><div class="muted" style="white-space:pre-wrap;margin-top:5px">${esc_(x.isi||'')}</div><small class="muted">${esc_(x.tanggal||x.createdAt||'')}</small></article>`).join(''):'<p class="muted">Belum ada pengumuman untuk Anda.</p>';}catch(e){host.textContent=e.message||'Pengumuman belum dapat dimuat.';}}
+function announcementsPanel_(){const c=$('adminContent');c.innerHTML=`<div class="card"><div class="hero"><div><h3>📢 Pengumuman Siswa</h3><p class="muted">Pengumuman dapat ditujukan untuk semua siswa atau satu kelas.</p></div><button class="btn" onclick="announcementsPanel_()">Muat ulang</button></div><div class="field"><label>Judul</label><input id="announcementTitle" maxlength="150" placeholder="Contoh: Libur kegiatan sekolah"></div><div class="field"><label>Isi pengumuman</label><textarea id="announcementBody" maxlength="2000" placeholder="Tulis informasi untuk siswa."></textarea></div><div class="field"><label>Tujuan</label><select id="announcementClass"><option value="">Semua siswa</option>${[...new Set((state.data.users||[]).map(x=>x.kelas).filter(Boolean))].sort().map(k=>`<option value="${esc_(k)}">Kelas ${esc_(k)}</option>`).join('')}</select></div><button class="btn primary" onclick="saveAnnouncement_()">Terbitkan Pengumuman</button><div id="announcementList" style="margin-top:18px">Memuat…</div></div>`;loadAdminAnnouncements_();}
+async function loadAdminAnnouncements_(){const host=$('announcementList');if(!host)return;try{const j=await api('announcements',{all:true}),rows=j?.data?.rows||[];host.innerHTML=`<div class="tablewrap"><table><thead><tr><th>Tanggal</th><th>Judul</th><th>Tujuan</th><th>Isi</th><th>Aksi</th></tr></thead><tbody>${rows.map(x=>`<tr><td>${esc_(x.tanggal||x.createdAt||'-')}</td><td><b>${esc_(x.judul)}</b></td><td>${esc_(x.kelas||'Semua siswa')}</td><td>${esc_(x.isi)}</td><td><button class="btn danger" onclick="deleteAnnouncement_('${esc_(x.id)}')">Hapus</button></td></tr>`).join('')||'<tr><td colspan="5">Belum ada pengumuman.</td></tr>'}</tbody></table></div>`;}catch(e){host.textContent=e.message||'Gagal memuat pengumuman.';}}
+async function saveAnnouncement_(){const judul=$('announcementTitle').value.trim(),isi=$('announcementBody').value.trim(),kelas=$('announcementClass').value;if(!judul||!isi)return toast('Judul dan isi pengumuman wajib diisi.');try{await api('announcementSave',{judul,isi,kelas});toast('Pengumuman diterbitkan.',true);$('announcementTitle').value='';$('announcementBody').value='';loadAdminAnnouncements_();}catch(e){toast(e.message||'Gagal menerbitkan pengumuman.')}}
+async function deleteAnnouncement_(id){if(!confirm('Hapus pengumuman ini?'))return;try{await api('announcementDelete',{id});toast('Pengumuman dihapus.',true);loadAdminAnnouncements_();}catch(e){toast(e.message||'Gagal menghapus pengumuman.')}}
 async function loadFilteredAdminAttendance_(){
  if(state.user?.role!=='admin')return;const date=$('attDate')?.value||'',kelas=$('attClass')?.value||'';
  $('attendanceResult').innerHTML='<div class="alert">Memuat data dari server…</div>';
@@ -2246,7 +2264,7 @@ function bulkStudentForm_(){
  <p class="muted">Kolom wajib: <b>NISN, Nama, Kelas</b>. NISN harus 10 digit dengan format teks, termasuk nol di depan. Kolom opsional: Sekolah, JenisKelamin, Aktif, Password. Kolom opsional kosong mempertahankan nilai siswa lama. Isi Aktif dengan <b>Nonaktif</b> untuk siswa berhenti atau lulus.</p>
  <div class="field"><label for="bulkFile">File Excel / CSV (maks. 5 MB, 1.000 siswa per lembar)</label><input id="bulkFile" type="file" accept=".xlsx,.xls,.csv" onchange="bulkReadFile_()"></div>
  <div class="field"><label for="bulkSheet">Lembar yang akan diunggah</label><select id="bulkSheet" onchange="bulkInvalidate_()"></select></div>
- <div class="field"><label for="bulkDefaultPassword">Password awal untuk siswa baru tanpa password</label><input id="bulkDefaultPassword" type="password" autocomplete="new-password" value="0123SMAN2Nusa" maxlength="128" oninput="bulkInvalidate_()"></div>
+ <p class="muted">Password awal siswa dibuat oleh server dan wajib diganti saat login pertama.</p>
  <div id="bulkMessage" class="muted" role="status">Pilih file, lalu periksa pratinjau sebelum menyimpan.</div>
  <div class="actions"><button id="bulkPreviewButton" class="btn" onclick="bulkPreview_()" disabled>Periksa & Pratinjau</button><button id="bulkSaveButton" class="btn primary" onclick="bulkApply_()" disabled>Simpan Perubahan Massal</button><button class="btn" onclick="closeModal()">Tutup</button></div><div id="bulkPreviewResult"></div>`;
  $('modal').classList.remove('hidden');
@@ -2300,11 +2318,10 @@ async function bulkPreview_(){
  bulkInvalidate_();bulkSetBusy_(true);
  try{
   const rows=bulkParseSheet_(state.bulkImport.workbook.Sheets[$('bulkSheet').value]);
-  const defaultPassword=$('bulkDefaultPassword').value;
   $('bulkMessage').textContent='Memeriksa data dengan Spreadsheet…';
-  const r=await api('userBulkPreview',{rows,defaultPassword});const d=r.data;
+  const r=await api('userBulkPreview',{rows});const d=r.data;
   if(!d||!Array.isArray(d.preview)||!Array.isArray(d.errors))throw Error('Perbarui Apps Script ke versi yang mendukung unggah massal.');
-  state.bulkImport.rows=rows;state.bulkImport.defaultPassword=defaultPassword;state.bulkImport.token=d.token||'';
+  state.bulkImport.rows=rows;state.bulkImport.token=d.token||'';
   const c=d.counts;
   $('bulkMessage').textContent=d.errors.length?`${d.errors.length} baris bermasalah. Belum ada data disimpan; perbaiki file lalu unggah ulang.`:`${rows.length} siswa diperiksa: ${c.added} baru, ${c.updated} diperbarui, ${c.unchanged} tetap. ${c.deactivated} akun akan dinonaktifkan. Periksa rincian sebelum menyimpan. Pratinjau berlaku 10 menit.`;
   $('bulkPreviewResult').innerHTML=(d.errors.length?`<div class="alert bad">${d.errors.map(e=>`Baris ${esc_(e.line)}: ${esc_(e.message)}`).join('<br>')}</div>`:'')+`<div class="tablewrap" style="max-height:340px;overflow:auto"><table><thead><tr><th>NISN</th><th>Nama</th><th>Kelas lama</th><th>Kelas baru</th><th>Tindakan</th><th>Kolom berubah</th></tr></thead><tbody>${d.preview.map(x=>`<tr><td>${esc_(x.nisn)}</td><td>${esc_(x.name)}</td><td>${esc_(x.oldClass)}</td><td>${esc_(x.kelas)}</td><td>${esc_(x.action)}</td><td>${esc_(x.fields||'—')}</td></tr>`).join('')}</tbody></table></div>`;
@@ -2316,9 +2333,9 @@ async function bulkApply_(){
  bulkSetBusy_(true);$('bulkMessage').textContent='Menyimpan data siswa ke Spreadsheet…';
  let saved=false;
  try{
-  const b=state.bulkImport;const r=await api('userBulkApply',{token:b.token,rows:b.rows,defaultPassword:b.defaultPassword});
+  const b=state.bulkImport;const r=await api('userBulkApply',{token:b.token,rows:b.rows});
   const d=r.data;if(!d||typeof d.added!=='number')throw Error('Respons server tidak lengkap. Muat ulang data sebelum mencoba lagi.');
-  saved=true;b.token='';b.rows=[];b.defaultPassword='';$('bulkDefaultPassword').value='';
+  saved=true;b.token='';b.rows=[];
   $('bulkMessage').textContent=`Selesai: ${d.added} siswa baru, ${d.updated} siswa diperbarui, ${d.unchanged} tetap. ${d.deactivated} akun dinonaktifkan.`;
   await loadData();
  }catch(e){$('bulkMessage').textContent=saved?'Data berhasil disimpan. Tutup formulir lalu klik Muat Ulang untuk memperbarui daftar.':(e.message||'Penyimpanan gagal.')+' Jika respons terputus, klik Simpan lagi untuk memeriksa hasil unggahan yang sama; jangan membuat unggahan baru sebelum memeriksa data.';}
@@ -2354,9 +2371,9 @@ async function saveStudentEdit_(){
 }
 
 function userForm(){
- $('modal').classList.remove('hidden');$('modalBox').innerHTML=`<h3>Tambah Siswa</h3><div class="field"><label>NISN / Username</label><input id="uNisn"></div><div class="field"><label>Nama Lengkap</label><input id="uName"></div><div class="grid two"><div class="field"><label>Sekolah</label><input id="uSekolah" value="Sekolah"></div><div class="field"><label>Kelas</label><input id="uKelas" value="Siswa"></div></div><div class="field"><label>Password</label><input id="uPass" value="0123SMAN2Nusa"></div><div class="actions"><button class="btn" onclick="closeModal()">Batal</button><button class="btn primary" onclick="addUser()">Simpan</button></div>`
+ $('modal').classList.remove('hidden');$('modalBox').innerHTML=`<h3>Tambah Siswa</h3><div class="field"><label>NISN / Username</label><input id="uNisn"></div><div class="field"><label>Nama Lengkap</label><input id="uName"></div><div class="grid two"><div class="field"><label>Sekolah</label><input id="uSekolah" value="Sekolah"></div><div class="field"><label>Kelas</label><input id="uKelas" value="Siswa"></div></div><p class="muted">Password awal dibuat server dan wajib diganti saat login pertama.</p><div class="actions"><button class="btn" onclick="closeModal()">Batal</button><button class="btn primary" onclick="addUser()">Simpan</button></div>`
 }
-async function addUser(){const nisn=$('uNisn').value.trim(),u={nisn,nip:nisn,id:nisn,name:$('uName').value.trim(),sekolah:$('uSekolah').value.trim(),kelas:$('uKelas').value.trim(),password:$('uPass').value,active:true};if(!u.nisn||!u.name)return toast('NISN dan nama wajib diisi');try{if(apiReady())await api('userSave',u);else state.data.users.push(u);closeModal();toast('Siswa berhasil disimpan',true);await loadData();adminTab('users')}catch(e){toast(e.message||'Gagal menyimpan siswa')}}
+async function addUser(){const nisn=$('uNisn').value.trim(),u={nisn,nip:nisn,id:nisn,name:$('uName').value.trim(),sekolah:$('uSekolah').value.trim(),kelas:$('uKelas').value.trim(),active:true,forcePasswordChange:true};if(!u.nisn||!u.name)return toast('NISN dan nama wajib diisi');try{if(apiReady())await api('userSave',u);else state.data.users.push(u);closeModal();toast('Siswa berhasil disimpan',true);await loadData();adminTab('users')}catch(e){toast(e.message||'Gagal menyimpan siswa')}}
 async function approveLeave(id,status){try{await api('leaveApprove',{id,status,adminId:state.user.id});toast('Status izin diperbarui',true);await loadData();adminTab('leave')}catch(e){toast(e.message)}}
 async function testApi(){try{const j=await api('ping');$('setMsg').textContent='Koneksi berhasil: '+(j.message||'OK');$('setMsg').className='alert ok'}catch(e){$('setMsg').textContent=e.message;$('setMsg').className='alert bad'}}
 function setCenter(){if(!navigator.geolocation)return toast('GPS tidak tersedia');navigator.geolocation.getCurrentPosition(async p=>{try{await api('setGeofence',{lat:p.coords.latitude,lng:p.coords.longitude,radius:Number($('radius').value||100),adminId:state.user.id});toast('Titik geofence tersimpan',true)}catch(e){toast(e.message)}},e=>toast(e.message),{enableHighAccuracy:true,timeout:15000})}
