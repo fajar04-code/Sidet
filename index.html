@@ -1625,10 +1625,10 @@ function renderTeacherAttendance_(){const a=state.data.attendance||[],el=$('teac
 async function teacherAttendanceFilter_(){const date=$('teacherDate')?.value,kelas=$('teacherClass')?.value;if(!date||!kelas)return toast('Pilih tanggal dan kelas terlebih dahulu.');try{await teacherLoad_(date,kelas);renderTeacherAttendance_()}catch(e){toast(e.message)}}
 function renderTeacherAbsence_(){const date=$('teacherAbsenceDate').value,kelas=$('teacherAbsenceClass').value,rows=absenceRows_(date,kelas),el=$('teacherResult');if(el)el.innerHTML=`<div class="tablewrap"><table><thead><tr><th>Nama</th><th>Kelas</th><th>Status</th><th>Keterangan</th></tr></thead><tbody>${rows.map(x=>`<tr><td><b>${esc_(x.name)}</b></td><td>${esc_(x.kelas)}</td><td>${esc_(x.status)}</td><td>${esc_(x.keterangan||'—')}</td></tr>`).join('')||'<tr><td colspan="4">Tidak ada siswa tidak hadir.</td></tr>'}</tbody></table></div>`;}
 async function teacherAbsenceFilter_(){try{await teacherLoad_($('teacherAbsenceDate').value,$('teacherAbsenceClass').value);renderTeacherAbsence_()}catch(e){toast(e.message)}}
-async function teacherClassRecapLight_(){const k=$('teacherRecapClass')?.value||'',m=$('teacherRecapMonth')?.value||'',el=$('teacherResult');if(!k||!m)return toast('Pilih kelas dan bulan.');el.innerHTML='Memuat ringkasan kelas…';try{const j=await api('classMonthly',{kelas:k,month:m}),d=j.data||{};window.__sidetTeacherRecap=d;const rows=classRecapRows_(d,k,m);teacherExportSet_('Rekap Kelas '+k+' '+m,['Nama','NISN','Hadir','Terlambat','Bolos','Alfa','Izin','Sakit'],rows.map(x=>[x.name,x.nisn,x.H,x.T,x.B,x.A,x.I,x.S]));el.innerHTML=`<div class="actions" style="margin:12px 0"><button class="btn" onclick="printClassRecap_(window.__sidetTeacherRecap,'${esc_(k)}','${esc_(m)}')">🖨️ Cetak</button><button class="btn" onclick="classRecapPdf_(window.__sidetTeacherRecap,'${esc_(k)}','${esc_(m)}')">📄 Unduh PDF</button><button class="btn primary" onclick="teacherExportExcel_()">📊 Unduh Excel</button></div>${buildStudentClassSummary_(d,k,m)}`;}catch(e){el.innerHTML='<div class="alert bad">'+esc_(e.message||'Gagal memuat rekap kelas.')+'</div>';}}
+async function teacherClassRecapLight_(){const k=$('teacherRecapClass')?.value||'',m=$('teacherRecapMonth')?.value||'',el=$('teacherResult');if(!k||!m)return toast('Pilih kelas dan bulan.');el.innerHTML='Memuat ringkasan kelas…';try{const j=await api('classMonthly',{kelas:k,month:m}),d=j.data||{};window.__sidetTeacherRecap=d;const rows=classRecapRows_(d,k,m);teacherExportSet_('Rekap Kelas '+k+' '+m,['Nama','NISN','Hadir','Terlambat','Bolos','Alpa','Izin','Sakit'],rows.map(x=>[x.name,x.nisn,x.H,x.T,x.B,x.A,x.I,x.S]));el.innerHTML=`<div class="actions" style="margin:12px 0"><button class="btn" onclick="printClassRecap_(window.__sidetTeacherRecap,'${esc_(k)}','${esc_(m)}')">🖨️ Cetak</button><button class="btn" onclick="classRecapPdf_(window.__sidetTeacherRecap,'${esc_(k)}','${esc_(m)}')">📄 Unduh PDF</button><button class="btn primary" onclick="teacherExportExcel_()">📊 Unduh Excel</button></div>${buildStudentClassSummary_(d,k,m)}`;}catch(e){el.innerHTML='<div class="alert bad">'+esc_(e.message||'Gagal memuat rekap kelas.')+'</div>';}}
 async function teacherIndividualPanel_(){showPage('adminPage');const host=$('adminDashboard');host.innerHTML='<div class="card">Memuat daftar siswa…</div>';try{const d=await teacherLoad_('','',true),classes=[...new Set((d.users||[]).map(x=>x.kelas).filter(Boolean))].sort();host.innerHTML=`<div class="card"><h2>📄 Laporan Individu Bulanan</h2><p class="muted">Pilih kelas, siswa, dan bulan. Hanya data siswa yang dipilih akan dimuat.</p><div class="admin-toolbar"><div class="field"><label>Kelas</label><select id="teacherIndividualClass" onchange="teacherIndividualStudents_()"><option value="">Pilih kelas</option>${classes.map(k=>`<option>${esc_(k)}</option>`).join('')}</select></div><div class="field"><label>Siswa</label><select id="teacherIndividualStudent"><option value="">Pilih kelas terlebih dahulu</option></select></div><div class="field"><label>Bulan</label><input id="teacherIndividualMonth" type="month" value="${localDateKey_().slice(0,7)}"></div><button class="btn primary" onclick="teacherLoadIndividual_()">Tampilkan Laporan</button></div><div id="teacherIndividualResult"><p class="muted">Data belum dimuat.</p></div></div>`;}catch(e){host.innerHTML='<div class="alert bad">'+esc_(e.message||'Gagal memuat daftar siswa.')+'</div>';}}
 function teacherIndividualStudents_(){const kelas=$('teacherIndividualClass')?.value||'',sel=$('teacherIndividualStudent');if(!sel)return;const users=(state.data.users||[]).filter(x=>x.kelas===kelas&&x.active);sel.innerHTML='<option value="">Pilih siswa</option>'+users.map(x=>`<option value="${esc_(x.id)}">${esc_(x.name)} · ${esc_(x.nisn||'')}</option>`).join('');}
-async function teacherLoadIndividual_(){const id=$('teacherIndividualStudent')?.value,month=$('teacherIndividualMonth')?.value,el=$('teacherIndividualResult');if(!id||!month)return toast('Pilih siswa dan bulan terlebih dahulu.');el.innerHTML='Memuat laporan siswa…';try{const d=(await api('teacherStudentReport',{userId:id,month})).data||{},byDate={};(d.attendance||[]).forEach(x=>{if(!byDate[x.tanggal])byDate[x.tanggal]={tanggal:x.tanggal,masuk:'—',pulang:'—',jarak:'—',status:'Hadir'};if(String(x.type).toUpperCase()==='MASUK')byDate[x.tanggal].masuk=x.jam||'—';if(String(x.type).toUpperCase()==='PULANG')byDate[x.tanggal].pulang=x.jam||'—';const meter=x.jarakMeter??x.jarak;if(meter!==''&&meter!==undefined&&meter!==null)byDate[x.tanggal].jarak=Math.round(Number(meter)*100)/100+' m';});(d.leave||[]).forEach(x=>{const start=x.tanggalMulai,end=x.tanggalSelesai;for(let z=new Date(start+'T00:00:00');z<=new Date(end+'T00:00:00');z.setDate(z.getDate()+1)){const t=z.toISOString().slice(0,10);if(t.startsWith(month))byDate[t]={tanggal:t,masuk:'—',pulang:'—',jarak:'—',status:x.type+' ('+x.status+')'};}});const rows=Object.values(byDate).sort((a,b)=>a.tanggal.localeCompare(b.tanggal));teacherExportSet_('Laporan '+(d.student?.name||'Siswa')+' '+month,['Tanggal','Jam Datang','Jam Pulang','Jarak','Keterangan'],rows.map(x=>[x.tanggal,x.masuk,x.pulang,x.jarak,x.status]));el.innerHTML=`<h3>${esc_(d.student?.name||'Siswa')} · ${esc_(d.student?.kelas||'')}</h3>${teacherExportButtons_()}<div class="tablewrap"><table><thead><tr><th>Tanggal</th><th>Jam Datang</th><th>Jam Pulang</th><th>Jarak</th><th>Keterangan</th></tr></thead><tbody>${rows.map(x=>`<tr><td>${esc_(x.tanggal)}</td><td>${esc_(x.masuk)}</td><td>${esc_(x.pulang)}</td><td>${esc_(x.jarak)}</td><td>${esc_(x.status)}</td></tr>`).join('')||'<tr><td colspan="5">Tidak ada data pada bulan ini.</td></tr>'}</tbody></table></div>`;}catch(e){el.innerHTML='<div class="alert bad">'+esc_(e.message||'Gagal memuat laporan.')+'</div>';}}
+async function teacherLoadIndividual_(){const id=$('teacherIndividualStudent')?.value,month=$('teacherIndividualMonth')?.value,el=$('teacherIndividualResult');if(!id||!month)return toast('Pilih siswa dan bulan terlebih dahulu.');el.innerHTML='Memuat laporan siswa…';try{const d=(await api('teacherStudentReport',{userId:id,month})).data||{},byDate={};(d.attendance||[]).forEach(x=>{if(!byDate[x.tanggal])byDate[x.tanggal]={tanggal:x.tanggal,masuk:'—',pulang:'—',terlambatMenit:0,jarak:'—',status:'Hadir'};if(String(x.type).toUpperCase()==='MASUK'){byDate[x.tanggal].masuk=x.jam||'—';byDate[x.tanggal].terlambatMenit=Number(x.terlambatMenit||0);if(byDate[x.tanggal].terlambatMenit>0)byDate[x.tanggal].status='Terlambat '+byDate[x.tanggal].terlambatMenit+' menit';}if(String(x.type).toUpperCase()==='PULANG')byDate[x.tanggal].pulang=x.jam||'—';const meter=x.jarakMeter??x.jarak;if(meter!==''&&meter!==undefined&&meter!==null)byDate[x.tanggal].jarak=Math.round(Number(meter)*100)/100+' m';});(d.leave||[]).forEach(x=>{const start=x.tanggalMulai,end=x.tanggalSelesai;for(let z=new Date(start+'T00:00:00');z<=new Date(end+'T00:00:00');z.setDate(z.getDate()+1)){const t=z.toISOString().slice(0,10);if(t.startsWith(month))byDate[t]={tanggal:t,masuk:'—',pulang:'—',jarak:'—',status:x.type+' ('+x.status+')'};}});const rows=Object.values(byDate).sort((a,b)=>a.tanggal.localeCompare(b.tanggal));teacherExportSet_('Laporan '+(d.student?.name||'Siswa')+' '+month,['Tanggal','Jam Datang','Jam Pulang','Menit Terlambat','Jarak','Keterangan'],rows.map(x=>[x.tanggal,x.masuk,x.pulang,x.terlambatMenit||0,x.jarak,x.status]));el.innerHTML=`<h3>${esc_(d.student?.name||'Siswa')} · ${esc_(d.student?.kelas||'')}</h3>${teacherExportButtons_()}<div class="tablewrap"><table><thead><tr><th>Tanggal</th><th>Jam Datang</th><th>Jam Pulang</th><th>Menit Terlambat</th><th>Jarak</th><th>Keterangan</th></tr></thead><tbody>${rows.map(x=>`<tr><td>${esc_(x.tanggal)}</td><td>${esc_(x.masuk)}</td><td>${esc_(x.pulang)}</td><td>${Number(x.terlambatMenit||0)}</td><td>${esc_(x.jarak)}</td><td>${esc_(x.status)}</td></tr>`).join('')||'<tr><td colspan="6">Tidak ada data pada bulan ini.</td></tr>'}</tbody></table></div>`;}catch(e){el.innerHTML='<div class="alert bad">'+esc_(e.message||'Gagal memuat laporan.')+'</div>';}}
 async function teacherExportFull_(){try{await teacherLoad_('','');exportExcel()}catch(e){toast(e.message)}}
 async function teacherExportSummary_(){try{await teacherLoad_('','');exportSummary()}catch(e){toast(e.message)}}
 
@@ -1639,9 +1639,54 @@ function pickHistory_(row,...names){
 }
 function normalizeHistory_(row){
  const x={...row};
- for(const [key,names] of Object.entries({id:['id','attendanceId'],userId:['userId','idSiswa'],nisn:['nisn','nip'],name:['name','nama'],tanggal:['tanggal','date'],jam:['jam','time'],timestamp:['timestamp','waktu'],type:['type','jenis','jenisPresensi'],photoUrl:['photoUrl','FotoURL','linkFotoDrive']}))x[key]=pickHistory_(row,...names);
- x.userId=String(x.userId).trim();x.nisn=String(x.nisn).trim();x.type=String(x.type).trim().toUpperCase();x.jenis=x.type;
+ const aliases={
+  id:['id','attendanceId'],
+  userId:['userId','idSiswa'],
+  nisn:['nisn','nip'],
+  name:['name','nama'],
+  kelas:['kelas'],
+  tanggal:['tanggal','date'],
+  jam:['jam','time'],
+  timestamp:['timestamp','waktu'],
+  type:['type','jenis','jenisPresensi'],
+  status:['status'],
+  terlambatMenit:['terlambatMenit','TerlambatMenit','late','lateMinutes'],
+  locationStatus:['locationStatus','StatusLokasi'],
+  locationClass:['locationClass','KategoriLokasi'],
+  verificationStatus:['verificationStatus','StatusVerifikasiLokasi'],
+  jarak:['jarak','JarakMeter','distance'],
+  lat:['lat','Latitude'],
+  lng:['lng','Longitude'],
+  accuracy:['accuracy','AkurasiGPS'],
+  photoUrl:['photoUrl','FotoURL','linkFotoDrive']
+ };
+ for(const [key,names] of Object.entries(aliases)){
+  const v=pickHistory_(row,...names);
+  if(v!==''||x[key]===undefined)x[key]=v;
+ }
+ x.userId=String(x.userId||'').trim();
+ x.nisn=String(x.nisn||'').trim();
+ x.type=String(x.type||'').trim().toUpperCase();
+ x.jenis=x.type;
+ const lm=Number(x.terlambatMenit);
+ x.terlambatMenit=Number.isFinite(lm)&&lm>0?Math.round(lm):0;
  return x;
+}
+function lateMinutesClient_(row,settings=state.data.settings||{}){
+ const x=normalizeHistory_(row);
+ if(x.type!=='MASUK')return 0;
+ const fromServer=Number(x.terlambatMenit);
+ if(Number.isFinite(fromServer)&&fromServer>0)return Math.round(fromServer);
+ const time=historyTime_(x),limit=String(settings.jamMasuk||'07:30').slice(0,5);
+ const tm=String(time||'').match(/^(\d{2}):(\d{2})(?::(\d{2}))?$/),lm=limit.match(/^(\d{2}):(\d{2})$/);
+ if(!tm||!lm)return 0;
+ const actual=Number(tm[1])*3600+Number(tm[2])*60+Number(tm[3]||0);
+ const target=Number(lm[1])*3600+Number(lm[2])*60;
+ return Math.max(0,Math.ceil((actual-target)/60));
+}
+function lateLabel_(row,settings){
+ const n=lateMinutesClient_(row,settings);
+ return n>0?'Terlambat '+n+' menit':'Tepat waktu';
 }
 function sameStudent_(row){
  const x=normalizeHistory_(row),u=state.user;if(!u)return false;
@@ -1740,9 +1785,9 @@ function renderEmpHistory(){
  state.today={masuk:todayMasuk,pulang:todayPulang};
  if($('masukTime')) $('masukTime').textContent=todayMasuk?historyTime_(todayMasuk):'—';
  if($('pulangTime')) $('pulangTime').textContent=todayPulang?historyTime_(todayPulang):'—';
- if($('masukSub')) $('masukSub').textContent=todayMasuk?'Presensi masuk tercatat':'Belum melakukan presensi masuk';
+ if($('masukSub')) $('masukSub').textContent=todayMasuk?(lateMinutesClient_(todayMasuk)>0?'Terlambat '+lateMinutesClient_(todayMasuk)+' menit':'Presensi masuk tepat waktu'):'Belum melakukan presensi masuk';
  if($('pulangSub')) $('pulangSub').textContent=todayPulang?'Presensi pulang tercatat':'Belum melakukan presensi pulang';
- if($('masukBadge')){$('masukBadge').textContent=todayMasuk?'✓ Tercatat':'Belum';$('masukBadge').className='badge '+(todayMasuk?'ok':'warn');}
+ if($('masukBadge')){const lm=todayMasuk?lateMinutesClient_(todayMasuk):0;$('masukBadge').textContent=todayMasuk?(lm>0?'⏱ Terlambat '+lm+' mnt':'✓ Tepat waktu'):'Belum';$('masukBadge').className='badge '+(todayMasuk?(lm>0?'warn':'ok'):'warn');}
  if($('pulangBadge')){$('pulangBadge').textContent=todayPulang?'✓ Tercatat':'Belum';$('pulangBadge').className='badge '+(todayPulang?'ok':'warn');}
  if($('todayStatus')){$('todayStatus').textContent=todayMasuk&&todayPulang?'Lengkap':todayMasuk?'Masuk tercatat':'Belum lengkap';$('todayStatus').className='badge '+(todayMasuk&&todayPulang?'ok':todayMasuk?'info':'warn');}
  if($('btnMasuk')){$('btnMasuk').disabled=!!todayMasuk;$('btnMasuk').classList.toggle('disabled',!!todayMasuk);}
@@ -1774,7 +1819,7 @@ function renderEmpHistory(){
    const day=(grouped[k]||[]).slice().sort((a,b)=>historyTime_(a).localeCompare(historyTime_(b)));
    const masuk=day.find(x=>(x.type||x.jenis)==='MASUK');
    const pulang=day.find(x=>(x.type||x.jenis)==='PULANG');
-   return `<div class="history-day"><div class="history-date">${esc_(historyDateLabel_(k))}${day.filter(x=>!['MASUK','PULANG'].includes(x.type)).map(x=>'<div class="muted">'+esc_(x.type||'Jenis belum tersedia')+' · '+esc_(historyTime_(x))+'</div>').join('')}</div><div class="history-time"><span>Masuk</span><b>${masuk?historyTime_(masuk):'—'}</b></div><div class="history-time"><span>Pulang</span><b>${pulang?historyTime_(pulang):'—'}</b></div></div>`;
+   return `<div class="history-day"><div class="history-date">${esc_(historyDateLabel_(k))}${day.filter(x=>!['MASUK','PULANG'].includes(x.type)).map(x=>'<div class="muted">'+esc_(x.type||'Jenis belum tersedia')+' · '+esc_(historyTime_(x))+'</div>').join('')}</div><div class="history-time"><span>Masuk</span><b>${masuk?historyTime_(masuk):'—'}</b>${masuk&&lateMinutesClient_(masuk)>0?`<small class="badge warn" style="margin-top:5px">+${lateMinutesClient_(masuk)} menit</small>`:''}</div><div class="history-time"><span>Pulang</span><b>${pulang?historyTime_(pulang):'—'}</b></div></div>`;
  }).join(''):'<div class="history-empty">'+(state.historyStatus==='error'?'Riwayat belum berhasil dimuat. Periksa pesan di atas, lalu tekan Muat ulang riwayat.':state.historyStatus==='loading'?'Memuat data server…':'Server belum mengembalikan catatan pada periode ini.')+'</div>';
  const unknown=all.filter(x=>!historyDateKey_(x));
  if(unknown.length)$('empHistory').insertAdjacentHTML('beforeend','<div class="alert">'+unknown.length+' catatan diterima, tetapi tanggalnya tidak dapat dibaca. Periksa format Tanggal/Timestamp di server.</div>');
@@ -1814,7 +1859,7 @@ function monthlyBaseRows_(month){
 function reportDuration_(seconds){return seconds==null?'—':Math.floor(seconds/3600)+' j '+String(Math.floor(seconds/60)%60).padStart(2,'0')+' m';}
 function reportRules_(){
  const s=state.data.settings||{};
- return {masuk:'07:30',pulang:'15:30',days:String(s.hariKerja||'1,2,3,4,5').split(',').map(Number),holidays:[...String(s.hariLibur||'').split(',').filter(Boolean),...String(s.hariTidakEfektif||'').split(',').filter(Boolean)]};
+ return {masuk:String(s.jamMasuk||'07:30').slice(0,5),pulang:String(s.jamPulang||'15:30').slice(0,5),days:String(s.hariKerja||'1,2,3,4,5').split(',').map(Number),holidays:[...String(s.hariLibur||'').split(',').filter(Boolean),...String(s.hariTidakEfektif||'').split(',').filter(Boolean)]};
 }
 function monthlyReportRows_(month){
  const rules=reportRules_(),today=localDateKey_(),now=new Date().toLocaleTimeString('en-GB',{timeZone:'Asia/Makassar',hour12:false});
@@ -1828,11 +1873,13 @@ function monthlyReportRows_(month){
   const inDue=school&&pastIn&&!r.future,outDue=school&&pastOut&&!r.future;
   const ta=outDue?(!r.masuk&&!r.pulang&&!exempt?1:0):null;
   const tad=inDue?(!r.masuk&&!exempt?1:0):null,tap=outDue?(!r.pulang&&!exempt?1:0):null;
-  const tw=r.masuk&&/^\d{2}:\d{2}:\d{2}$/.test(r.inTime)?(r.inTime<=rules.masuk+':00'?1:0):inDue?0:null;
+  const lateMin=r.masuk?lateMinutesClient_(r.masuk,state.data.settings||{}):0;
+  const tw=r.masuk?(!lateMin?1:0):inDue?0:null;
   let status=r.status;
+  if(r.masuk&&lateMin>0)status=(status?status+' · ':'')+'Terlambat '+lateMin+' menit';
   if(!r.records.length)status=exempt?(sakit?'Sakit':'Izin'):r.future?'Belum berlangsung':!school?'Di luar hari sekolah':!pastOut?'Menunggu batas waktu':'Tidak absen';
   else if(exempt)status+=' · '+[sakit?'Sakit':'',izin?'Izin':''].filter(Boolean).join(' / ');
-  return {...r,school,ta,tad,tap,tw,sakit:sakit?1:r.future?null:0,izin:izin?1:r.future?null:0,excused,status};
+  return {...r,school,ta,tad,tap,tw,terlambatMenit:lateMin,sakit:sakit?1:r.future?null:0,izin:izin?1:r.future?null:0,excused,status};
  });
 }
 function renderIndividualReport_(){
@@ -1847,7 +1894,7 @@ function renderIndividualReport_(){
  if($('reportPrint'))$('reportPrint').disabled=reportDisabled;
  if($('reportPdf'))$('reportPdf').disabled=reportDisabled;
  $('reportReload').disabled=state.historyStatus==='loading';
- const stats=[['Masuk',rows.filter(r=>r.masuk).length],['Tidak absen',rows.reduce((n,r)=>n+(r.ta||0),0)],['Sakit',rows.reduce((n,r)=>n+(r.sakit||0),0)],['Izin',rows.reduce((n,r)=>n+(r.izin||0),0)]];
+ const stats=[['Masuk',rows.filter(r=>r.masuk).length],['Terlambat',rows.filter(r=>Number(r.terlambatMenit||0)>0).length],['Menit Terlambat',rows.reduce((n,r)=>n+Number(r.terlambatMenit||0),0)],['Tidak absen',rows.reduce((n,r)=>n+(r.ta||0),0)],['Sakit',rows.reduce((n,r)=>n+(r.sakit||0),0)],['Izin',rows.reduce((n,r)=>n+(r.izin||0),0)]];
  $('reportSummary').innerHTML=stats.map(([label,n])=>'<div><span>'+label+'</span><b>'+(state.reportReady?n:'—')+'</b></div>').join('');
  const cell=v=>state.reportReady&&v!==null?v:'—';
  $('reportBody').innerHTML=rows.map(r=>`<tr class="${!r.school?'report-weekend ':''}${r.future?'report-future':''}"><td>${r.no}</td><td>${r.day}</td><td class="report-nowrap">${r.date.split('-').reverse().join('-')}</td><td>${esc_(r.inTime||'—')}</td><td>${esc_(r.outTime||'—')}</td>${[r.ta,r.tw,r.tad,r.tap,r.sakit,r.izin].map(v=>'<td>'+cell(v)+'</td>').join('')}<td>${esc_(state.reportReady?r.status:'Menunggu data jadwal dan izin/sakit')}</td></tr>`).join('')||'<tr><td colspan="12">Pilih bulan laporan.</td></tr>';
@@ -1860,7 +1907,7 @@ function individualReportPdfData_(){
  if(state.historyStatus!=='ready'||!state.reportReady)throw Error('Muat ulang riwayat sampai data laporan berhasil dibaca.');
  const month=$('reportMonth')?.value||'',rows=monthlyReportRows_(month);if(!rows.length)throw Error('Pilih bulan laporan.');
  const u=state.user,rules=reportRules_();
- const stats={masuk:rows.filter(r=>r.masuk).length,terlambat:rows.filter(r=>r.masuk&&r.tw===0).length,alfa:rows.reduce((n,r)=>n+(r.ta||0),0),sakit:rows.reduce((n,r)=>n+(r.sakit||0),0),izin:rows.reduce((n,r)=>n+(r.izin||0),0),bolos:rows.filter(r=>r.masuk&&r.tap===1&&!r.sakit&&!r.izin).length};
+ const stats={masuk:rows.filter(r=>r.masuk).length,terlambat:rows.filter(r=>Number(r.terlambatMenit||0)>0).length,totalMenitTerlambat:rows.reduce((n,r)=>n+Number(r.terlambatMenit||0),0),alpa:rows.reduce((n,r)=>n+(r.ta||0),0),sakit:rows.reduce((n,r)=>n+(r.sakit||0),0),izin:rows.reduce((n,r)=>n+(r.izin||0),0),bolos:rows.filter(r=>r.masuk&&r.tap===1&&!r.sakit&&!r.izin).length};
  return {u,rules,month,rows,stats};
 }
 function downloadIndividualReportPdf_(){
@@ -1871,7 +1918,7 @@ function downloadIndividualReportPdf_(){
   doc.setFontSize(14);doc.text('LAPORAN PRESENSI INDIVIDU SiDEt',14,12);
   doc.setFontSize(9);doc.text(`Nama: ${String(u.name||'-')}   NISN: ${String(u.nisn||'-')}   Kelas: ${String(u.kelas||'-')}`,14,18);
   doc.text(`Periode: ${historyMonthLabel_(month)}   Jadwal WITA: Masuk ${rules.masuk} · Pulang ${rules.pulang}`,14,23);
-  doc.text(`Ringkasan: Hadir/Masuk ${stats.masuk} · Terlambat ${stats.terlambat} · Bolos ${stats.bolos} · Alfa ${stats.alfa} · Izin ${stats.izin} · Sakit ${stats.sakit}`,14,28);
+  doc.text(`Ringkasan: Hadir/Masuk ${stats.masuk} · Terlambat ${stats.terlambat} hari / ${stats.totalMenitTerlambat} menit · Bolos ${stats.bolos} · Alpa ${stats.alpa} · Izin ${stats.izin} · Sakit ${stats.sakit}`,14,28);
   const head=[['No','Hari','Tanggal','Masuk','Pulang','Tdk Absen','Tepat Waktu','Tdk Datang','Tdk Pulang','Sakit','Izin','Keterangan']];
   const body=rows.map(r=>[r.no,r.day,r.date.split('-').reverse().join('-'),r.inTime||'—',r.outTime||'—',r.ta??'—',r.tw??'—',r.tad??'—',r.tap??'—',r.sakit??'—',r.izin??'—',r.status||'']);
   doc.autoTable({head,body,startY:33,theme:'grid',styles:{fontSize:6.6,cellPadding:1.2,valign:'middle'},headStyles:{fontStyle:'bold'},columnStyles:{11:{cellWidth:48}},margin:{left:8,right:8}});
@@ -1885,7 +1932,7 @@ function printIndividualReport_(){
   const w=window.open('','_blank','width=1200,height=800');if(!w)throw Error('Jendela cetak diblokir browser. Izinkan pop-up untuk SiDet.');
   const cell=v=>v===null||v===undefined?'—':v;
   const trs=rows.map(r=>`<tr><td>${r.no}</td><td>${esc_(r.day)}</td><td>${esc_(r.date.split('-').reverse().join('-'))}</td><td>${esc_(r.inTime||'—')}</td><td>${esc_(r.outTime||'—')}</td><td>${cell(r.ta)}</td><td>${cell(r.tw)}</td><td>${cell(r.tad)}</td><td>${cell(r.tap)}</td><td>${cell(r.sakit)}</td><td>${cell(r.izin)}</td><td class="left">${esc_(r.status||'')}</td></tr>`).join('');
-  w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>Rekap Presensi ${esc_(u.name||'Siswa')}</title><style>@page{size:A4 landscape;margin:10mm}*{box-sizing:border-box}body{font-family:Arial,sans-serif;color:#111;margin:0}h1{font-size:18px;margin:0 0 6px}.meta{font-size:11px;line-height:1.6;margin-bottom:8px}.summary{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0 12px}.summary span{border:1px solid #bbb;border-radius:7px;padding:5px 8px;font-size:10px}table{width:100%;border-collapse:collapse;font-size:8px}th,td{border:1px solid #aaa;padding:3px;text-align:center}th{background:#f1f5f9}.left{text-align:left}.note{font-size:9px;margin-top:8px;color:#444}</style></head><body><h1>LAPORAN PRESENSI INDIVIDU SiDEt</h1><div class="meta"><b>${esc_(u.name||'-')}</b> · NISN ${esc_(u.nisn||'-')} · ${esc_(u.kelas||'-')}<br>Periode ${esc_(historyMonthLabel_(month))} · Masuk ${esc_(rules.masuk)} · Pulang ${esc_(rules.pulang)} WITA</div><div class="summary"><span>Hadir/Masuk <b>${stats.masuk}</b></span><span>Terlambat <b>${stats.terlambat}</b></span><span>Bolos <b>${stats.bolos}</b></span><span>Alfa <b>${stats.alfa}</b></span><span>Izin <b>${stats.izin}</b></span><span>Sakit <b>${stats.sakit}</b></span></div><table><thead><tr><th>No</th><th>Hari</th><th>Tanggal</th><th>Masuk</th><th>Pulang</th><th>Tdk Absen</th><th>Tepat Waktu</th><th>Tdk Datang</th><th>Tdk Pulang</th><th>Sakit</th><th>Izin</th><th>Keterangan</th></tr></thead><tbody>${trs}</tbody></table><div class="note">Dicetak dari dashboard siswa SiDet · ${new Date().toLocaleString('id-ID',{timeZone:'Asia/Makassar'})} WITA</div><script>window.onload=()=>{setTimeout(()=>window.print(),250)}<\/script></body></html>`);
+  w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>Rekap Presensi ${esc_(u.name||'Siswa')}</title><style>@page{size:A4 landscape;margin:10mm}*{box-sizing:border-box}body{font-family:Arial,sans-serif;color:#111;margin:0}h1{font-size:18px;margin:0 0 6px}.meta{font-size:11px;line-height:1.6;margin-bottom:8px}.summary{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0 12px}.summary span{border:1px solid #bbb;border-radius:7px;padding:5px 8px;font-size:10px}table{width:100%;border-collapse:collapse;font-size:8px}th,td{border:1px solid #aaa;padding:3px;text-align:center}th{background:#f1f5f9}.left{text-align:left}.note{font-size:9px;margin-top:8px;color:#444}</style></head><body><h1>LAPORAN PRESENSI INDIVIDU SiDEt</h1><div class="meta"><b>${esc_(u.name||'-')}</b> · NISN ${esc_(u.nisn||'-')} · ${esc_(u.kelas||'-')}<br>Periode ${esc_(historyMonthLabel_(month))} · Masuk ${esc_(rules.masuk)} · Pulang ${esc_(rules.pulang)} WITA</div><div class="summary"><span>Hadir/Masuk <b>${stats.masuk}</b></span><span>Terlambat <b>${stats.terlambat} hari / ${stats.totalMenitTerlambat} menit</b></span><span>Bolos <b>${stats.bolos}</b></span><span>Alpa <b>${stats.alpa}</b></span><span>Izin <b>${stats.izin}</b></span><span>Sakit <b>${stats.sakit}</b></span></div><table><thead><tr><th>No</th><th>Hari</th><th>Tanggal</th><th>Masuk</th><th>Pulang</th><th>Tdk Absen</th><th>Tepat Waktu</th><th>Tdk Datang</th><th>Tdk Pulang</th><th>Sakit</th><th>Izin</th><th>Keterangan</th></tr></thead><tbody>${trs}</tbody></table><div class="note">Dicetak dari dashboard siswa SiDet · ${new Date().toLocaleString('id-ID',{timeZone:'Asia/Makassar'})} WITA</div><script>window.onload=()=>{setTimeout(()=>window.print(),250)}<\/script></body></html>`);
   w.document.close();
  }catch(e){toast('Gagal menyiapkan cetak: '+e.message);}
 }
@@ -1930,7 +1977,7 @@ function recapTime_(x){const t=historyTime_(normalizeHistory_(x));return t==='�
 function recapMonthDays_(month){if(!/^\d{4}-\d{2}$/.test(month))return[];const [y,m]=month.split('-').map(Number),n=new Date(Date.UTC(y,m,0)).getUTCDate();return Array.from({length:n},(_,i)=>`${month}-${String(i+1).padStart(2,'0')}`)}
 function recapLeaveFor_(leaves,u,date){const n=recapNormNisn_(u.nisn),id=String(u.id||'');return (leaves||[]).filter(x=>String(x.status||'').toUpperCase()==='DISETUJUI'&&((n&&recapNormNisn_(x.nisn)===n)||(id&&String(x.userId||'')===id))&&String(x.tanggalMulai||'').slice(0,10)<=date&&String(x.tanggalSelesai||'').slice(0,10)>=date)}
 function recapCell_(u,date,data){
- const rules=(()=>{const s=data.settings||{};return{masuk:'07:30',pulang:'15:30',days:String(s.hariKerja||'1,2,3,4,5').split(',').map(Number),holidays:[...String(s.hariLibur||'').split(',').filter(Boolean),...String(s.hariTidakEfektif||'').split(',').filter(Boolean)]}})();
+ const rules=(()=>{const s=data.settings||{};return{masuk:String(s.jamMasuk||'07:30').slice(0,5),pulang:String(s.jamPulang||'15:30').slice(0,5),days:String(s.hariKerja||'1,2,3,4,5').split(',').map(Number),holidays:[...String(s.hariLibur||'').split(',').filter(Boolean),...String(s.hariTidakEfektif||'').split(',').filter(Boolean)]}})();
  const weekday=new Date(date+'T12:00:00Z').getUTCDay(),school=rules.days.includes(weekday)&&!rules.holidays.includes(date),today=localDateKey_();
  if(!school)return{code:'—',cls:'cr-off',label:'Libur',in:'—',out:'—'};
  const leaves=recapLeaveFor_(data.leave||[],u,date),sick=leaves.some(x=>['S','SAKIT'].includes(String(x.type||'').toUpperCase())),permit=leaves.some(x=>['I','IZIN'].includes(String(x.type||'').toUpperCase()));
@@ -1939,16 +1986,17 @@ function recapCell_(u,date,data){
  const masuk=rows.find(x=>(x.type||x.jenis)==='MASUK'),pulang=rows.find(x=>(x.type||x.jenis)==='PULANG'),tin=masuk?recapTime_(masuk):'—',tout=pulang?recapTime_(pulang):'—';
  const now=new Date().toLocaleTimeString('en-GB',{timeZone:'Asia/Makassar',hour12:false}).slice(0,5),pastOut=date<today||(date===today&&now>rules.pulang),pastIn=date<today||(date===today&&now>rules.masuk);
  if(masuk&&pastOut&&!pulang)return{code:'B',cls:'cr-b',label:'Bolos',in:tin,out:'—'};
- if(masuk&&tin!=='—'&&historyTime_(normalizeHistory_(masuk))>rules.masuk+':00')return{code:'T',cls:'cr-t',label:'Terlambat',in:tin,out:tout};
- if(masuk)return{code:'H',cls:'cr-h',label:'Hadir',in:tin,out:tout};
- if(pastOut&&!masuk&&!pulang)return{code:'A',cls:'cr-a',label:'Alfa',in:'—',out:'—'};
+ const lateMin=masuk?lateMinutesClient_(masuk,data.settings||{}):0;
+ if(masuk&&lateMin>0)return{code:'T',cls:'cr-t',label:'Terlambat '+lateMin+' menit',lateMin,in:tin,out:tout};
+ if(masuk)return{code:'H',cls:'cr-h',label:'Hadir tepat waktu',lateMin:0,in:tin,out:tout};
+ if(pastOut&&!masuk&&!pulang)return{code:'A',cls:'cr-a',label:'Alpa',in:'—',out:'—'};
  if(pastIn&&pulang)return{code:'B',cls:'cr-b',label:'Bolos',in:'—',out:tout};
  return{code:'',cls:'cr-pending',label:'Belum',in:tin,out:tout};
 }
 function buildClassRecap_(data,kelas,month){
  const users=(data.users||[]).filter(u=>String(u.kelas||'').trim()===String(kelas||'').trim()&&u.active!==false).sort((a,b)=>String(a.name||'').localeCompare(String(b.name||''),'id'));
  const days=recapMonthDays_(month),heads=days.map(d=>`<th>${Number(d.slice(-2))}</th>`).join('');
- const body=users.map((u,i)=>{const sum={H:0,T:0,B:0,A:0,I:0,S:0};const cells=days.map(d=>{const c=recapCell_(u,d,data);if(sum[c.code]!==undefined)sum[c.code]++;return`<td class="daycell ${c.cls}" title="${c.label}"><b>${c.code||'·'}</b>${['H','T','B'].includes(c.code)?`<small>↓ ${c.in}</small><small>↑ ${c.out}</small>`:''}</td>`}).join('');return`<tr><td class="sticky-no">${i+1}</td><td class="sticky-name">${esc_(u.name||'')}<small style="display:block;color:var(--muted);font-weight:600">${esc_(u.nisn||'')}</small></td>${cells}<td class="sum cr-h">${sum.H}</td><td class="sum cr-t">${sum.T}</td><td class="sum cr-b">${sum.B}</td><td class="sum cr-a">${sum.A}</td><td class="sum cr-i">${sum.I}</td><td class="sum cr-s">${sum.S}</td></tr>`}).join('');
+ const body=users.map((u,i)=>{const sum={H:0,T:0,B:0,A:0,I:0,S:0};const cells=days.map(d=>{const c=recapCell_(u,d,data);if(sum[c.code]!==undefined)sum[c.code]++;return`<td class="daycell ${c.cls}" title="${c.label}"><b>${c.code||'·'}</b>${['H','T','B'].includes(c.code)?`<small>↓ ${c.in}</small><small>↑ ${c.out}</small>${c.code==='T'?`<small><b>+${Number(c.lateMin||0)} mnt</b></small>`:''}`:''}</td>`}).join('');return`<tr><td class="sticky-no">${i+1}</td><td class="sticky-name">${esc_(u.name||'')}<small style="display:block;color:var(--muted);font-weight:600">${esc_(u.nisn||'')}</small></td>${cells}<td class="sum cr-h">${sum.H}</td><td class="sum cr-t">${sum.T}</td><td class="sum cr-b">${sum.B}</td><td class="sum cr-a">${sum.A}</td><td class="sum cr-i">${sum.I}</td><td class="sum cr-s">${sum.S}</td></tr>`}).join('');
  return `<div class="classrecap-legend"><span class="cr-h">H Hadir</span><span class="cr-t">T Terlambat</span><span class="cr-b">B Bolos</span><span class="cr-a">A Alpa</span><span class="cr-i">I Izin</span><span class="cr-s">S Sakit</span><span class="cr-off">— Libur</span></div><div class="classrecap-wrap"><table class="classrecap-table"><thead><tr><th class="sticky-no">No</th><th class="sticky-name">Nama Siswa</th>${heads}<th>Hadir</th><th>Terlambat</th><th>Bolos</th><th>Alpa</th><th>Izin</th><th>Sakit</th></tr></thead><tbody>${body||`<tr><td colspan="${days.length+8}">Belum ada siswa pada kelas ini.</td></tr>`}</tbody></table></div><p class="muted classrecap-note">Jam kecil: ↓ datang · ↑ pulang. Batas masuk ${esc_(data.settings?.jamMasuk||'07:30')} WITA · pulang ${esc_(data.settings?.jamPulang||'15:30')} WITA.</p>`;
 }
 async function renderAdminClassRecap_(){const el=$('adminClassRecapContent');if(!el)return;const k=$('classRecapClass')?.value||'',m=$('classRecapMonth')?.value||localDateKey_().slice(0,7);if(!k||!m)return;el.innerHTML='<div class="classrecap-loading">Memuat ringkasan kelas…</div>';try{const j=await api('classMonthly',{kelas:k,month:m});const d=j.data||{};el.innerHTML=`<div class="actions" style="margin:12px 0"><button class="btn" onclick="printClassRecap_(window.__sidetAdminRecap,'${esc_(k)}','${esc_(m)}')">🖨️ Cetak</button><button class="btn primary" onclick="classRecapPdf_(window.__sidetAdminRecap,'${esc_(k)}','${esc_(m)}')">📄 Unduh PDF</button></div>${buildStudentClassSummary_(d,k,m)}`;window.__sidetAdminRecap=d;}catch(e){el.innerHTML='<div class="alert bad">'+esc_(e.message||'Gagal memuat rekap kelas.')+'</div>';}}
@@ -1971,7 +2019,7 @@ function classRecapPdf_(data,kelas,month){
  if(!window.jspdf?.jsPDF)throw Error('Komponen PDF belum dimuat. Periksa koneksi internet.');
  const {jsPDF}=window.jspdf,rows=classRecapRows_(data,kelas,month),doc=new jsPDF({orientation:'landscape',unit:'mm',format:'a4'});
  doc.setFontSize(14);doc.text('REKAP KEHADIRAN KELAS — SiDEt',14,13);doc.setFontSize(9);doc.text(`Kelas: ${kelas}   Periode: ${historyMonthLabel_(month)}   Dicetak: ${new Date().toLocaleString('id-ID',{timeZone:'Asia/Makassar'})} WITA`,14,19);
- doc.autoTable({head:[['No','Nama Siswa','Hadir','Terlambat','Bolos','Alfa','Izin','Sakit']],body:rows.map(x=>[x.no,x.name,x.H,x.T,x.B,x.A,x.I,x.S]),startY:24,theme:'grid',styles:{fontSize:8,cellPadding:1.5},headStyles:{fillColor:[10,105,180]}});
+ doc.autoTable({head:[['No','Nama Siswa','Hadir','Terlambat','Bolos','Alpa','Izin','Sakit']],body:rows.map(x=>[x.no,x.name,x.H,x.T,x.B,x.A,x.I,x.S]),startY:24,theme:'grid',styles:{fontSize:8,cellPadding:1.5},headStyles:{fillColor:[10,105,180]}});
  doc.save(`SiDet_Rekap_Kelas_${String(kelas).replace(/[^a-zA-Z0-9_-]/g,'_')}_${month}.pdf`);
 }
 function printClassRecap_(data,kelas,month){
@@ -2038,19 +2086,19 @@ function renderSchoolAnalytics_(){
  const max=Math.max(1,...Object.values(d.monthly).map(x=>x.H)),selected=semesterView.kelas,rows=d.students.filter(s=>!selected||s.kelas===selected).sort((a,b)=>a.kelas.localeCompare(b.kelas)||a.name.localeCompare(b.name,'id'));
  host.innerHTML=`<div class="card school-report"><div class="hero"><div><div class="section-label">Analisis satu sekolah</div><h2>Laporan Semester</h2><p class="muted">Kehadiran, keterlambatan, dan rekap tiap kelas dalam satu tampilan.</p></div><button class="btn primary" onclick="exportSemesterExcel_()">📊 Unduh Excel Semester</button></div>
  <div class="semester-filters"><div class="field"><label>Tahun ajaran</label><select onchange="semesterView.year=Number(this.value);renderSchoolAnalytics_()">${years.map(v=>`<option value="${v}" ${v===semesterView.year?'selected':''}>${v}/${v+1}</option>`).join('')}</select></div><div class="field"><label>Semester</label><select onchange="semesterView.term=this.value;renderSchoolAnalytics_()"><option value="1" ${semesterView.term==='1'?'selected':''}>Ganjil · Juli–Desember</option><option value="2" ${semesterView.term==='2'?'selected':''}>Genap · Januari–Juni</option></select></div><button class="btn" onclick="loadData()">🔄 Muat Ulang</button></div>
- <div class="semester-kpis">${[['Hadir',d.total.H],['Terlambat',d.total.T],['Alfa',d.total.A],['Izin',d.total.I],['Sakit',d.total.S],['Bolos',d.total.B]].map(([k,v])=>`<div><span>${k}</span><b>${v}</b></div>`).join('')}</div>
+ <div class="semester-kpis">${[['Hadir',d.total.H],['Terlambat',d.total.T],['Alpa',d.total.A],['Izin',d.total.I],['Sakit',d.total.S],['Bolos',d.total.B]].map(([k,v])=>`<div><span>${k}</span><b>${v}</b></div>`).join('')}</div>
  <h3>Tren kehadiran bulanan seluruh sekolah</h3><p class="muted">Jumlah kehadiran = siswa × hari; satu siswa maksimal satu kehadiran per hari.</p>
  <div class="school-bars" role="img" aria-label="Grafik kehadiran bulanan: ${d.period.months.map(k=>k+' '+d.monthly[k].H).join(', ')}">${d.period.months.map(k=>`<div class="school-bar-column"><b>${d.monthly[k].H}</b><div class="school-bar-track"><div style="height:${d.monthly[k].H/max*100}%"></div></div><span>${new Date(k+'-01T12:00:00Z').toLocaleDateString('id-ID',{month:'short'})}</span></div>`).join('')}</div>
  <p class="muted">${d.dates.length?`Perhitungan ${d.dates[0]} sampai ${d.dates.at(-1)} (${d.dates.length} hari sekolah selesai).`:'Belum ada hari sekolah selesai yang tercakup data pada semester ini.'} Hari libur dan masa sebelum awal pencatatan tidak dihitung. Terlambat termasuk Hadir; Bolos dapat termasuk Hadir jika siswa masuk tetapi belum absen pulang.</p>
- <h3>Rekap tiap kelas</h3><div class="tablewrap"><table><thead><tr><th>Kelas</th><th>Siswa</th><th>Hadir</th><th>Terlambat</th><th>Alfa</th><th>Izin</th><th>Sakit</th><th>Bolos</th><th>Kehadiran</th></tr></thead><tbody>${d.classes.map(c=>`<tr><td><b>${esc_(c.kelas)}</b></td><td>${c.count}</td>${['H','T','A','I','S','B'].map(k=>`<td>${c[k]}</td>`).join('')}<td>${c.rate===null?'—':c.rate+'%'}</td></tr>`).join('')||'<tr><td colspan="9">Belum ada data.</td></tr>'}</tbody></table></div>
+ <h3>Rekap tiap kelas</h3><div class="tablewrap"><table><thead><tr><th>Kelas</th><th>Siswa</th><th>Hadir</th><th>Terlambat</th><th>Alpa</th><th>Izin</th><th>Sakit</th><th>Bolos</th><th>Kehadiran</th></tr></thead><tbody>${d.classes.map(c=>`<tr><td><b>${esc_(c.kelas)}</b></td><td>${c.count}</td>${['H','T','A','I','S','B'].map(k=>`<td>${c[k]}</td>`).join('')}<td>${c.rate===null?'—':c.rate+'%'}</td></tr>`).join('')||'<tr><td colspan="9">Belum ada data.</td></tr>'}</tbody></table></div>
  <div class="hero" style="margin-top:24px"><h3>Rincian siswa per semester</h3><select aria-label="Filter kelas semester" onchange="semesterView.kelas=this.value;renderSchoolAnalytics_()"><option value="">Semua kelas</option>${d.classes.map(c=>`<option value="${esc_(c.kelas)}" ${c.kelas===selected?'selected':''}>${esc_(c.kelas)}</option>`).join('')}</select></div>
- <div class="tablewrap" style="max-height:420px"><table><thead><tr><th>Nama / NISN</th><th>Kelas</th><th>Hadir</th><th>Terlambat</th><th>Alfa</th><th>Izin</th><th>Sakit</th><th>Bolos</th><th>Kehadiran</th></tr></thead><tbody>${rows.map(c=>`<tr><td><b>${esc_(c.name)}</b><br><small>${esc_(c.nisn)}</small></td><td>${esc_(c.kelas)}</td>${['H','T','A','I','S','B'].map(k=>`<td>${c[k]}</td>`).join('')}<td>${c.rate===null?'—':c.rate+'%'}</td></tr>`).join('')||'<tr><td colspan="9">Belum ada siswa pada pilihan ini.</td></tr>'}</tbody></table></div>
+ <div class="tablewrap" style="max-height:420px"><table><thead><tr><th>Nama / NISN</th><th>Kelas</th><th>Hadir</th><th>Terlambat</th><th>Alpa</th><th>Izin</th><th>Sakit</th><th>Bolos</th><th>Kehadiran</th></tr></thead><tbody>${rows.map(c=>`<tr><td><b>${esc_(c.name)}</b><br><small>${esc_(c.nisn)}</small></td><td>${esc_(c.kelas)}</td>${['H','T','A','I','S','B'].map(k=>`<td>${c[k]}</td>`).join('')}<td>${c.rate===null?'—':c.rate+'%'}</td></tr>`).join('')||'<tr><td colspan="9">Belum ada siswa pada pilihan ini.</td></tr>'}</tbody></table></div>
  <p class="muted">Persentase = hadir ÷ hari sekolah yang dihitung untuk siswa. Kelas semester mengikuti kelas pada catatan presensi terakhir dalam periode; jika belum ada, memakai kelas siswa saat ini. Tanggal pendaftaran membatasi perhitungan siswa baru. Riwayat perpindahan kelas lengkap belum tersedia.</p></div>`;
 }
 function exportSemesterExcel_(){
  if(typeof XLSX==='undefined')return toast('Komponen Excel belum termuat.');
  const d=state.semesterReport;if(!d)return toast('Muat laporan semester terlebih dahulu.');
- const wb=XLSX.utils.book_new(),metrics=c=>({Hadir:c.H,Terlambat:c.T,Alfa:c.A,Izin:c.I,Sakit:c.S,Bolos:c.B,HariSiswa:c.days,Persentase:c.rate===null?'':c.rate});
+ const wb=XLSX.utils.book_new(),metrics=c=>({Hadir:c.H,Terlambat:c.T,Alpa:c.A,Izin:c.I,Sakit:c.S,Bolos:c.B,HariSiswa:c.days,Persentase:c.rate===null?'':c.rate});
  XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(d.classes.map(c=>({Kelas:c.kelas,JumlahSiswa:c.count,...metrics(c)}))),'Rekap Kelas');
  XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(d.students.map(c=>({NISN:String(c.nisn),Nama:c.name,Kelas:c.kelas,...metrics(c)}))),'Rincian Siswa');
  XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(d.period.months.map(k=>({Bulan:k,...metrics(d.monthly[k])}))), 'Bulanan Sekolah');
@@ -2061,7 +2109,7 @@ function downloadClassRecapExcel_(){
  if(typeof XLSX==='undefined')return toast('Komponen Excel belum termuat.');
  const kelas=$('classRecapClass')?.value,month=$('classRecapMonth')?.value;if(!kelas||!month)return toast('Pilih kelas dan bulan.');
  const days=recapMonthDays_(month),users=(state.data.users||[]).filter(u=>String(u.kelas||'').trim()===kelas&&u.active!==false).sort((a,b)=>String(a.name).localeCompare(String(b.name),'id'));
- const rows=users.map((u,i)=>{const sums={H:0,T:0,B:0,A:0,I:0,S:0},r={No:i+1,NISN:String(u.nisn||''),Nama:u.name||'',Kelas:kelas};days.forEach(d=>{const c=recapCell_(u,d,state.data);if(sums[c.code]!==undefined)sums[c.code]++;r[d]=[c.code||'Belum',c.in,c.out].join(' | ');});return {...r,HadirTepatWaktu:sums.H,Terlambat:sums.T,Bolos:sums.B,Alfa:sums.A,Izin:sums.I,Sakit:sums.S};});
+ const rows=users.map((u,i)=>{const sums={H:0,T:0,B:0,A:0,I:0,S:0},r={No:i+1,NISN:String(u.nisn||''),Nama:u.name||'',Kelas:kelas};days.forEach(d=>{const c=recapCell_(u,d,state.data);if(sums[c.code]!==undefined)sums[c.code]++;r[d]=[c.code||'Belum',c.in,c.out].join(' | ');});return {...r,HadirTepatWaktu:sums.H,Terlambat:sums.T,Bolos:sums.B,Alpa:sums.A,Izin:sums.I,Sakit:sums.S};});
  const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(rows),'Rekap Bulanan');XLSX.writeFile(wb,`SiDEt_Rekap_${kelas.replace(/[^a-zA-Z0-9_-]/g,'_')}_${month}.xlsx`);
 }
 
@@ -2081,7 +2129,7 @@ function absenceRows_(date,kelas=''){
   const rows=byStudent(attendance,u),excused=byStudent(leaves,u),masuk=rows.find(x=>x.type==='MASUK'),pulang=rows.find(x=>x.type==='PULANG');
   if(masuk)return null;
   const sakit=excused.find(x=>['S','SAKIT'].includes(String(x.type).toUpperCase())),izin=excused.find(x=>['I','IZIN'].includes(String(x.type).toUpperCase()));
-  let status=sakit?'SAKIT':izin?'IZIN':pulang?'BOLOS':date<today||(date===today&&clock>='15:30:00')?'ALFA':'BELUM HADIR';
+  let status=sakit?'SAKIT':izin?'IZIN':pulang?'BOLOS':date<today||(date===today&&clock>='15:30:00')?'ALPA':'BELUM HADIR';
   const leave=sakit||izin;
   return {nisn:String(u.nisn||''),name:u.name||'',kelas:u.kelas||'',status,jamPulang:pulang?historyTime_(pulang):'',keterangan:leave?.alasan||''};
  }).filter(Boolean).sort((a,b)=>String(a.kelas).localeCompare(String(b.kelas),'id')||String(a.name).localeCompare(String(b.name),'id'));
@@ -2092,11 +2140,11 @@ function renderAbsenceTable_(){
  if(!absenceSchoolDay_(date)){host.innerHTML='<div class="alert info">Tanggal ini bukan hari sekolah atau masih di masa mendatang, sehingga daftar ketidakhadiran tidak dibuat.</div>';return;}
  const rows=absenceRows_(date,kelas);
  const counts=rows.reduce((o,r)=>(o[r.status]=(o[r.status]||0)+1,o),{});
- host.innerHTML=`<div class="admin-summary"><span class="badge info">${rows.length} siswa</span>${Object.entries(counts).map(([k,v])=>`<span class="badge ${k==='ALFA'||k==='BOLOS'?'bad':k==='SAKIT'?'info':k==='IZIN'?'warn':''}">${esc_(k)}: ${v}</span>`).join('')}</div><div class="tablewrap"><table><thead><tr><th>No.</th><th>NISN</th><th>Nama</th><th>Kelas</th><th>Status</th><th>Keterangan</th></tr></thead><tbody>${rows.map((r,i)=>`<tr><td>${i+1}</td><td>${esc_(r.nisn)}</td><td><b>${esc_(r.name)}</b></td><td>${esc_(r.kelas)}</td><td><span class="badge ${r.status==='ALFA'||r.status==='BOLOS'?'bad':r.status==='SAKIT'?'info':'warn'}">${esc_(r.status)}</span></td><td>${esc_(r.keterangan||r.jamPulang&&'Hanya absen pulang '+r.jamPulang||'—')}</td></tr>`).join('')||'<tr><td colspan="6">Tidak ada siswa dalam daftar.</td></tr>'}</tbody></table></div>`;
+ host.innerHTML=`<div class="admin-summary"><span class="badge info">${rows.length} siswa</span>${Object.entries(counts).map(([k,v])=>`<span class="badge ${k==='ALPA'||k==='BOLOS'?'bad':k==='SAKIT'?'info':k==='IZIN'?'warn':''}">${esc_(k)}: ${v}</span>`).join('')}</div><div class="tablewrap"><table><thead><tr><th>No.</th><th>NISN</th><th>Nama</th><th>Kelas</th><th>Status</th><th>Keterangan</th></tr></thead><tbody>${rows.map((r,i)=>`<tr><td>${i+1}</td><td>${esc_(r.nisn)}</td><td><b>${esc_(r.name)}</b></td><td>${esc_(r.kelas)}</td><td><span class="badge ${r.status==='ALPA'||r.status==='BOLOS'?'bad':r.status==='SAKIT'?'info':'warn'}">${esc_(r.status)}</span></td><td>${esc_(r.keterangan||r.jamPulang&&'Hanya absen pulang '+r.jamPulang||'—')}</td></tr>`).join('')||'<tr><td colspan="6">Tidak ada siswa dalam daftar.</td></tr>'}</tbody></table></div>`;
 }
 function absencePanel_(){
  const classes=[...new Set((state.data.users||[]).filter(u=>u.active!==false).map(u=>String(u.kelas||'').trim()).filter(Boolean))].sort();
- $('adminContent').innerHTML=`<div class="card"><div class="hero"><div><h3 style="margin:0">Daftar Siswa Tidak Hadir</h3><p class="muted">Seluruh kelas, termasuk Alfa, Izin, Sakit, Bolos, dan Belum Hadir.</p></div><button class="btn primary" onclick="downloadAbsenceExcel_()">📊 Unduh Excel</button></div><div class="admin-toolbar"><div class="field"><label>Tanggal</label><input id="absenceDate" type="date" value="${absenceView.date||localDateKey_()}" max="${localDateKey_()}" onchange="renderAbsenceTable_()"></div><div class="field"><label>Kelas</label><select id="absenceClass" onchange="renderAbsenceTable_()"><option value="">Semua kelas</option>${classes.map(k=>`<option value="${esc_(k)}" ${absenceView.kelas===k?'selected':''}>${esc_(k)}</option>`).join('')}</select></div><button class="btn" onclick="loadData().then(()=>adminTab('absence'))">🔄 Muat Ulang</button></div><div id="absenceResult"></div><p class="muted">Siswa yang sudah presensi masuk tidak masuk dalam daftar. Untuk hari berjalan sebelum 15.30, status sementara ditulis Belum Hadir. Siswa nonaktif dan siswa yang belum terdaftar pada tanggal pilihan tidak dihitung.</p></div>`;renderAbsenceTable_();
+ $('adminContent').innerHTML=`<div class="card"><div class="hero"><div><h3 style="margin:0">Daftar Siswa Tidak Hadir</h3><p class="muted">Seluruh kelas, termasuk Alpa, Izin, Sakit, Bolos, dan Belum Hadir.</p></div><button class="btn primary" onclick="downloadAbsenceExcel_()">📊 Unduh Excel</button></div><div class="admin-toolbar"><div class="field"><label>Tanggal</label><input id="absenceDate" type="date" value="${absenceView.date||localDateKey_()}" max="${localDateKey_()}" onchange="renderAbsenceTable_()"></div><div class="field"><label>Kelas</label><select id="absenceClass" onchange="renderAbsenceTable_()"><option value="">Semua kelas</option>${classes.map(k=>`<option value="${esc_(k)}" ${absenceView.kelas===k?'selected':''}>${esc_(k)}</option>`).join('')}</select></div><button class="btn" onclick="loadData().then(()=>adminTab('absence'))">🔄 Muat Ulang</button></div><div id="absenceResult"></div><p class="muted">Siswa yang sudah presensi masuk tidak masuk dalam daftar. Untuk hari berjalan sebelum 15.30, status sementara ditulis Belum Hadir. Siswa nonaktif dan siswa yang belum terdaftar pada tanggal pilihan tidak dihitung.</p></div>`;renderAbsenceTable_();
 }
 function safeExcelText_(v){const s=String(v??'');return /^[=+\-@]/.test(s)?"'"+s:s;}
 function downloadAbsenceExcel_(){
@@ -2110,7 +2158,7 @@ function downloadAbsenceExcel_(){
 async function renderLeadershipDashboard_(){
  const host=$('adminDashboard');host.innerHTML='<div class="card">Memuat ringkasan sekolah…</div>';
  try{const j=await api('leadershipDashboard',{}),d=j.data||{};state.data={...state.data,...d};applyServerSettings_(d.settings);const k=d.kpi||{};host.innerHTML=`<div class="hero"><div><h2>📊 Dashboard ${state.user.role==='kepsek'?'Kepala Sekolah':'Wakil Kepala Sekolah'}</h2><p class="muted">Ringkasan kehadiran seluruh sekolah · akses baca saja.</p></div><button class="btn" onclick="renderLeadershipDashboard_()">🔄 Muat ulang</button></div><div class="grid cards" style="margin-top:16px"><div class="card stat"><span class="muted">Total Siswa</span><b>${Number(k.totalSiswa||0)}</b></div><div class="card stat"><span class="muted">Hadir Hari Ini</span><b>${Number(k.hadirHariIni||0)}</b></div><div class="card stat"><span class="muted">Terlambat Hari Ini</span><b>${Number(k.terlambatHariIni||0)}</b></div><div class="card stat"><span class="muted">Belum Pulang</span><b>${Number(k.belumPulang||0)}</b></div></div><div class="card" style="margin-top:16px"><h3>Rekap per Kelas</h3><div class="tablewrap"><table><thead><tr><th>Kelas</th><th>Total</th><th>Hadir</th><th>Terlambat</th><th>Izin</th><th>Sakit</th><th>Belum Pulang</th></tr></thead><tbody>${(d.kelas||[]).map(x=>`<tr><td><b>${esc_(x.kelas)}</b></td><td>${Number(x.total||0)}</td><td>${Number(x.hadir||0)}</td><td>${Number(x.terlambat||0)}</td><td>${Number(x.izin||0)}</td><td>${Number(x.sakit||0)}</td><td>${Number(x.belumPulang||0)}</td></tr>`).join('')||'<tr><td colspan="7">Belum ada data rekap.</td></tr>'}</tbody></table></div></div>`;}catch(e){host.innerHTML='<div class="alert bad">'+esc_(e.message||'Gagal memuat dasbor pimpinan.')+'</div>';}}
-async function leadershipClassRecap_(){const m=prompt('Masukkan bulan YYYY-MM',localDateKey_().slice(0,7));if(!m)return;const host=$('adminDashboard');host.innerHTML='<div class="card">Memuat rekap bulanan…</div>';try{const j=await api('leadershipMonthly',{month:m}),d=j.data||{};host.innerHTML=`<div class="card"><div class="hero"><div><h2>🗓️ Rekap Bulanan Sekolah</h2><p class="muted">Periode ${esc_(m)} · akses baca saja.</p></div><button class="btn" onclick="renderLeadershipDashboard_()">Kembali</button></div><div class="tablewrap"><table><thead><tr><th>Kelas</th><th>Total Siswa</th><th>Hadir</th><th>Terlambat</th><th>Alfa/Bolos</th><th>Izin</th><th>Sakit</th></tr></thead><tbody>${(d.rows||[]).map(x=>`<tr><td><b>${esc_(x.kelas)}</b></td><td>${Number(x.total||0)}</td><td>${Number(x.hadir||0)}</td><td>${Number(x.terlambat||0)}</td><td>${Number(x.alfa||0)}</td><td>${Number(x.izin||0)}</td><td>${Number(x.sakit||0)}</td></tr>`).join('')||'<tr><td colspan="7">Belum ada data.</td></tr>'}</tbody></table></div></div>`;}catch(e){host.innerHTML='<div class="alert bad">'+esc_(e.message||'Gagal memuat rekap.')+'</div>';}}
+async function leadershipClassRecap_(){const m=prompt('Masukkan bulan YYYY-MM',localDateKey_().slice(0,7));if(!m)return;const host=$('adminDashboard');host.innerHTML='<div class="card">Memuat rekap bulanan…</div>';try{const j=await api('leadershipMonthly',{month:m}),d=j.data||{};host.innerHTML=`<div class="card"><div class="hero"><div><h2>🗓️ Rekap Bulanan Sekolah</h2><p class="muted">Periode ${esc_(m)} · akses baca saja.</p></div><button class="btn" onclick="renderLeadershipDashboard_()">Kembali</button></div><div class="tablewrap"><table><thead><tr><th>Kelas</th><th>Total Siswa</th><th>Hadir</th><th>Terlambat</th><th>Alpa/Bolos</th><th>Izin</th><th>Sakit</th></tr></thead><tbody>${(d.rows||[]).map(x=>`<tr><td><b>${esc_(x.kelas)}</b></td><td>${Number(x.total||0)}</td><td>${Number(x.hadir||0)}</td><td>${Number(x.terlambat||0)}</td><td>${Number(x.alfa||0)}</td><td>${Number(x.izin||0)}</td><td>${Number(x.sakit||0)}</td></tr>`).join('')||'<tr><td colspan="7">Belum ada data.</td></tr>'}</tbody></table></div></div>`;}catch(e){host.innerHTML='<div class="alert bad">'+esc_(e.message||'Gagal memuat rekap.')+'</div>';}}
 function renderAdminDashboard(){
  const a=Array.isArray(state.data.attendance)?state.data.attendance:[],today=localDateKey_(),td=a.filter(x=>rowDate_(x)===today);
  const masuk=new Set(td.filter(x=>(x.type||x.jenis)==='MASUK').map(x=>String(x.nisn||x.userId||x.name))).size;
@@ -2380,7 +2428,7 @@ function setCenter(){if(!navigator.geolocation)return toast('GPS tidak tersedia'
 
 function exportExcel(){
  const wb=XLSX.utils.book_new(),a=state.data.attendance||[],u=state.data.users||[],l=state.data.leave||[];
- XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(a.map((x,i)=>({No:i+1,Tanggal:rowDate_(x),Jam:historyTime_(x),NISN:x.nisn||x.nip||'',Nama:x.name||'',Kelas:x.kelas||'',Jenis:x.type||x.jenis||'',Status:x.status||'',Lokasi:x.locationStatus||'',TerlambatMenit:x.terlambatMenit||0,Latitude:x.lat??'',Longitude:x.lng??'',AkurasiGPS:x.accuracy??'',JarakMeter:x.jarak??x.distance??'',LinkFotoDrive:photoUrl_(x)}))),"PRESENSI");
+ XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(a.map((x,i)=>({No:i+1,Tanggal:rowDate_(x),Jam:historyTime_(x),NISN:x.nisn||x.nip||'',Nama:x.name||'',Kelas:x.kelas||'',Jenis:x.type||x.jenis||'',Status:x.status||'',Lokasi:x.locationStatus||'',TerlambatMenit:Number(x.terlambatMenit??x.late??0),Latitude:x.lat??'',Longitude:x.lng??'',AkurasiGPS:x.accuracy??'',JarakMeter:x.jarak??x.distance??'',LinkFotoDrive:photoUrl_(x)}))),"PRESENSI");
  XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(u.map((x,i)=>({No:i+1,NISN:x.nisn||x.nip||x.id,Nama:x.name,Sekolah:x.sekolah||'',Kelas:x.kelas||'',JenisKelamin:x.gender||x.jenisKelamin||'',Aktif:x.active!==false}))),"SISWA");
  XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(l.map((x,i)=>({No:i+1,NISN:x.nisn||x.nip||'',Nama:x.name||'',Jenis:x.type||'',Mulai:x.tanggalMulai||'',Selesai:x.tanggalSelesai||'',Alasan:x.alasan||'',Status:x.status||''}))),"IZIN");
  XLSX.writeFile(wb,'SiDEt_v2_Laporan_'+new Date().toISOString().slice(0,10)+'.xlsx')
