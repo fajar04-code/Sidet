@@ -539,7 +539,10 @@ body.sidet13-design .tablewrap{background:var(--card)}
 const initialSchoolData = {};
 const CLASS_ORDER=["Kelas XA", "Kelas XB", "Kelas XC", "Kelas XD", "Kelas XIA", "Kelas XIB", "Kelas XIC", "Kelas XID", "Kelas XIIA", "Kelas XIIB", "Kelas XIIC", "Kelas XIID"];
 const INITIAL_STUDENTS=Object.entries(initialSchoolData).flatMap(([kelas,arr])=>arr.map(x=>({...x,kelas,sekolah:'SMAN 2 Nunukan Selatan',active:true})));
-const state={role:'auto',user:null,api:localStorage.getItem('sidet_api')||'',data:{attendance:[],users:INITIAL_STUDENTS,leave:[],settings:{}}};
+const SIDET_DEFAULT_API_URL='https://script.google.com/macros/s/AKfycbxfl79GgtRFPcDsojojvjiHzUpRV34FitJBRqqoCdtdfKl8tfhHJVDiK9dDujXlGRj1/exec';
+const SIDET_STORED_API_URL=(localStorage.getItem('sidet_api')||'').trim();
+const state={role:'auto',user:null,api:(/^https:\/\//i.test(SIDET_STORED_API_URL)?SIDET_STORED_API_URL:SIDET_DEFAULT_API_URL),data:{attendance:[],users:INITIAL_STUDENTS,leave:[],settings:{}}};
+try{if(!SIDET_STORED_API_URL)localStorage.setItem('sidet_api',SIDET_DEFAULT_API_URL);}catch(e){}
 const $=id=>document.getElementById(id);
 function setRole(){state.role='auto';}
 function toast(t,ok=false){$('toast').textContent=t;$('toast').classList.remove('hidden');setTimeout(()=>$('toast').classList.add('hidden'),3000)}
