@@ -1026,4 +1026,77 @@ openAttendance=async function(type){
 };
 </script>
 
+<script id="sidet-v85-final">
+/* SiDEt V8.5: satu alur presensi yang stabil dan nyaman di ponsel. */
+(function(){
+  const style=document.createElement('style');
+  style.textContent=`
+    :root{--v85a:#1263d6;--v85b:#08a878;--v85ink:#18324b}
+    .v85-ready{box-shadow:0 10px 28px rgba(18,99,214,.12);border:1px solid rgba(18,99,214,.12)}
+    .v85-pulse{animation:v85pulse 1.8s ease-in-out infinite}@keyframes v85pulse{50%{transform:scale(1.035);box-shadow:0 0 0 9px rgba(8,168,120,.10)}}
+    #modalBox{max-width:560px}.camera{border-radius:18px;background:#102235;min-height:220px;object-fit:cover}
+    .v85-tip{font-size:12px;line-height:1.55;color:#567087;margin:8px 0 0}
+  `;document.head.appendChild(style);
+})();
+
+function v85FreshGps_(){
+  return new Promise((resolve,reject)=>{
+    if(!navigator.geolocation)return reject(Error('GPS tidak tersedia pada perangkat ini.'));
+    navigator.geolocation.getCurrentPosition(pos=>{
+      const c={latitude:Number(pos.coords.latitude),longitude:Number(pos.coords.longitude),accuracy:Number(pos.coords.accuracy),gpsTimestamp:Date.now()};
+      try{ validateGPS_(c); resolve(c); }catch(e){reject(e);}
+    },err=>reject(Error('GPS gagal dibaca. Aktifkan izin lokasi lalu coba lagi.')),{enableHighAccuracy:true,timeout:25000,maximumAge:0});
+  });
+}
+
+openAttendance=async function(type){
+  if(SIDET_V7.sending)return;
+  if(!navigator.mediaDevices?.getUserMedia)return toast('Browser belum mendukung kamera. Gunakan Chrome terbaru dan buka lewat HTTPS.');
+  const modal=$('modal'),box=$('modalBox'); modal.classList.remove('hidden');
+  box.innerHTML='<h3>Presensi '+type+'</h3><video id="cam" class="camera" autoplay playsinline muted></video><img id="v7Preview" class="camera hidden" alt="Preview selfie"><div id="attInfo" class="alert warn">Menyiapkan kamera. GPS akan diperiksa tepat sebelum data dikirim.</div><p class="v85-tip">Pastikan wajah terlihat jelas. Jika lokasi berada di luar radius sekolah, presensi tetap dicatat dan menunggu verifikasi Admin.</p><div class="actions"><button class="btn" onclick="closeModal()">Batal</button><button id="captureBtn" class="btn primary v85-pulse" disabled onclick="captureAttendance(\''+type+'\')">Menyiapkan kamera…</button></div>';
+  try{
+    const stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'user'},width:{ideal:720},height:{ideal:540}},audio:false});
+    state.stream=stream; const video=$('cam'); video.srcObject=stream; await video.play().catch(()=>{});
+    $('captureBtn').disabled=false; $('captureBtn').textContent='Ambil Selfie & Kirim';
+    $('attInfo').textContent='Kamera siap. Tekan tombol untuk mengambil selfie dan mengirim presensi.'; $('attInfo').className='alert ok';
+  }catch(e){$('attInfo').textContent='Kamera tidak dapat dibuka: '+(e.message||e);$('attInfo').className='alert bad';}
+};
+
+captureAttendance=async function(type){
+  if(SIDET_V7.sending)return;
+  const video=$('cam'); if(!video?.videoWidth)return toast('Kamera belum siap. Tunggu sebentar lalu coba lagi.');
+  SIDET_V7.sending=true; const button=$('captureBtn');
+  try{
+    v7SetProgress_(12,'Mengompres foto…'); const photo=await v7Compress100_(video);
+    if($('v7Preview')){$('v7Preview').src=photo.dataUrl;$('v7Preview').classList.remove('hidden');video.classList.add('hidden');}
+    if(state.stream){state.stream.getTracks().forEach(t=>t.stop());state.stream=null;}
+    v7SetProgress_(32,'Membaca GPS terbaru…'); const gps=await v85FreshGps_(); const check=validateGPS_(gps);
+    state.gps={...gps,distance:check.distance,inside:check.inside,nearestPoint:check.nearestPoint};
+    v7SetProgress_(52,'Mencatat presensi…');
+    const payload={userId:state.user.id,nisn:state.user.nisn,name:state.user.name,kelas:state.user.kelas,type,lat:gps.latitude,lng:gps.longitude,accuracy:gps.accuracy,gpsTimestamp:gps.gpsTimestamp};
+    const result=await api('attendanceQuick',payload);
+    if(!result?.record?.id)throw Error('Server belum mengembalikan nomor presensi.');
+    v7SetProgress_(80,'Presensi tercatat. Foto disinkronkan…');
+    v7QueuePhotoSync_({attendanceId:result.record.id,userId:state.user.id,photo:photo.dataUrl,queuedAt:Date.now()});
+    v7SetProgress_(100,check.inside?'Presensi berhasil dicatat.':'Presensi berhasil dicatat dan menunggu verifikasi lokasi Admin.');
+    SIDET_V7.sending=false; closeModal(); await loadData();
+    toast(check.inside?'Presensi berhasil dicatat.':'Presensi tercatat; lokasi menunggu verifikasi Admin.',true);
+  }catch(e){
+    SIDET_V7.sending=false; if(button){button.disabled=false;button.classList.remove('v85-pulse');button.textContent='Coba Kirim Lagi';}
+    if($('attInfo')){$('attInfo').textContent='Data belum dikirim: '+(e.message||e);$('attInfo').className='alert bad';}
+  }
+};
+
+v7RunPhotoSync_=async function(payload){
+  try{
+    const r=await api('syncAttendance',{attendanceId:payload.attendanceId,userId:payload.userId||state.user?.id,photo:payload.photo});
+    if(!r?.ok)throw Error(r?.message||'Sinkronisasi foto gagal.');
+    try{sessionStorage.removeItem(v7SyncKey_(payload.attendanceId));}catch(e){}
+  }catch(e){console.warn('Foto masih menunggu sinkronisasi:',e);}
+};
+
+const v85OldRenderProfile_=renderStudentProfile;
+renderStudentProfile=function(){v85OldRenderProfile_(); const card=document.querySelector('.student-card,.profile-card');if(card)card.classList.add('v85-ready');};
+</script>
+
 </body></html>
