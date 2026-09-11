@@ -1424,7 +1424,7 @@ openAttendance=async function(type){
   try{
     const cam=await navigator.mediaDevices.getUserMedia({video:{facingMode:'user'},audio:false});state.stream=cam;$('cam').srcObject=cam;
     if($('captureBtn')){$('captureBtn').disabled=false;$('captureBtn').textContent='Ambil Selfie & Kirim';}
-    if($('attInfo')){$('attInfo').textContent=state.gps?'Kamera siap. GPS akan diperbarui saat dikirim.':'Kamera siap. Aktifkan GPS; lokasi akan dibaca saat dikirim.';$('attInfo').className='alert ok';}
+    if($('attInfo')){$('attInfo').textContent=state.gps?'Kamera siap. GPS terakhir akan digunakan saat dikirim.':'Kamera siap. Jika belum ada GPS terakhir, aktifkan lokasi sebentar.';$('attInfo').className='alert ok';}
   }catch(e){if($('attInfo')){$('attInfo').textContent='Kamera gagal: '+(e.message||e);$('attInfo').className='alert bad';}}
 };
 </script>
@@ -1562,7 +1562,7 @@ openAttendance=async function(type){
     '<h3>Presensi '+type+'</h3>'+
     '<video id="cam" class="camera" autoplay playsinline muted></video>'+
     '<img id="v7Preview" class="camera hidden" alt="Preview selfie">'+
-    '<div id="attInfo" class="alert warn">Menyiapkan kamera. GPS akan diperiksa tepat sebelum data dikirim.</div>'+
+    '<div id="attInfo" class="alert warn">Menyiapkan kamera. SiDEt akan memakai GPS terakhir yang tersedia saat data dikirim.</div>'+
     '<p class="v85-tip">Pastikan wajah terlihat jelas. Jika GPS gagal, foto tetap tersimpan sementara dan tidak perlu diambil ulang. Jika lokasi berada di luar radius sekolah, presensi tetap dicatat dan menunggu verifikasi Admin.</p>'+
     '<div class="actions">'+
       '<button class="btn" onclick="closeModal()">Batal</button>'+
@@ -1832,6 +1832,392 @@ renderStudentProfile=function(){v85OldRenderProfile_(); const card=document.quer
       }
       jobs.forEach((p,i)=>setTimeout(()=>window.v7RunPhotoSync_(p),800+(i*250)));
     }catch(e){console.warn('Antrean foto lama tidak dapat dipulihkan:',e);if(oldResume)try{oldResume();}catch(_){} }
+  };
+})();
+</script>
+
+
+<script id="sidet-v89-last-known-gps">
+/* SiDEt V8.9
+   Presensi memakai GPS TERAKHIR yang sudah tersedia.
+   Tidak memaksa high-accuracy / fresh fix setiap kali tombol kirim ditekan.
+*/
+(function(){
+  function gpsKey_(){
+    const uid=String(state.user?.id||state.user?.nisn||'user')
+      .replace(/[^a-zA-Z0-9_-]/g,'_');
+    return 'sidet_v89_last_gps_'+uid;
+  }
+
+  function validGps_(g){
+    if(!g)return false;
+    const lat=Number(g.latitude),lng=Number(g.longitude);
+    return Number.isFinite(lat) && Number.isFinite(lng) &&
+           lat>=-90 && lat<=90 && lng>=-180 && lng<=180;
+  }
+
+  function saveGps_(g){
+    if(!validGps_(g))return null;
+    const clean={
+      latitude:Number(g.latitude),
+      longitude:Number(g.longitude),
+      accuracy:Number.isFinite(Number(g.accuracy))?Number(g.accuracy):0,
+      gpsTimestamp:Number(g.gpsTimestamp)||Date.now(),
+      gpsSource:String(g.gpsSource||'LAST_KNOWN')
+    };
+    state.gps={...(state.gps||{}),...clean};
+    try{sessionStorage.setItem(gpsKey_(),JSON.stringify(clean));}catch(e){}
+    return clean;
+  }
+
+  function readSavedGps_(){
+    if(validGps_(state.gps))return saveGps_(state.gps);
+    try{
+      const raw=sessionStorage.getItem(gpsKey_());
+      if(!raw)return null;
+      const g=JSON.parse(raw);
+      return validGps_(g)?saveGps_(g):null;
+    }catch(e){
+      return null;
+    }
+  }
+
+  function ageText_(g){
+    const ts=Number(g?.gpsTimestamp)||0;
+    if(!ts)return 'tersimpan';
+    const mins=Math.max(0,Math.round((Date.now()-ts)/60000));
+    if(mins<1)return 'baru saja';
+    if(mins<60)return mins+' menit lalu';
+    const hrs=Math.round(mins/60);
+    return hrs+' jam lalu';
+  }
+
+  // Simpan setiap koordinat yang berhasil dibaca oleh UI GPS utama.
+  if(typeof updateGPSUI_==='function'){
+    const oldUpdate=updateGPSUI_;
+    updateGPSUI_=function(coords){
+      const result=oldUpdate.apply(this,arguments);
+      if(validGps_(state.gps))saveGps_(state.gps);
+      return result;
+    };
+  }
+
+  // Pertahankan nama fungsi lama agar bagian presensi lain tidak perlu diubah.
+  // Urutan:
+  // 1. state.gps terakhir
+  // 2. sessionStorage GPS terakhir
+  // 3. bila belum pernah ada, minta SATU lokasi cepat dari browser.
+  v85FreshGps_=function(){
+    const cached=readSavedGps_();
+    if(cached){
+      cached.gpsSource='LAST_KNOWN';
+      return Promise.resolve(cached);
+    }
+
+    return new Promise((resolve,reject)=>{
+      if(!navigator.geolocation){
+        return reject(Error('GPS terakhir belum tersedia pada perangkat ini.'));
+      }
+
+      navigator.geolocation.getCurrentPosition(
+        pos=>{
+          const g=saveGps_({
+            latitude:Number(pos.coords.latitude),
+            longitude:Number(pos.coords.longitude),
+            accuracy:Number(pos.coords.accuracy),
+            gpsTimestamp:Number(pos.timestamp)||Date.now(),
+            gpsSource:'BROWSER_CACHED'
+          });
+          if(!g)return reject(Error('Koordinat GPS terakhir tidak valid.'));
+          resolve(g);
+        },
+        err=>{
+          let msg='GPS terakhir belum tersedia.';
+          if(Number(err?.code)===1){
+            msg='GPS terakhir belum tersedia karena izin lokasi ditolak. Aktifkan lokasi sebentar lalu coba lagi.';
+          }else if(Number(err?.code)===2){
+            msg='GPS terakhir belum tersedia di perangkat. Aktifkan lokasi sebentar lalu coba lagi.';
+          }else if(Number(err?.code)===3){
+            msg='GPS terakhir belum tersedia. Aktifkan lokasi sebentar lalu tekan Coba Kirim Lagi.';
+          }
+          reject(Error(msg));
+        },
+        {
+          enableHighAccuracy:false,
+          timeout:6000,
+          maximumAge:Infinity
+        }
+      );
+    });
+  };
+
+  // Tidak ada lagi dua kali retry GPS / menunggu GPS terbaru.
+  v88ReadGpsForSend_=async function(){
+    v7SetProgress_(34,'Menggunakan GPS terakhir yang tersedia…');
+    const g=await v85FreshGps_();
+    try{
+      const info=$('attInfo');
+      if(info){
+        info.textContent='GPS terakhir digunakan ('+ageText_(g)+'). Mengirim presensi…';
+        info.className='alert ok';
+      }
+    }catch(e){}
+    return g;
+  };
+
+  // Pesan pending dibuat lebih sederhana.
+  if(typeof v88ShowPendingPreview_==='function'){
+    const oldPending=v88ShowPendingPreview_;
+    v88ShowPendingPreview_=function(job){
+      oldPending(job);
+      const info=$('attInfo');
+      if(info){
+        const g=readSavedGps_();
+        info.textContent=g
+          ? 'Foto tetap tersimpan. GPS terakhir sudah tersedia; tekan Coba Kirim Lagi.'
+          : 'Foto tetap tersimpan. GPS terakhir belum tersedia; aktifkan lokasi sebentar lalu tekan Coba Kirim Lagi.';
+        info.className='alert warn';
+      }
+    };
+  }
+
+  // Ekspos helper untuk diagnosis dari console jika diperlukan.
+  window.SiDEtLastGps={
+    get:readSavedGps_,
+    save:saveGps_,
+    clear:function(){
+      state.gps=null;
+      try{sessionStorage.removeItem(gpsKey_());}catch(e){}
+    }
+  };
+})();
+</script>
+
+
+<script id="sidet-v90-photo-drive-confirm">
+/* SiDEt V9.0 — upload foto wajib terkonfirmasi Drive
+   - Foto JPEG dipaksa <=95 KB (server max 100 KB).
+   - Presensi inti tidak diduplikasi saat upload foto diulang.
+   - Modal baru ditutup setelah server mengembalikan Link Foto Drive.
+*/
+(function(){
+  function dataUrlBytes_(dataUrl){
+    const base64=String(dataUrl||'').split(',')[1]||'';
+    const pad=(base64.match(/=*$/)||[''])[0].length;
+    return Math.max(0,Math.floor(base64.length*3/4)-pad);
+  }
+
+  // Override kompresor lama. Target aman 95 KB, bukan toleransi 110 KB.
+  window.v7Compress100_ = async function(video){
+    const TARGET=95*1024;
+    const HARD_MAX=99*1024;
+
+    let sw=Number(video?.videoWidth)||640;
+    let sh=Number(video?.videoHeight)||480;
+    let scale=Math.min(1,720/sw,540/sh);
+
+    let canvas=document.createElement('canvas');
+    canvas.width=Math.max(1,Math.round(sw*scale));
+    canvas.height=Math.max(1,Math.round(sh*scale));
+
+    const draw=(c)=>{
+      const ctx=c.getContext('2d',{alpha:false});
+      ctx.fillStyle='#fff';
+      ctx.fillRect(0,0,c.width,c.height);
+      ctx.drawImage(video,0,0,c.width,c.height);
+    };
+    draw(canvas);
+
+    let quality=.70;
+    let dataUrl=canvas.toDataURL('image/jpeg',quality);
+
+    while(dataUrlBytes_(dataUrl)>TARGET && quality>.22){
+      quality=Math.max(.22,quality-.06);
+      dataUrl=canvas.toDataURL('image/jpeg',quality);
+    }
+
+    // Jika masih besar, turunkan resolusi bertahap.
+    let rounds=0;
+    while(dataUrlBytes_(dataUrl)>TARGET && rounds<3){
+      rounds++;
+      const next=document.createElement('canvas');
+      next.width=Math.max(480,Math.round(canvas.width*.82));
+      next.height=Math.max(360,Math.round(canvas.height*.82));
+      const ctx=next.getContext('2d',{alpha:false});
+      ctx.fillStyle='#fff';
+      ctx.fillRect(0,0,next.width,next.height);
+      ctx.drawImage(canvas,0,0,next.width,next.height);
+      canvas=next;
+      quality=.55;
+      dataUrl=canvas.toDataURL('image/jpeg',quality);
+      while(dataUrlBytes_(dataUrl)>TARGET && quality>.20){
+        quality=Math.max(.20,quality-.05);
+        dataUrl=canvas.toDataURL('image/jpeg',quality);
+      }
+    }
+
+    const size=dataUrlBytes_(dataUrl);
+    if(size>HARD_MAX){
+      throw Error('Foto masih melebihi 100 KB. Silakan ambil selfie kembali.');
+    }
+    return {dataUrl:dataUrl,sizeKB:Math.ceil(size/1024),bytes:size};
+  };
+
+  async function v90SyncPhotoConfirmed_(job){
+    // Simpan antrean dulu agar aman bila koneksi putus.
+    try{
+      sessionStorage.setItem(v7SyncKey_(job.attendanceId),JSON.stringify(job));
+    }catch(e){}
+
+    let last=null;
+    for(let attempt=1;attempt<=3;attempt++){
+      try{
+        v7SetProgress_(82+(attempt-1)*4,'Mengunggah foto ke Drive… percobaan '+attempt+'/3');
+        const r=await api('syncAttendance',{
+          attendanceId:job.attendanceId,
+          userId:job.userId,
+          nisn:job.nisn,
+          name:job.name,
+          kelas:job.kelas,
+          type:job.type,
+          photo:job.photo
+        });
+        const url=String(r?.linkFotoDrive||r?.photoUrl||'').trim();
+        if(!r?.ok||!url){
+          throw Error(r?.message||'Server belum mengembalikan Link Foto Drive.');
+        }
+        try{sessionStorage.removeItem(v7SyncKey_(job.attendanceId));}catch(e){}
+        return {...r,ok:true,photoUrl:url,linkFotoDrive:url};
+      }catch(e){
+        last=e;
+        if(attempt<3)await new Promise(resolve=>setTimeout(resolve,900*attempt));
+      }
+    }
+    throw last||Error('Upload foto Drive gagal.');
+  }
+
+  // Override FINAL captureAttendance.
+  window.captureAttendance = async function(type){
+    if(SIDET_V7.sending)return;
+    type=String(type||'MASUK').toUpperCase();
+    SIDET_V7.sending=true;
+
+    const button=$('captureBtn');
+
+    try{
+      let job=v88GetPending_(type);
+
+      // Belum ada foto: ambil dan simpan sekali.
+      if(!job){
+        const video=$('cam');
+        if(!video?.videoWidth)throw Error('Kamera belum siap. Tunggu sebentar lalu coba lagi.');
+
+        v7SetProgress_(10,'Mengompres foto maksimal 95 KB…');
+        const photo=await window.v7Compress100_(video);
+
+        job={
+          type:type,
+          photo:photo.dataUrl,
+          photoSizeKB:photo.sizeKB,
+          userId:String(state.user?.id||''),
+          nisn:String(state.user?.nisn||''),
+          name:String(state.user?.name||''),
+          kelas:String(state.user?.kelas||''),
+          createdAt:Date.now(),
+          attendanceId:''
+        };
+        v88SavePending_(job);
+
+        if($('v7Preview')){
+          $('v7Preview').src=job.photo;
+          $('v7Preview').classList.remove('hidden');
+        }
+        if(video)video.classList.add('hidden');
+        if(state.stream){
+          state.stream.getTracks().forEach(t=>t.stop());
+          state.stream=null;
+        }
+      }
+
+      // Jika presensi inti belum ada, catat dulu. Gunakan GPS terakhir V8.9.
+      if(!job.attendanceId){
+        const gps=await v88ReadGpsForSend_();
+        const check=validateGPS_(gps);
+
+        state.gps={
+          ...gps,
+          distance:check.distance,
+          inside:check.inside,
+          nearestPoint:check.nearestPoint
+        };
+
+        v7SetProgress_(52,'Menyimpan presensi inti…');
+        const result=await api('attendanceQuick',{
+          userId:job.userId,
+          nisn:job.nisn,
+          name:job.name,
+          kelas:job.kelas,
+          type:job.type,
+          lat:gps.latitude,
+          lng:gps.longitude,
+          accuracy:gps.accuracy,
+          gpsTimestamp:gps.gpsTimestamp
+        });
+
+        if(!result?.record?.id)throw Error('Server belum mengembalikan ID presensi.');
+
+        job.attendanceId=String(result.record.id);
+        job.serverRecordedAt=Date.now();
+        job.locationInside=!!check.inside;
+        v88SavePending_(job);
+      }
+
+      // PENTING: tunggu upload foto sampai server memberikan URL Drive.
+      v7SetProgress_(78,'Presensi tercatat. Mengunggah foto ke Drive…');
+      const sync=await v90SyncPhotoConfirmed_(job);
+
+      if(!sync?.linkFotoDrive){
+        throw Error('Foto belum mendapat Link Foto Drive.');
+      }
+
+      v7SetProgress_(100,'Presensi dan foto berhasil tersimpan di Drive.');
+      v88ClearPending_(type);
+
+      SIDET_V7.sending=false;
+      toast('Presensi berhasil. Foto sudah tersimpan di Drive.',true);
+
+      // Beri sedikit waktu agar pesan sukses terlihat.
+      await new Promise(resolve=>setTimeout(resolve,350));
+      closeModal();
+
+      try{await loadData();}catch(e){console.warn('Refresh data setelah foto tersimpan gagal:',e);}
+
+    }catch(e){
+      SIDET_V7.sending=false;
+      const pending=v88GetPending_(type);
+
+      if(button){
+        button.disabled=false;
+        button.classList.remove('v85-pulse');
+        button.textContent=pending?.attendanceId?'Kirim Foto Lagi':(pending?.photo?'Coba Kirim Lagi':'Ambil Selfie & Kirim');
+      }
+
+      if(pending?.photo){
+        v88ShowPendingPreview_(pending);
+        if($('attInfo')){
+          $('attInfo').textContent=
+            (pending.attendanceId
+              ? 'Presensi sudah tercatat, tetapi foto belum berhasil masuk Drive. '
+              : 'Foto tetap tersimpan sementara. ')+
+            (e?.message||e||'Proses gagal.')+
+            (pending.attendanceId?' Tekan Kirim Foto Lagi.':' Tekan Coba Kirim Lagi.');
+          $('attInfo').className='alert bad';
+        }
+      }else if($('attInfo')){
+        $('attInfo').textContent='Data belum dikirim: '+(e?.message||e);
+        $('attInfo').className='alert bad';
+      }
+    }
   };
 })();
 </script>
