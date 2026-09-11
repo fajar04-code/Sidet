@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>SiDEt V10.0 Verifikasi Lokasi — SMAN 2 Nunukan Selatan</title>
+<title>SiDEt V10.1 Fix Presensi Pulang — SMAN 2 Nunukan Selatan</title>
 <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
@@ -3048,7 +3048,7 @@ renderStudentProfile=function(){v85OldRenderProfile_(); const card=document.quer
     if(document.getElementById('sidetVersionBadge'))return;
     const el=document.createElement('div');
     el.id='sidetVersionBadge';
-    el.textContent='SiDEt V10.0 • Verifikasi Lokasi • Foto Email B';
+    el.textContent='SiDEt V10.1 • Pulang FIX • Foto Email B';
     el.style.cssText='position:fixed;right:8px;bottom:6px;z-index:9000;font:500 10px system-ui;color:#64748b;background:rgba(255,255,255,.88);padding:3px 7px;border-radius:999px;pointer-events:none';
     document.body.appendChild(el);
   }
@@ -3074,7 +3074,7 @@ renderStudentProfile=function(){v85OldRenderProfile_(); const card=document.quer
     if(version)version.textContent='v9.8';
 
     const oldBadge=document.getElementById('sidetVersionBadge');
-    if(oldBadge)oldBadge.textContent='SiDEt V10.0 • Verifikasi Lokasi • Foto Email B';
+    if(oldBadge)oldBadge.textContent='SiDEt V10.1 • Pulang FIX • Foto Email B';
   }
 
   let resizeTimer=null;
@@ -3800,6 +3800,68 @@ renderStudentProfile=function(){v85OldRenderProfile_(); const card=document.quer
   }else{
     setTimeout(renderStudentVerification_,500);
   }
+})();
+</script>
+
+
+<script id="sidet-v101-pulang-fix">
+(function(){
+  function v101Schedule_(dateKey){
+    const p=String(dateKey||v7LocalDate_()).split('-').map(Number);
+    const day=(p.length===3&&p[0]&&p[1]&&p[2])
+      ?new Date(Date.UTC(p[0],p[1]-1,p[2])).getUTCDay()
+      :new Date().getDay();
+
+    if(day>=1&&day<=4)return {active:true,jamMasuk:'07:30',jamPulang:'15:30',label:'Senin–Kamis'};
+    if(day===5)return {active:true,jamMasuk:'07:30',jamPulang:'16:00',label:'Jumat'};
+    return {active:false,jamMasuk:'07:30',jamPulang:'',label:'Sabtu–Minggu'};
+  }
+
+  // Override seluruh schedule client lama.
+  window.v82ScheduleForDate_=v101Schedule_;
+  window.v82TodaySchedule_=function(){return v101Schedule_(v7LocalDate_());};
+
+  function cleanAttendanceError_(message,payload){
+    let msg=String(message||'').trim();
+    if(!msg)return msg;
+
+    // Hilangkan bug serial waktu Google Sheets tahun 1899 dari server lama.
+    if(/Dec\s+30\s+1899|1899\s+15:30|GMT\+\d{4}/i.test(msg)){
+      const sc=v101Schedule_(v7LocalDate_());
+      if(String(payload?.type||'').toUpperCase()==='PULANG'){
+        return 'Presensi pulang belum dibuka. Jadwal '+sc.label+
+          ' dapat dilakukan mulai pukul '+String(sc.jamPulang).replace(':','.')+'.';
+      }
+    }
+    return msg;
+  }
+
+  // Bersihkan pesan dari API bila HP masih sempat mengenai cache/deployment lama.
+  if(typeof window.api==='function'){
+    const coreApi=window.api;
+    window.api=async function(action,payload={}){
+      try{
+        return await coreApi.apply(this,arguments);
+      }catch(e){
+        if(action==='attendanceQuick'||action==='attendance'){
+          const clean=cleanAttendanceError_(e?.message||e,payload);
+          const err=new Error(clean);
+          err.original=e;
+          throw err;
+        }
+        throw e;
+      }
+    };
+  }
+
+  // Penanda versi yang mudah dilihat.
+  function version_(){
+    const badge=document.getElementById('sidetVersionBadge');
+    if(badge)badge.textContent='SiDEt V10.1 • Pulang FIX • Foto Email B';
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',version_);
+  else version_();
+  setTimeout(version_,500);
 })();
 </script>
 
