@@ -2204,6 +2204,15 @@ renderStudentProfile=function(){v85OldRenderProfile_(); const card=document.quer
 
       if(pending?.photo){
         v88ShowPendingPreview_(pending);
+
+        // v88ShowPendingPreview_ memakai label umum "Coba Kirim Lagi".
+        // Jika presensi inti sudah tercatat, ubah kembali agar jelas bahwa
+        // tombol hanya mengulang upload foto, bukan membuat presensi baru.
+        if(button){
+          button.disabled=false;
+          button.textContent=pending.attendanceId?'Kirim Foto Lagi':'Coba Kirim Lagi';
+        }
+
         if($('attInfo')){
           $('attInfo').textContent=
             (pending.attendanceId
