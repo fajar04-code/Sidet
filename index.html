@@ -2216,8 +2216,8 @@ renderStudentProfile=function(){v85OldRenderProfile_(); const card=document.quer
         if($('attInfo')){
           $('attInfo').textContent=
             (pending.attendanceId
-              ? 'Presensi tersimpan, tetapi sinkronisasi foto belum selesai. '
-              : 'Foto tetap tersimpan sementara. ')+
+              ? 'Presensi sudah tercatat, tetapi foto belum berhasil masuk Drive Email B. '
+              : 'Foto selfie masih tersedia di halaman ini. ')+
             (e?.message||e||'Proses gagal.')+
             (pending.attendanceId?' Tekan Kirim Foto Lagi.':' Tekan Coba Kirim Lagi.');
           $('attInfo').className='alert bad';
@@ -2426,6 +2426,22 @@ renderStudentProfile=function(){v85OldRenderProfile_(); const card=document.quer
       toast('Internet terputus. Presensi baru dapat dikirim setelah jaringan aktif.');
     }
   });
+})();
+</script>
+
+
+<script id="sidet-v97-version-marker">
+(function(){
+  function addVersion_(){
+    if(document.getElementById('sidetVersionBadge'))return;
+    const el=document.createElement('div');
+    el.id='sidetVersionBadge';
+    el.textContent='SiDEt V9.7 • Online • Foto Email B';
+    el.style.cssText='position:fixed;right:8px;bottom:6px;z-index:9000;font:500 10px system-ui;color:#64748b;background:rgba(255,255,255,.88);padding:3px 7px;border-radius:999px;pointer-events:none';
+    document.body.appendChild(el);
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',addVersion_);
+  else addVersion_();
 })();
 </script>
 
