@@ -2666,4 +2666,149 @@ renderStudentProfile=function(){v85OldRenderProfile_(); const card=document.quer
 })();
 </script>
 
+
+<script id="sidet-v93-admin-far-photo">
+/* SiDEt V9.4 — Verifikasi lokasi jauh + Link Foto Drive */
+(function(){
+  function photoUrl_(x){
+    const u=String(x?.linkFotoDrive||x?.photoUrl||'').trim();
+    return /^https:\/\/(drive|docs)\.google\.com\//i.test(u)?u:'';
+  }
+
+  function escAttr_(s){
+    return String(s??'')
+      .replace(/&/g,'&amp;')
+      .replace(/"/g,'&quot;')
+      .replace(/</g,'&lt;')
+      .replace(/>/g,'&gt;');
+  }
+
+  function photoCell_(x){
+    const url=photoUrl_(x);
+    if(url){
+      return '<a class="btn" href="'+escAttr_(url)+'" target="_blank" rel="noopener noreferrer">📷 Buka Foto</a>'+
+             '<div class="muted" style="margin-top:5px;font-size:11px">Drive tersinkronisasi</div>';
+    }
+    const status=String(x?.syncStatus||'MENUNGGU_SINKRONISASI');
+    const msg=String(x?.syncMessage||'Foto belum masuk Drive.');
+    return '<span class="badge warn">'+v7Esc_(status)+'</span>'+
+           '<div class="muted" style="margin-top:5px;max-width:220px;font-size:11px">'+v7Esc_(msg)+'</div>';
+  }
+
+  window.v7AdminFar_=async function(){
+    const c=$('adminContent');
+    if(!c)return;
+
+    c.innerHTML='<div class="card"><div class="muted">Memuat daftar verifikasi lokasi jauh…</div></div>';
+
+    try{
+      const j=await api('attendancePendingFar',{});
+      const data=j?.data||{};
+      const rows=Array.isArray(data.rows)?data.rows:[];
+
+      c.innerHTML=
+        '<div class="card">'+
+          '<div class="hero">'+
+            '<div>'+
+              '<h3>📍 Verifikasi Lokasi Jauh</h3>'+
+              '<div class="muted">Admin dapat menyetujui atau menolak presensi di luar radius. Foto Drive tampil setelah sinkronisasi selesai.</div>'+
+            '</div>'+
+            '<div class="actions">'+
+              '<span class="badge warn">'+rows.length+' menunggu</span>'+
+              '<button class="btn" onclick="v7AdminFar_()">🔄 Muat ulang</button>'+
+            '</div>'+
+          '</div>'+
+          '<div class="grid three" style="margin:12px 0">'+
+            '<div class="v7-kpi"><small>Total Menunggu</small><b>'+Number(data.count||rows.length)+'</b></div>'+
+            '<div class="v7-kpi"><small>Foto Siap</small><b>'+Number(data.photoReadyCount||0)+'</b></div>'+
+            '<div class="v7-kpi"><small>Foto Menunggu</small><b>'+Number(data.photoPendingCount||0)+'</b></div>'+
+          '</div>'+
+          '<div class="tablewrap">'+
+            '<table>'+
+              '<thead><tr>'+
+                '<th>Tanggal</th>'+
+                '<th>Siswa</th>'+
+                '<th>Kelas</th>'+
+                '<th>Jenis</th>'+
+                '<th>Jarak</th>'+
+                '<th>Titik</th>'+
+                '<th>Foto</th>'+
+                '<th>Aksi</th>'+
+              '</tr></thead>'+
+              '<tbody>'+
+                (rows.map(function(x){
+                  const id=escAttr_(x.id);
+                  const distance=x.distance==null?'—':Math.round(Number(x.distance))+' m';
+                  return '<tr>'+
+                    '<td>'+v7Esc_(x.tanggal||'')+'<br><small>'+v7Esc_(x.jam||'')+'</small></td>'+
+                    '<td><b>'+v7Esc_(x.name||'')+'</b><br><small>'+v7Esc_(x.nisn||'')+'</small></td>'+
+                    '<td>'+v7Esc_(x.kelas||'')+'</td>'+
+                    '<td>'+v7Esc_(x.type||'')+'</td>'+
+                    '<td><b>'+v7Esc_(distance)+'</b>'+
+                      (x.accuracy!=null?'<br><small>Akurasi ±'+Math.round(Number(x.accuracy))+' m</small>':'')+
+                    '</td>'+
+                    '<td>'+v7Esc_(x.nearestPoint||'—')+'</td>'+
+                    '<td>'+photoCell_(x)+'</td>'+
+                    '<td>'+
+                      '<div class="actions" style="min-width:180px">'+
+                        '<button class="btn ok" onclick="v7VerifyFar_(\''+id+'\',\'SETUJUI\',this)">✓ Setujui</button>'+
+                        '<button class="btn danger" onclick="v7VerifyFar_(\''+id+'\',\'TOLAK\',this)">✕ Tolak</button>'+
+                      '</div>'+
+                    '</td>'+
+                  '</tr>';
+                }).join('') || '<tr><td colspan="8"><div class="muted">Tidak ada presensi lokasi jauh yang menunggu verifikasi.</div></td></tr>')+
+              '</tbody>'+
+            '</table>'+
+          '</div>'+
+        '</div>';
+
+    }catch(e){
+      c.innerHTML='<div class="alert bad"><b>Gagal memuat verifikasi lokasi.</b><br>'+v7Esc_(e?.message||e)+'</div>';
+    }
+  };
+
+  window.v7VerifyFar_=async function(id,decision,btn){
+    const label=decision==='SETUJUI'?'menyetujui':'menolak';
+    if(!confirm('Yakin ingin '+label+' presensi lokasi jauh ini?'))return;
+
+    const parent=btn?.closest('.actions');
+    const buttons=parent?[...parent.querySelectorAll('button')]:[];
+    buttons.forEach(function(b){b.disabled=true;});
+
+    try{
+      const j=await api('attendanceVerify',{
+        attendanceId:id,
+        decision:decision,
+        actorName:state.user?.name||'Admin',
+        adminId:state.user?.id||''
+      });
+      toast(j?.message||'Verifikasi tersimpan.',true);
+      await v7AdminFar_();
+    }catch(e){
+      buttons.forEach(function(b){b.disabled=false;});
+      toast(e?.message||'Verifikasi gagal.');
+    }
+  };
+
+  // Setelah dashboard Admin dirender, tampilkan jumlah antrean pada tombol.
+  if(typeof v7RenderAdmin_==='function'){
+    const oldRenderAdmin=v7RenderAdmin_;
+    window.v7RenderAdmin_=function(){
+      oldRenderAdmin.apply(this,arguments);
+      setTimeout(async function(){
+        try{
+          const j=await api('attendancePendingFar',{});
+          const n=Number(j?.data?.count||0);
+          const buttons=[...document.querySelectorAll('#adminDashboard button')];
+          const b=buttons.find(function(el){
+            return String(el.getAttribute('onclick')||'').includes('v7AdminFar_');
+          });
+          if(b)b.textContent='📍 Verifikasi Lokasi Jauh'+(n?' ('+n+')':'');
+        }catch(e){}
+      },150);
+    };
+  }
+})();
+</script>
+
 </body></html>
