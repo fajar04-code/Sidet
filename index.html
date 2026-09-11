@@ -493,7 +493,7 @@ html #loginView{isolation:isolate;overflow:auto;position:relative;min-height:100
           <button id="btnMasuk" class="btn primary bigbtn" disabled onclick="openAttendance('MASUK')"><span>📸</span><strong>Presensi Masuk</strong><small>Selfie + GPS</small></button>
           <button id="btnPulang" class="btn bigbtn" disabled onclick="openAttendance('PULANG')"><span>🏁</span><strong>Presensi Pulang</strong><small>Selfie + GPS</small></button>
         </div>
-        <div class="notice-info"><div>📷</div><div><strong>Foto otomatis dikompres</strong>Foto selfie diproses maksimal <b>300 KB</b> sebelum dikirim ke server dan Drive sekolah.</div></div>
+        <div class="notice-info"><div>📷</div><div><strong>Foto otomatis dikompres</strong>Foto selfie dikompres maksimal <b>95 KB</b>, lalu dikirim ke server SiDEt dan Drive Foto Email B.</div></div>
         <div id="empNotice" class="alert">Pastikan kamera dan GPS aktif sebelum menekan tombol presensi.</div>
       </div>
 
@@ -693,7 +693,7 @@ async function compressCanvasMax300KB(canvas){
    quality=.72;blob=await toBlob();
    while(blob.size>MAX_BYTES&&quality>.20){quality-=.05;blob=await toBlob();}
  }
- if(blob.size>MAX_BYTES)throw new Error('Foto tidak dapat dikompres hingga maksimal 300 KB. Silakan ambil foto kembali.');
+ if(blob.size>MAX_BYTES)throw new Error('Foto tidak dapat dikompres hingga ukuran aman. Silakan ambil foto kembali.');
  const dataUrl=await new Promise((resolve,reject)=>{const r=new FileReader();r.onload=()=>resolve(r.result);r.onerror=reject;r.readAsDataURL(blob);});
  return {blob,dataUrl,size:blob.size,sizeKB:Math.ceil(blob.size/1024)};
 }
@@ -2232,443 +2232,10 @@ renderStudentProfile=function(){v85OldRenderProfile_(); const card=document.quer
 </script>
 
 
-<script id="sidet-v92-offline-sync">
-/* SiDEt V9.2 — OFFLINE FIRST
-   - Foto + data presensi disimpan ke IndexedDB SEBELUM dikirim.
-   - Saat offline, presensi tetap tersimpan di perangkat.
-   - Saat online kembali, antrean dikirim otomatis satu per satu.
-   - Queue baru dihapus setelah LinkFotoDrive diterima.
-*/
-(function(){
-  const DB_NAME='sidet_offline_v92';
-  const DB_VERSION=1;
-  const STORE='attendance_queue';
-  let syncing=false;
-
-  function qid_(job){
-    return String(job.queueId||[
-      'Q',
-      job.userId||'U',
-      job.type||'P',
-      job.capturedAt||new Date().toISOString(),
-      Math.random().toString(36).slice(2,8)
-    ].join('_')).replace(/[^a-zA-Z0-9_.:-]/g,'_');
-  }
-
-  function dbOpen_(){
-    return new Promise((resolve,reject)=>{
-      if(!window.indexedDB)return reject(Error('IndexedDB tidak tersedia.'));
-      const req=indexedDB.open(DB_NAME,DB_VERSION);
-      req.onupgradeneeded=()=>{
-        const db=req.result;
-        if(!db.objectStoreNames.contains(STORE)){
-          const st=db.createObjectStore(STORE,{keyPath:'queueId'});
-          st.createIndex('userId','userId',{unique:false});
-          st.createIndex('createdAt','createdAt',{unique:false});
-        }
-      };
-      req.onsuccess=()=>resolve(req.result);
-      req.onerror=()=>reject(req.error||Error('Database offline gagal dibuka.'));
-    });
-  }
-
-  async function dbPut_(job){
-    job.queueId=qid_(job);
-    job.updatedAt=Date.now();
-    const db=await dbOpen_();
-    return new Promise((resolve,reject)=>{
-      const tx=db.transaction(STORE,'readwrite');
-      tx.objectStore(STORE).put(job);
-      tx.oncomplete=()=>{db.close();resolve(job);};
-      tx.onerror=()=>{const e=tx.error;db.close();reject(e);};
-    });
-  }
-
-  async function dbDelete_(queueId){
-    const db=await dbOpen_();
-    return new Promise((resolve,reject)=>{
-      const tx=db.transaction(STORE,'readwrite');
-      tx.objectStore(STORE).delete(String(queueId));
-      tx.oncomplete=()=>{db.close();resolve(true);};
-      tx.onerror=()=>{const e=tx.error;db.close();reject(e);};
-    });
-  }
-
-  async function dbAll_(){
-    const db=await dbOpen_();
-    return new Promise((resolve,reject)=>{
-      const tx=db.transaction(STORE,'readonly');
-      const req=tx.objectStore(STORE).getAll();
-      req.onsuccess=()=>{const a=req.result||[];db.close();resolve(a);};
-      req.onerror=()=>{const e=req.error;db.close();reject(e);};
-    });
-  }
-
-  // Fallback bila IndexedDB bermasalah. Foto kecil (~95 KB), jadi satu-dua antrean tetap aman.
-  async function queuePut_(job){
-    try{return await dbPut_(job);}
-    catch(e){
-      console.warn('IndexedDB gagal, fallback localStorage:',e);
-      job.queueId=qid_(job);
-      const key='sidet_offline_fallback_'+job.queueId;
-      localStorage.setItem(key,JSON.stringify(job));
-      return job;
-    }
-  }
-
-  async function queueDelete_(job){
-    try{await dbDelete_(job.queueId);}catch(e){}
-    try{localStorage.removeItem('sidet_offline_fallback_'+job.queueId);}catch(e){}
-  }
-
-  async function queueAll_(){
-    let out=[];
-    try{out=await dbAll_();}catch(e){}
-    try{
-      for(let i=0;i<localStorage.length;i++){
-        const k=localStorage.key(i);
-        if(!k||!k.startsWith('sidet_offline_fallback_'))continue;
-        const x=JSON.parse(localStorage.getItem(k)||'{}');
-        if(x&&x.queueId&&!out.some(y=>y.queueId===x.queueId))out.push(x);
-      }
-    }catch(e){}
-    return out.sort((a,b)=>Number(a.createdAt||0)-Number(b.createdAt||0));
-  }
-
-  function ensureBadge_(){
-    let el=document.getElementById('sidetOfflineBadge');
-    if(el)return el;
-    el=document.createElement('button');
-    el.id='sidetOfflineBadge';
-    el.type='button';
-    el.style.cssText=[
-      'position:fixed','left:12px','bottom:12px','z-index:9998',
-      'border:0','border-radius:999px','padding:8px 12px',
-      'font:600 12px/1.2 system-ui','box-shadow:0 5px 20px rgba(0,0,0,.16)',
-      'background:#fff3cd','color:#6b4f00','display:none'
-    ].join(';');
-    el.onclick=()=>window.sidetSyncOfflineQueue?.(true);
-    document.body.appendChild(el);
-    return el;
-  }
-
-  async function updateBadge_(custom){
-    const el=ensureBadge_();
-    const all=await queueAll_();
-    const uid=String(state.user?.id||'');
-    const mine=uid?all.filter(x=>String(x.userId||'')===uid):all;
-    if(!mine.length){
-      el.style.display='none';
-      return;
-    }
-    el.style.display='block';
-    el.textContent=custom||('📡 '+mine.length+' presensi menunggu sinkronisasi');
-  }
-
-  // API khusus sinkronisasi: timeout 18 detik, lebih cepat daripada API umum 45 detik.
-  function apiSync_(action,payload={}){
-    return new Promise((resolve,reject)=>{
-      if(!apiReady())return reject(Error('URL server SiDEt belum dikonfigurasi.'));
-      if(navigator.onLine===false)return reject(Error('Jaringan sedang offline.'));
-
-      const requestId='sidet_sync_'+Date.now()+'_'+Math.random().toString(36).slice(2);
-      const frame=document.createElement('iframe');
-      frame.name=frame.id=requestId;
-      frame.style.display='none';
-      document.body.appendChild(frame);
-
-      const form=document.createElement('form');
-      form.method='POST';
-      form.action=state.api;
-      form.target=requestId;
-      form.style.display='none';
-
-      const timer=setTimeout(()=>{
-        cleanup();
-        reject(Error('Server SiDEt belum dapat dijangkau. Data tetap tersimpan di perangkat.'));
-      },18000);
-
-      function cleanup(){
-        clearTimeout(timer);
-        window.removeEventListener('message',onMessage);
-        try{frame.remove();form.remove();}catch(e){}
-      }
-      function onMessage(ev){
-        if(!/^https:\/\/(script\.google\.com|[a-z0-9-]+\.googleusercontent\.com)$/.test(ev.origin))return;
-        const d=ev.data;
-        if(!d||d.type!=='SIDET_API_RESULT'||d.requestId!==requestId)return;
-        cleanup();
-        d.ok?resolve(d):reject(Error(d.message||'Sinkronisasi server gagal.'));
-      }
-      window.addEventListener('message',onMessage);
-
-      const data={
-        ...payload,
-        action:action,
-        transport:'iframe_api',
-        requestId:requestId,
-        sessionToken:state.user?.sessionToken||''
-      };
-      Object.entries(data).forEach(([k,v])=>{
-        const i=document.createElement('input');
-        i.type='hidden';
-        i.name=k;
-        i.value=typeof v==='string'?v:JSON.stringify(v??'');
-        form.appendChild(i);
-      });
-      document.body.appendChild(form);
-      form.submit();
-    });
-  }
-
-  function online_(){
-    return navigator.onLine!==false && apiReady();
-  }
-
-  async function syncOne_(job){
-    if(!state.user?.sessionToken)throw Error('Login ulang diperlukan untuk sinkronisasi.');
-    if(String(job.userId||'')!==String(state.user?.id||''))throw Error('Antrean milik akun siswa lain.');
-
-    job.lastAttemptAt=Date.now();
-    await queuePut_(job);
-
-    const r=await apiSync_('attendanceSyncBundle',{
-      queueId:job.queueId,
-      offlineQueued:true,
-      capturedAt:job.capturedAt,
-      userId:job.userId,
-      nisn:job.nisn,
-      name:job.name,
-      kelas:job.kelas,
-      type:job.type,
-      lat:job.lat,
-      lng:job.lng,
-      accuracy:job.accuracy,
-      gpsTimestamp:job.gpsTimestamp,
-      gpsSource:job.gpsSource||'LAST_KNOWN',
-      photo:job.photo
-    });
-
-    const url=String(r?.linkFotoDrive||r?.photoUrl||r?.record?.linkFotoDrive||r?.record?.photoUrl||'').trim();
-    if(!url)throw Error('Server belum mengembalikan Link Foto Drive.');
-
-    await queueDelete_(job);
-    return {...r,linkFotoDrive:url,photoUrl:url};
-  }
-
-  window.sidetSyncOfflineQueue=async function(manual){
-    if(syncing)return;
-    if(!online_()){
-      await updateBadge_('📴 Offline — presensi aman di perangkat');
-      return;
-    }
-    if(!state.user?.sessionToken){
-      await updateBadge_('🔐 Login untuk mengirim antrean presensi');
-      return;
-    }
-
-    syncing=true;
-    try{
-      const all=await queueAll_();
-      const uid=String(state.user.id||'');
-      const mine=all.filter(x=>String(x.userId||'')===uid);
-
-      for(const job of mine){
-        try{
-          await updateBadge_('⏳ Mengirim presensi tersimpan…');
-          await syncOne_(job);
-        }catch(e){
-          job.retryCount=Number(job.retryCount||0)+1;
-          job.lastError=String(e?.message||e||'Sinkronisasi gagal');
-          await queuePut_(job);
-
-          if(/Sesi berakhir|Login ulang/i.test(job.lastError)){
-            await updateBadge_('🔐 Login ulang untuk sinkronisasi');
-            break;
-          }
-          // Jangan hapus antrean bila server/network gagal.
-          console.warn('Antrean presensi tetap disimpan:',job.lastError);
-          break;
-        }
-      }
-
-      await updateBadge_();
-      if(manual){
-        const remain=(await queueAll_()).filter(x=>String(x.userId||'')===String(state.user?.id||''));
-        if(!remain.length){
-          toast('Semua presensi tersimpan sudah berhasil disinkronkan.',true);
-          try{await loadData();}catch(e){}
-        }
-      }
-    }finally{
-      syncing=false;
-    }
-  };
-
-  // FINAL captureAttendance: offline-first.
-  window.captureAttendance=async function(type){
-    if(SIDET_V7.sending)return;
-    type=String(type||'MASUK').toUpperCase();
-    SIDET_V7.sending=true;
-
-    const button=$('captureBtn');
-    try{
-      let pending=v88GetPending_(type);
-      let job=pending;
-
-      if(!job){
-        const video=$('cam');
-        if(!video?.videoWidth)throw Error('Kamera belum siap. Tunggu sebentar lalu coba lagi.');
-
-        v7SetProgress_(10,'Menyiapkan foto presensi…');
-        const photo=await window.v7Compress100_(video);
-
-        let gps=null;
-        try{
-          gps=await v88ReadGpsForSend_();
-        }catch(gpsError){
-          // Jika state.gps valid, tetap gunakan GPS terakhir yang sudah ada.
-          const g=state.gps;
-          if(g&&Number.isFinite(Number(g.latitude))&&Number.isFinite(Number(g.longitude)))gps=g;
-          else throw gpsError;
-        }
-
-        const capturedAt=new Date().toISOString();
-        job={
-          queueId:'Q_'+String(state.user?.id||'U')+'_'+type+'_'+Date.now()+'_'+Math.random().toString(36).slice(2,7),
-          userId:String(state.user?.id||''),
-          nisn:String(state.user?.nisn||''),
-          name:String(state.user?.name||''),
-          kelas:String(state.user?.kelas||''),
-          type:type,
-          photo:photo.dataUrl,
-          photoSizeKB:photo.sizeKB,
-          lat:Number(gps.latitude),
-          lng:Number(gps.longitude),
-          accuracy:Number(gps.accuracy||0),
-          gpsTimestamp:Number(gps.gpsTimestamp||Date.now()),
-          gpsSource:String(gps.gpsSource||'LAST_KNOWN'),
-          capturedAt:capturedAt,
-          createdAt:Date.now(),
-          retryCount:0,
-          status:'PENDING'
-        };
-
-        // PENTING: simpan lokal SEBELUM mencoba server.
-        await queuePut_(job);
-        v88SavePending_(job);
-
-        if($('v7Preview')){
-          $('v7Preview').src=job.photo;
-          $('v7Preview').classList.remove('hidden');
-        }
-        if(video)video.classList.add('hidden');
-        if(state.stream){
-          state.stream.getTracks().forEach(t=>t.stop());
-          state.stream=null;
-        }
-      }else{
-        // Pending dari versi sebelumnya juga dipindahkan ke queue offline persisten.
-        job.queueId=job.queueId||('Q_'+String(job.userId||state.user?.id||'U')+'_'+type+'_'+Date.now());
-        job.capturedAt=job.capturedAt||new Date(job.createdAt||Date.now()).toISOString();
-        job.createdAt=job.createdAt||Date.now();
-
-        if(!Number.isFinite(Number(job.lat))||!Number.isFinite(Number(job.lng))){
-          const gps=await v88ReadGpsForSend_();
-          job.lat=Number(gps.latitude);
-          job.lng=Number(gps.longitude);
-          job.accuracy=Number(gps.accuracy||0);
-          job.gpsTimestamp=Number(gps.gpsTimestamp||Date.now());
-          job.gpsSource=String(gps.gpsSource||'LAST_KNOWN');
-        }
-        await queuePut_(job);
-      }
-
-      // Setelah sudah aman di perangkat, UI tidak lagi bergantung pada internet.
-      if(!online_()){
-        v7SetProgress_(100,'Presensi tersimpan sementara di perangkat. Akan dikirim otomatis saat jaringan aktif.');
-        v88ClearPending_(type);
-        SIDET_V7.sending=false;
-        await updateBadge_();
-        toast('Presensi tersimpan sementara. Akan dikirim otomatis saat internet aktif.',true);
-        await new Promise(r=>setTimeout(r,350));
-        closeModal();
-        return;
-      }
-
-      v7SetProgress_(55,'Jaringan tersedia. Mengirim presensi dan foto ke server…');
-
-      try{
-        const r=await syncOne_(job);
-        v88ClearPending_(type);
-        v7SetProgress_(100,'Presensi dan foto berhasil tersimpan di server & Drive.');
-        SIDET_V7.sending=false;
-        await updateBadge_();
-        toast('Presensi berhasil. Foto sudah masuk Drive.',true);
-        await new Promise(r=>setTimeout(r,350));
-        closeModal();
-        try{await loadData();}catch(e){}
-      }catch(syncError){
-        // Data sudah aman di IndexedDB. Jangan paksa siswa mengulang selfie.
-        job.retryCount=Number(job.retryCount||0)+1;
-        job.lastError=String(syncError?.message||syncError||'Sinkronisasi tertunda');
-        await queuePut_(job);
-        v88ClearPending_(type);
-        SIDET_V7.sending=false;
-        await updateBadge_();
-
-        if($('attInfo')){
-          $('attInfo').textContent='Presensi aman tersimpan di perangkat. Server belum dapat menerima data sekarang. SiDEt akan mengirim otomatis saat koneksi kembali.';
-          $('attInfo').className='alert warn';
-        }
-        toast('Presensi tersimpan sementara; sinkronisasi akan dilanjutkan otomatis.',true);
-        await new Promise(r=>setTimeout(r,500));
-        closeModal();
-      }
-
-    }catch(e){
-      SIDET_V7.sending=false;
-      if(button){
-        button.disabled=false;
-        button.textContent='Coba Lagi';
-      }
-      if($('attInfo')){
-        $('attInfo').textContent='Presensi belum dapat disimpan: '+String(e?.message||e);
-        $('attInfo').className='alert bad';
-      }
-    }
-  };
-
-  // Otomatis sinkron ketika koneksi kembali.
-  window.addEventListener('online',()=>{
-    setTimeout(()=>window.sidetSyncOfflineQueue(false),900);
-  });
-  window.addEventListener('offline',()=>{
-    updateBadge_('📴 Offline — presensi akan disimpan sementara');
-  });
-
-  // Setelah login/start app, coba kirim antrean milik akun itu.
-  if(typeof startApp==='function'){
-    const oldStartApp=startApp;
-    window.startApp=function(){
-      const r=oldStartApp.apply(this,arguments);
-      setTimeout(()=>window.sidetSyncOfflineQueue(false),1200);
-      return r;
-    };
-  }
-
-  // Jaga-jaga bila event "online" tidak terpanggil pada WebView tertentu.
-  setInterval(()=>{
-    if(navigator.onLine!==false&&state.user?.sessionToken)window.sidetSyncOfflineQueue(false);
-  },30000);
-
-  setTimeout(()=>updateBadge_(),1200);
-})();
-</script>
 
 
 <script id="sidet-v93-admin-far-photo">
-/* SiDEt V9.4 — Verifikasi lokasi jauh + Link Foto Drive */
+/* SiDEt V9.6 — Verifikasi lokasi jauh + Link Foto Drive */
 (function(){
   function photoUrl_(x){
     const u=String(x?.linkFotoDrive||x?.photoUrl||'').trim();
@@ -2808,6 +2375,57 @@ renderStudentProfile=function(){v85OldRenderProfile_(); const card=document.quer
       },150);
     };
   }
+})();
+</script>
+
+
+<script id="sidet-v96-online-only">
+/* SiDEt V9.6 — ONLINE ONLY
+   Tidak membuat presensi offline / antrean IndexedDB baru.
+   Presensi hanya diproses saat perangkat sedang online.
+*/
+(function(){
+  function onlineReady_(){
+    return navigator.onLine !== false && typeof apiReady==='function' && apiReady();
+  }
+
+  const originalOpenAttendance = window.openAttendance;
+  window.openAttendance = async function(type){
+    if(!onlineReady_()){
+      toast('Presensi memerlukan koneksi internet. Aktifkan jaringan lalu coba kembali.');
+      return;
+    }
+    return originalOpenAttendance.apply(this,arguments);
+  };
+
+  const originalCaptureAttendance = window.captureAttendance;
+  window.captureAttendance = async function(type){
+    if(!onlineReady_()){
+      const info=$('attInfo');
+      if(info){
+        info.textContent='Jaringan tidak aktif. Presensi belum dikirim. Aktifkan internet lalu tekan Coba Kirim Lagi.';
+        info.className='alert bad';
+      }
+      const b=$('captureBtn');
+      if(b){
+        b.disabled=false;
+        b.textContent='Coba Kirim Lagi';
+      }
+      return;
+    }
+    return originalCaptureAttendance.apply(this,arguments);
+  };
+
+  // Hilangkan badge offline versi lama bila masih tersisa di DOM.
+  const oldBadge=document.getElementById('sidetOfflineBadge');
+  if(oldBadge)oldBadge.remove();
+
+  // Informasi koneksi sederhana.
+  window.addEventListener('offline',()=>{
+    if(state?.role==='siswa'){
+      toast('Internet terputus. Presensi baru dapat dikirim setelah jaringan aktif.');
+    }
+  });
 })();
 </script>
 
