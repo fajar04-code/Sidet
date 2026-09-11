@@ -3,8 +3,10 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>SiDEt V8.6 — SMAN 2 Nunukan Selatan</title>
+<title>SiDEt V10.0 Verifikasi Lokasi — SMAN 2 Nunukan Selatan</title>
 <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 <style>
 :root{--bg:#f4f7fb;--card:#fff;--ink:#182230;--muted:#6b7788;--primary:#1769e0;--primary2:#0d47a1;--ok:#16834b;--bad:#c62828;--warn:#b56a00;--line:#e4e9f0;--shadow:0 10px 30px #1d355715}
 *{box-sizing:border-box}body{margin:0;font-family:Inter,system-ui,-apple-system,Segoe UI,Arial,sans-serif;background:var(--bg);color:var(--ink)}
@@ -434,6 +436,618 @@ html #loginView{isolation:isolate;overflow:auto;position:relative;min-height:100
 
 </style>
 <script id="sidet13-design-marker">document.addEventListener('DOMContentLoaded',()=>document.body.classList.add('sidet13-design'));</script>
+
+<style id="sidet-v98-responsive-dashboard">
+/* ============================================================
+   SiDEt V9.8 — RESPONSIVE DASHBOARD
+   Satu UI untuk HP, tablet, laptop, desktop.
+   Tidak mengubah logika presensi / API.
+   ============================================================ */
+:root{
+  --v98-radius:18px;
+  --v98-radius-sm:13px;
+  --v98-gap:16px;
+  --v98-surface:#ffffff;
+  --v98-soft:#f5f9ff;
+  --v98-blue:#0b6ff4;
+  --v98-green:#0ba36c;
+  --v98-ink:#12304f;
+  --v98-shadow:0 10px 28px rgba(15,72,128,.08);
+}
+html{scroll-behavior:smooth}
+body{overflow-x:hidden}
+#app{min-height:100dvh;background:
+  radial-gradient(circle at 90% 4%,rgba(15,165,190,.08),transparent 30%),
+  linear-gradient(180deg,#f7fbff 0%,#f4f8fc 100%)}
+
+/* Header */
+#app .top{
+  min-height:70px;height:auto;
+  padding:10px clamp(14px,2.3vw,30px);
+  background:rgba(255,255,255,.94);
+  backdrop-filter:blur(14px) saturate(1.18);
+  -webkit-backdrop-filter:blur(14px) saturate(1.18);
+  box-shadow:0 5px 18px rgba(19,63,104,.055);
+}
+#app .brand{font-size:20px;letter-spacing:-.4px}
+#app .brand .logo{
+  width:42px;height:42px;border-radius:13px;
+  background:linear-gradient(145deg,#0878ef,#04a493);
+  box-shadow:0 7px 18px rgba(0,114,221,.22)
+}
+#app #who{
+  max-width:min(38vw,390px);
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  color:#5c7085;font-weight:650
+}
+
+/* Main canvas */
+#app .container{
+  width:min(100%,1480px);
+  max-width:1480px;
+  padding:clamp(14px,2vw,28px);
+}
+#app .container>section{min-width:0}
+#app .card{
+  border:1px solid rgba(191,211,230,.72);
+  border-radius:var(--v98-radius);
+  box-shadow:var(--v98-shadow);
+  background:rgba(255,255,255,.98);
+}
+#app .card:hover{border-color:rgba(151,190,224,.82)}
+#app h2,#app h3{color:var(--v98-ink);letter-spacing:-.35px}
+
+/* Main role navigation */
+#app #nav{
+  position:sticky;
+  top:70px;
+  z-index:9;
+  display:flex;
+  flex-wrap:nowrap;
+  gap:8px;
+  overflow-x:auto;
+  overscroll-behavior-inline:contain;
+  scrollbar-width:none;
+  padding:9px 4px 11px;
+  margin:0 0 18px;
+  background:linear-gradient(180deg,rgba(247,251,255,.98),rgba(247,251,255,.92));
+  backdrop-filter:blur(10px);
+}
+#app #nav::-webkit-scrollbar{display:none}
+#app #nav button{
+  flex:0 0 auto;
+  min-height:40px;
+  padding:9px 15px;
+  border:1px solid #dbe7f2;
+  background:#fff;
+  color:#46637f;
+  box-shadow:0 3px 9px rgba(24,75,125,.035);
+  transition:.18s ease;
+}
+#app #nav button:hover{transform:translateY(-1px);border-color:#a9caeb}
+#app #nav button.active{
+  color:#fff;
+  border-color:transparent;
+  background:linear-gradient(115deg,#0b72ee,#099d9d);
+  box-shadow:0 7px 18px rgba(11,114,238,.2)
+}
+
+/* Hero sections */
+#adminDashboard>.hero,
+#teacherDashboard>.hero,
+#kepsekDashboard>.hero,
+#wakasekDashboard>.hero{
+  padding:21px 22px;
+  margin-bottom:15px;
+  border-radius:var(--v98-radius);
+  color:#fff;
+  background:
+    radial-gradient(circle at 88% 10%,rgba(255,255,255,.18),transparent 31%),
+    linear-gradient(125deg,#075dcc 0%,#087ee9 52%,#0aa17f 100%);
+  box-shadow:0 12px 28px rgba(8,105,202,.17)
+}
+#adminDashboard>.hero h2,
+#teacherDashboard>.hero h2,
+#kepsekDashboard>.hero h2,
+#wakasekDashboard>.hero h2{color:#fff}
+#adminDashboard>.hero .muted,
+#teacherDashboard>.hero .muted,
+#kepsekDashboard>.hero .muted,
+#wakasekDashboard>.hero .muted{color:#e8f5ff}
+#adminDashboard>.hero .btn,
+#teacherDashboard>.hero .btn,
+#kepsekDashboard>.hero .btn,
+#wakasekDashboard>.hero .btn{
+  background:rgba(255,255,255,.16);
+  color:#fff;border:1px solid rgba(255,255,255,.28)
+}
+
+/* KPIs */
+#app .v7-kpis,
+#app .semester-kpis{
+  display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:12px;
+  margin:14px 0 17px
+}
+#app .v7-kpi,
+#app .semester-kpis>div{
+  min-width:0;
+  padding:16px 17px;
+  border-radius:16px;
+  border:1px solid #dce8f3;
+  background:linear-gradient(150deg,#fff,#f7fbff);
+  box-shadow:0 7px 18px rgba(35,86,133,.055)
+}
+#app .v7-kpi small,
+#app .semester-kpis span{
+  display:block;
+  color:#6e8296;
+  font-size:11px;
+  font-weight:750;
+  letter-spacing:.35px;
+  text-transform:uppercase
+}
+#app .v7-kpi b,
+#app .semester-kpis b{
+  display:block;
+  margin-top:7px;
+  font-size:clamp(22px,2.2vw,32px);
+  color:#0b67d0;
+  line-height:1.15
+}
+
+/* Role menu tiles */
+#app .v7-menu{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(170px,1fr));
+  gap:10px;
+  margin:14px 0 18px
+}
+#app .v7-menu .btn{
+  min-height:58px;
+  display:flex;
+  align-items:center;
+  justify-content:flex-start;
+  text-align:left;
+  white-space:normal;
+  line-height:1.35;
+  padding:12px 15px;
+  border-radius:14px;
+  border:1px solid #dbe7f2;
+  background:linear-gradient(145deg,#fff,#f5f9fe);
+  color:#244b70;
+  box-shadow:0 5px 14px rgba(25,73,118,.045)
+}
+#app .v7-menu .btn:hover{
+  transform:translateY(-1px);
+  border-color:#9bc4e9;
+  background:#f4f9ff
+}
+
+/* Student dashboard */
+#siswaPage{gap:16px}
+#siswaPage .student-hero{
+  min-height:145px;
+  padding:24px 26px!important;
+  border-radius:22px;
+  background:
+    radial-gradient(circle at 86% 12%,rgba(255,255,255,.17),transparent 30%),
+    linear-gradient(122deg,#0b68d8 0%,#0787e2 50%,#0aa98a 100%)
+}
+#siswaPage .student-layout{
+  grid-template-columns:minmax(0,1.45fr) minmax(310px,.75fr);
+  gap:16px
+}
+#siswaPage .side-stack{gap:16px}
+#siswaPage .today-item{
+  background:linear-gradient(155deg,#fff,#f8fbfe);
+  border-color:#dbe7f2
+}
+#siswaPage .attendance-actions,
+#siswaPage .grid.two{min-width:0}
+#siswaPage .bigbtn{
+  box-shadow:0 8px 20px rgba(11,111,244,.14);
+  transition:.18s ease
+}
+#siswaPage .bigbtn:hover:not(:disabled){transform:translateY(-2px)}
+#v7StudentExtras{
+  grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  gap:16px!important
+}
+
+/* Teacher/Admin/Leadership work areas */
+#teacherPage,#adminPage,#kepsekPage,#wakasekPage{min-width:0}
+#v7TeacherHost,#adminContent,#kepsekDashboard,#wakasekDashboard{min-width:0}
+#v7TeacherHost.card,#adminContent>.card,
+#kepsekDashboard>.card,#wakasekDashboard>.card{
+  padding:21px
+}
+#adminPage>div.card{border-radius:16px}
+#adminPage>div.card>.grid.three{
+  grid-template-columns:repeat(auto-fit,minmax(160px,1fr))
+}
+
+/* Toolbars/forms */
+#app .hero{min-width:0}
+#app .hero>div{min-width:0}
+#app .actions{align-items:center}
+#app .actions .btn{min-height:40px}
+#app .field{min-width:0}
+#app input,#app select,#app textarea{
+  border-radius:12px;
+  min-height:43px;
+  border-color:#d6e2ee
+}
+#app textarea{min-height:100px;resize:vertical}
+
+/* Tables: desktop looks clean, mobile scrolls safely */
+#app .tablewrap{
+  width:100%;
+  max-width:100%;
+  max-height:min(64vh,640px);
+  overflow:auto;
+  -webkit-overflow-scrolling:touch;
+  border:1px solid #e0e9f2;
+  border-radius:14px;
+  background:#fff;
+  scrollbar-width:thin
+}
+#app .tablewrap table{margin:0;min-width:720px}
+#app .tablewrap th{
+  top:0;
+  z-index:3;
+  padding:11px 10px;
+  background:#f3f8fc;
+  color:#405b74;
+  font-size:11px;
+  text-transform:uppercase;
+  letter-spacing:.28px
+}
+#app .tablewrap td{padding:11px 10px}
+#app .tablewrap tbody tr:hover{background:#f8fbfe}
+#app .tablewrap .btn{padding:8px 11px;min-height:34px;font-size:11px}
+
+/* Announcement blocks */
+#app .v7-announcement{
+  padding:15px 16px;
+  margin:10px 0;
+  border:1px solid #e0e9f3;
+  border-radius:14px;
+  background:#fbfdff
+}
+
+/* Modal */
+#app .modalbox,.modalbox{
+  border-radius:22px;
+  border:1px solid rgba(202,216,229,.82)
+}
+
+/* Laptop / large desktop */
+@media (min-width:1200px){
+  #app .container{padding-left:30px;padding-right:30px}
+  #app .v7-menu{grid-template-columns:repeat(4,minmax(0,1fr))}
+  #adminDashboard .v7-menu{grid-template-columns:repeat(5,minmax(0,1fr))}
+  #siswaPage .side-stack{position:sticky;top:136px;align-self:start}
+  #v7TeacherHost.card,#adminContent>.card{padding:24px}
+}
+
+/* Tablet / small laptop */
+@media (min-width:721px) and (max-width:1199px){
+  #app .v7-menu{grid-template-columns:repeat(3,minmax(0,1fr))}
+  #app .v7-kpis,#app .semester-kpis{grid-template-columns:repeat(4,minmax(0,1fr))}
+  #siswaPage .student-layout{grid-template-columns:1fr}
+  #siswaPage .side-stack{grid-template-columns:repeat(2,minmax(0,1fr))}
+  #v7StudentExtras{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+}
+
+/* Phone */
+@media (max-width:720px){
+  :root{--v98-gap:12px}
+  #app .top{
+    min-height:66px;
+    padding:9px 12px
+  }
+  #app .brand{font-size:18px;gap:9px}
+  #app .brand .logo{width:38px;height:38px;border-radius:12px}
+  #app .top .actions{gap:6px;min-width:0}
+  #app #who{
+    max-width:118px;
+    font-size:10px
+  }
+  #app .top .btn{
+    min-height:39px;
+    padding:8px 12px
+  }
+
+  #app .container{
+    width:100%;
+    padding:12px 11px 25px
+  }
+  #app #nav{
+    top:66px;
+    margin-left:-11px;
+    margin-right:-11px;
+    padding:8px 11px 10px
+  }
+  #app #nav button{
+    min-height:38px;
+    padding:8px 12px;
+    font-size:11px
+  }
+
+  #app .card{
+    padding:15px;
+    border-radius:16px;
+    box-shadow:0 7px 20px rgba(28,79,126,.065)
+  }
+  #app .hero{
+    flex-direction:column;
+    align-items:stretch;
+    gap:12px
+  }
+  #app .hero .actions{width:100%}
+  #app .hero .actions .btn{flex:1 1 120px}
+  #adminDashboard>.hero,
+  #teacherDashboard>.hero,
+  #kepsekDashboard>.hero,
+  #wakasekDashboard>.hero{
+    padding:18px 16px;
+    margin-bottom:12px
+  }
+  #adminDashboard>.hero h2,
+  #teacherDashboard>.hero h2,
+  #kepsekDashboard>.hero h2,
+  #wakasekDashboard>.hero h2{
+    font-size:21px
+  }
+
+  #app .v7-kpis,#app .semester-kpis{
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:9px;
+    margin:11px 0 14px
+  }
+  #app .v7-kpi,#app .semester-kpis>div{
+    padding:13px;
+    border-radius:14px
+  }
+  #app .v7-kpi small,#app .semester-kpis span{font-size:9px}
+  #app .v7-kpi b,#app .semester-kpis b{font-size:23px}
+
+  #app .v7-menu{
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:8px;
+    margin:11px 0 14px
+  }
+  #app .v7-menu .btn{
+    min-height:64px;
+    padding:11px;
+    border-radius:13px;
+    font-size:11px
+  }
+
+  #siswaPage .student-hero{
+    min-height:0;
+    padding:19px 17px!important;
+    border-radius:18px
+  }
+  #siswaPage .student-name{font-size:22px}
+  #siswaPage .student-layout{grid-template-columns:1fr;gap:12px}
+  #siswaPage .side-stack{grid-template-columns:1fr;gap:12px}
+  #v7StudentExtras{
+    grid-template-columns:1fr!important;
+    gap:12px!important
+  }
+  #siswaPage .today-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+  #siswaPage .today-item{padding:12px 10px}
+  #siswaPage .today-item>b{font-size:20px}
+  #siswaPage .attendance-actions,
+  #siswaPage .grid.two{grid-template-columns:1fr 1fr!important}
+  #siswaPage .bigbtn{
+    min-height:88px!important;
+    height:auto!important;
+    padding:11px 7px!important;
+    font-size:13px!important
+  }
+  #siswaPage .mapbox{height:160px}
+  #siswaPage .gps-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}
+  #siswaPage .gps-metric{padding:9px}
+
+  #app .grid.two,#app .grid.three{
+    grid-template-columns:1fr!important
+  }
+  #adminPage>div.card>.grid.three{
+    grid-template-columns:repeat(2,minmax(0,1fr))!important
+  }
+
+  #app .tablewrap{
+    max-height:58vh;
+    border-radius:12px
+  }
+  #app .tablewrap table{min-width:700px}
+  #app .tablewrap th,#app .tablewrap td{
+    padding:9px 8px;
+    font-size:11px
+  }
+
+  #app .modal{
+    align-items:end;
+    padding:0
+  }
+  #app .modalbox{
+    width:100%;
+    max-width:none;
+    max-height:92dvh;
+    border-radius:24px 24px 0 0;
+    padding:20px 16px 24px
+  }
+  #app .modalbox .actions{
+    position:sticky;
+    bottom:0;
+    padding-top:8px;
+    background:linear-gradient(transparent,#fff 22%)
+  }
+
+  #app .toast{
+    left:12px;right:12px;bottom:12px;
+    max-width:none;
+    border-radius:14px;
+    text-align:center
+  }
+}
+
+/* Very small phone */
+@media (max-width:390px){
+  #app #who{display:none}
+  #app .v7-menu{grid-template-columns:1fr 1fr}
+  #app .v7-menu .btn{min-height:58px;font-size:10px}
+  #siswaPage .today-grid{grid-template-columns:1fr}
+  #siswaPage .attendance-actions,
+  #siswaPage .grid.two{grid-template-columns:1fr!important}
+  #siswaPage .bigbtn{min-height:76px!important}
+  #adminPage>div.card>.grid.three{grid-template-columns:1fr!important}
+}
+
+/* Landscape phone: maximize working area */
+@media (max-height:520px) and (orientation:landscape){
+  #app .top{min-height:56px;padding-top:6px;padding-bottom:6px}
+  #app #nav{top:56px}
+  #app .container{padding-top:9px}
+  #app .modalbox{max-height:96dvh}
+}
+
+/* Accessible motion */
+@media (prefers-reduced-motion:reduce){
+  #app *,#app *:before,#app *:after{scroll-behavior:auto!important;transition:none!important;animation:none!important}
+}
+</style>
+
+
+<style id="sidet-v99-export-style">
+/* SiDEt V9.9 — universal PDF/Excel export for non-student dashboards */
+.v99-exportbar{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  padding:11px 13px;
+  margin:0 0 14px;
+  border:1px solid #dbe7f2;
+  border-radius:15px;
+  background:linear-gradient(135deg,#ffffff,#f3f8fd);
+  box-shadow:0 6px 18px rgba(31,76,119,.055);
+}
+.v99-exportbar .v99-export-meta{
+  min-width:0;
+  display:flex;
+  align-items:center;
+  gap:9px;
+  color:#536d86;
+  font-size:12px;
+}
+.v99-exportbar .v99-export-meta b{
+  display:block;
+  max-width:min(52vw,680px);
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+  color:#173a5e;
+  font-size:13px;
+}
+.v99-exportbar .v99-export-icon{
+  width:34px;height:34px;flex:0 0 34px;
+  display:grid;place-items:center;
+  border-radius:11px;
+  background:linear-gradient(135deg,#eaf3ff,#e9fff6);
+}
+.v99-exportbar .actions{flex-wrap:nowrap}
+.v99-exportbar .btn{
+  min-height:38px;
+  padding:8px 13px;
+  border-radius:12px;
+  white-space:nowrap;
+}
+.v99-exportbar .btn.v99-pdf{
+  background:#fff0f0;
+  color:#a82828;
+  border:1px solid #f3cece;
+}
+.v99-exportbar .btn.v99-xlsx{
+  background:#eaf8ef;
+  color:#13723f;
+  border:1px solid #cbe9d7;
+}
+@media(max-width:720px){
+  .v99-exportbar{
+    align-items:stretch;
+    flex-direction:column;
+    gap:9px;
+    padding:10px;
+  }
+  .v99-exportbar .v99-export-meta b{max-width:72vw}
+  .v99-exportbar .actions{display:grid;grid-template-columns:1fr 1fr;width:100%;gap:8px}
+  .v99-exportbar .btn{width:100%;justify-content:center}
+}
+@media print{
+  body.sidet-v99-printing>*{display:none!important}
+  body.sidet-v99-printing #app{display:block!important;background:white!important}
+  body.sidet-v99-printing #app>*{display:none!important}
+  body.sidet-v99-printing #app main{display:block!important}
+  body.sidet-v99-printing #app main>*{display:none!important}
+  body.sidet-v99-printing .sidet-v99-print-target{
+    display:block!important;
+    position:absolute!important;
+    left:0!important;top:0!important;
+    width:100%!important;
+    max-width:none!important;
+    margin:0!important;
+    padding:0!important;
+    box-shadow:none!important;
+  }
+  body.sidet-v99-printing .v99-exportbar,
+  body.sidet-v99-printing button,
+  body.sidet-v99-printing .actions{display:none!important}
+}
+</style>
+
+
+<style id="sidet-v100-verification-ui">
+.v100-verify-card{
+  border:1px solid #dbe8f3;
+  background:linear-gradient(145deg,#fff,#f7fbff);
+}
+.v100-verify-list{display:grid;gap:9px;margin-top:12px}
+.v100-verify-item{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto;
+  gap:10px;
+  align-items:center;
+  padding:11px 12px;
+  border:1px solid #e0e9f2;
+  border-radius:13px;
+  background:#fff;
+}
+.v100-verify-item small{display:block;margin-top:3px;color:#6b7f93}
+.v100-verify-item.pending{border-color:#eedb9f;background:#fffdf5}
+.v100-verify-item.approved{border-color:#bfe5d2;background:#f5fff9}
+.v100-verify-item.rejected{border-color:#efc3c3;background:#fff7f7}
+.v100-verify-badge{
+  display:inline-flex;align-items:center;justify-content:center;
+  min-height:30px;padding:5px 9px;border-radius:999px;
+  font-size:10px;font-weight:800;white-space:nowrap
+}
+.v100-verify-badge.pending{background:#fff1c7;color:#815d00}
+.v100-verify-badge.approved{background:#dff8ea;color:#126d41}
+.v100-verify-badge.rejected{background:#ffe0e0;color:#a12c2c}
+.v100-admin-result{margin:10px 0 0}
+.v100-admin-actions{display:flex;gap:7px;flex-wrap:wrap;min-width:190px}
+.v100-admin-actions .btn{flex:1 1 80px}
+@media(max-width:720px){
+  .v100-verify-item{grid-template-columns:1fr;align-items:start}
+  .v100-verify-badge{justify-self:start}
+}
+</style>
+
 </head>
 <body>
 
@@ -546,8 +1160,6 @@ html #loginView{isolation:isolate;overflow:auto;position:relative;min-height:100
       <button class="btn" onclick="adminTab('leave')">📝 Persetujuan Izin</button>
       <button class="btn" onclick="adminTab('wa')">📲 WA Orang Tua</button>
       <button class="btn" onclick="v83AdminSpecialSchedule_()">⏰ Pulang Cepat Resmi</button><button class="btn" onclick="adminTab('settings')">⚙️ Pengaturan</button>
-      <button class="btn ok" onclick="exportExcel()">📊 Ekspor Excel Lengkap</button>
-      <button class="btn" onclick="exportSummary()">📈 Ekspor Ringkasan</button>
     </div>
   </div>
   <div id="adminContent" style="margin-top:16px"></div>
@@ -2436,12 +3048,758 @@ renderStudentProfile=function(){v85OldRenderProfile_(); const card=document.quer
     if(document.getElementById('sidetVersionBadge'))return;
     const el=document.createElement('div');
     el.id='sidetVersionBadge';
-    el.textContent='SiDEt V9.7 • Online • Foto Email B';
+    el.textContent='SiDEt V10.0 • Verifikasi Lokasi • Foto Email B';
     el.style.cssText='position:fixed;right:8px;bottom:6px;z-index:9000;font:500 10px system-ui;color:#64748b;background:rgba(255,255,255,.88);padding:3px 7px;border-radius:999px;pointer-events:none';
     document.body.appendChild(el);
   }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',addVersion_);
   else addVersion_();
+})();
+</script>
+
+
+<script id="sidet-v98-responsive-runtime">
+(function(){
+  function viewportKind_(){
+    const w=window.innerWidth||document.documentElement.clientWidth||1024;
+    return w<=720?'phone':(w<=1199?'tablet':'desktop');
+  }
+  function applyResponsive_(){
+    document.body.classList.add('sidet-responsive-v98');
+    document.documentElement.dataset.sidetViewport=viewportKind_();
+    const role=String(window.state?.user?.role||'');
+    if(role)document.body.dataset.sidetRole=role;
+
+    const version=document.querySelector('#app .brand .muted');
+    if(version)version.textContent='v9.8';
+
+    const oldBadge=document.getElementById('sidetVersionBadge');
+    if(oldBadge)oldBadge.textContent='SiDEt V10.0 • Verifikasi Lokasi • Foto Email B';
+  }
+
+  let resizeTimer=null;
+  window.addEventListener('resize',function(){
+    clearTimeout(resizeTimer);
+    resizeTimer=setTimeout(applyResponsive_,80);
+  });
+  window.addEventListener('orientationchange',function(){
+    setTimeout(applyResponsive_,180);
+  });
+
+  if(typeof window.startApp==='function'){
+    const oldStartApp=window.startApp;
+    window.startApp=function(){
+      const r=oldStartApp.apply(this,arguments);
+      setTimeout(applyResponsive_,0);
+      setTimeout(applyResponsive_,500);
+      return r;
+    };
+  }
+
+  if(typeof window.showPage==='function'){
+    const oldShowPage=window.showPage;
+    window.showPage=function(id){
+      const r=oldShowPage.apply(this,arguments);
+      setTimeout(applyResponsive_,0);
+      return r;
+    };
+  }
+
+  if(document.readyState==='loading'){
+    document.addEventListener('DOMContentLoaded',applyResponsive_);
+  }else{
+    applyResponsive_();
+  }
+})();
+</script>
+
+
+<script id="sidet-v99-universal-export">
+(function(){
+  const ROLE_LABEL={
+    guru:'Guru',
+    admin:'Admin',
+    kepsek:'Kepala Sekolah',
+    wakasek:'Wakil Kepala Sekolah'
+  };
+
+  function role_(){
+    return String(window.state?.user?.role||'').trim().toLowerCase();
+  }
+
+  function allowed_(){
+    return ['guru','admin','kepsek','wakasek'].includes(role_());
+  }
+
+  function visible_(el){
+    if(!el)return false;
+    const s=getComputedStyle(el);
+    return s.display!=='none'&&s.visibility!=='hidden'&&!el.classList.contains('hidden');
+  }
+
+  function clean_(s){
+    return String(s??'')
+      .replace(/\u00a0/g,' ')
+      .replace(/[ \t]+/g,' ')
+      .replace(/\n[ \t]+/g,'\n')
+      .replace(/\n{3,}/g,'\n\n')
+      .trim();
+  }
+
+  function pdfText_(s){
+    return clean_(s)
+      .normalize('NFKD')
+      .replace(/[\u0300-\u036f]/g,'')
+      .replace(/[–—]/g,'-')
+      .replace(/[“”]/g,'"')
+      .replace(/[‘’]/g,"'")
+      .replace(/[^\x20-\x7E\n]/g,'');
+  }
+
+  function safeFile_(s){
+    return clean_(s)
+      .replace(/[\\/:*?"<>|]+/g,' ')
+      .replace(/\s+/g,'_')
+      .replace(/^_+|_+$/g,'')
+      .slice(0,75)||'Laporan_SiDEt';
+  }
+
+  function pageForRole_(){
+    const r=role_();
+    const ids={
+      guru:'teacherPage',
+      admin:'adminPage',
+      kepsek:'kepsekPage',
+      wakasek:'wakasekPage'
+    };
+    return document.getElementById(ids[r]||'');
+  }
+
+  function hasUsefulContent_(el){
+    if(!el)return false;
+    const txt=clean_(el.innerText);
+    return txt.length>15||el.querySelector('table,.v7-kpi,.semester-kpis,.field,.alert');
+  }
+
+  function activeTarget_(){
+    const r=role_();
+    if(r==='guru'){
+      const host=document.getElementById('v7TeacherHost');
+      return hasUsefulContent_(host)?host:document.getElementById('teacherDashboard');
+    }
+    if(r==='admin'){
+      const content=document.getElementById('adminContent');
+      return hasUsefulContent_(content)?content:document.getElementById('adminDashboard');
+    }
+    if(r==='kepsek')return document.getElementById('kepsekDashboard');
+    if(r==='wakasek')return document.getElementById('wakasekDashboard');
+    return null;
+  }
+
+  function title_(target){
+    if(!target)return 'Laporan SiDEt';
+    const headings=[...target.querySelectorAll('h1,h2,h3,h4')]
+      .filter(visible_)
+      .map(x=>clean_(x.textContent))
+      .filter(Boolean);
+    return headings[0]||('Dashboard '+(ROLE_LABEL[role_()]||'SiDEt'));
+  }
+
+  function fileBase_(target){
+    const d=new Date();
+    const ymd=[
+      d.getFullYear(),
+      String(d.getMonth()+1).padStart(2,'0'),
+      String(d.getDate()).padStart(2,'0')
+    ].join('-');
+    return safeFile_('SiDEt_'+(ROLE_LABEL[role_()]||role_())+'_'+title_(target)+'_'+ymd);
+  }
+
+  function cellValue_(cell){
+    if(!cell)return '';
+    const input=cell.querySelector('input,select,textarea');
+    if(input){
+      if(input.tagName==='SELECT'){
+        return clean_(input.options[input.selectedIndex]?.text||input.value);
+      }
+      return clean_(input.value);
+    }
+    const links=[...cell.querySelectorAll('a[href]')]
+      .map(a=>String(a.href||'').trim())
+      .filter(Boolean);
+    const text=clean_(cell.innerText);
+    if(links.length){
+      const unique=[...new Set(links)];
+      if(/^buka foto$/i.test(text)||/^foto$/i.test(text))return unique.join(' ');
+      return clean_((text?text+' - ':'')+unique.join(' '));
+    }
+    return text;
+  }
+
+  function tableAOA_(table){
+    const rows=[...table.querySelectorAll('tr')].filter(visible_);
+    if(!rows.length)return [];
+    const raw=rows.map(row=>[...row.children].map(cellValue_));
+    if(!raw.length)return [];
+
+    // Exclude interactive "Aksi" columns from report output.
+    const header=raw[0]||[];
+    const keep=header.map((h,i)=>({h:String(h||'').toLowerCase(),i}))
+      .filter(x=>!['aksi','action'].includes(x.h.trim()))
+      .map(x=>x.i);
+
+    if(!keep.length)return raw;
+    return raw.map(r=>keep.map(i=>r[i]??''));
+  }
+
+  function visibleTables_(target){
+    return [...(target?.querySelectorAll('table')||[])]
+      .filter(t=>visible_(t)&&t.querySelector('tr'));
+  }
+
+  function summaryRows_(target){
+    const rows=[['Bagian','Isi']];
+    if(!target)return rows;
+
+    const seen=new Set();
+    function add(k,v){
+      k=clean_(k);v=clean_(v);
+      if(!v)return;
+      const sig=k+'|'+v;
+      if(seen.has(sig))return;
+      seen.add(sig);
+      rows.push([k||'Informasi',v]);
+    }
+
+    [...target.querySelectorAll('.v7-kpi,.semester-kpis>div')].filter(visible_).forEach(el=>{
+      const label=clean_(el.querySelector('small,span')?.textContent||'Indikator');
+      const value=clean_(el.querySelector('b,strong')?.textContent||el.textContent);
+      add(label,value);
+    });
+
+    [...target.querySelectorAll('.field')].filter(visible_).forEach(el=>{
+      const label=clean_(el.querySelector('label')?.textContent||'Kolom');
+      const inp=el.querySelector('input,select,textarea');
+      if(!inp)return;
+      let value='';
+      if(inp.tagName==='SELECT')value=inp.options[inp.selectedIndex]?.text||inp.value;
+      else value=inp.value;
+      add(label,value);
+    });
+
+    [...target.querySelectorAll('.alert,.v7-announcement,p.muted')].filter(visible_).forEach(el=>{
+      add('Keterangan',clean_(el.innerText));
+    });
+
+    const heading=title_(target);
+    const directText=[...target.querySelectorAll('h2,h3,h4,p')]
+      .filter(el=>visible_(el)&&!el.closest('table')&&!el.closest('.field'))
+      .map(el=>clean_(el.innerText))
+      .filter(Boolean)
+      .slice(0,20);
+    directText.forEach((txt,i)=>add(i===0?heading:'Informasi',txt));
+
+    if(rows.length===1){
+      add(title_(target),clean_(target.innerText).slice(0,6000));
+    }
+    return rows;
+  }
+
+  function sheetName_(base,index,used){
+    let s=clean_(base).replace(/[\\/?*[\]:]/g,' ').replace(/\s+/g,' ').slice(0,28);
+    if(!s)s='Data '+index;
+    let candidate=s;
+    let n=2;
+    while(used.has(candidate)){
+      const suffix=' '+n++;
+      candidate=(s.slice(0,31-suffix.length)+suffix);
+    }
+    used.add(candidate);
+    return candidate;
+  }
+
+  function widths_(aoa){
+    if(!aoa.length)return [];
+    const cols=Math.max(...aoa.map(r=>r.length));
+    const ws=[];
+    for(let c=0;c<cols;c++){
+      let max=8;
+      aoa.forEach(r=>{max=Math.max(max,String(r[c]??'').length)});
+      ws.push({wch:Math.min(42,max+2)});
+    }
+    return ws;
+  }
+
+  function exportExcel_(){
+    if(!allowed_())return;
+    const target=activeTarget_();
+    if(!target)return toast('Menu yang akan diekspor belum tersedia.');
+
+    if(!window.XLSX){
+      toast('Modul Excel belum termuat. Periksa koneksi internet lalu coba lagi.');
+      return;
+    }
+
+    const wb=XLSX.utils.book_new();
+    const used=new Set();
+    const summary=summaryRows_(target);
+    const wsSummary=XLSX.utils.aoa_to_sheet(summary);
+    wsSummary['!cols']=widths_(summary);
+    XLSX.utils.book_append_sheet(wb,wsSummary,sheetName_('Ringkasan',1,used));
+
+    const tables=visibleTables_(target);
+    tables.forEach((table,i)=>{
+      const aoa=tableAOA_(table);
+      if(!aoa.length)return;
+      const cap=clean_(table.querySelector('caption')?.textContent||
+        table.closest('.card')?.querySelector('h2,h3,h4')?.textContent||
+        ('Tabel '+(i+1)));
+      const ws=XLSX.utils.aoa_to_sheet(aoa);
+      ws['!cols']=widths_(aoa);
+      if(aoa.length>1)ws['!autofilter']={ref:XLSX.utils.encode_range({
+        s:{r:0,c:0},
+        e:{r:aoa.length-1,c:Math.max(0,(aoa[0]?.length||1)-1)}
+      })};
+      XLSX.utils.book_append_sheet(wb,ws,sheetName_(cap,i+2,used));
+    });
+
+    XLSX.writeFile(wb,fileBase_(target)+'.xlsx',{compression:true});
+  }
+
+  function fallbackPrint_(target){
+    target.classList.add('sidet-v99-print-target');
+    document.body.classList.add('sidet-v99-printing');
+    const cleanup=()=>{
+      target.classList.remove('sidet-v99-print-target');
+      document.body.classList.remove('sidet-v99-printing');
+      window.removeEventListener('afterprint',cleanup);
+    };
+    window.addEventListener('afterprint',cleanup);
+    setTimeout(()=>window.print(),80);
+    setTimeout(cleanup,2500);
+  }
+
+  function pdfSummaryLines_(target){
+    const rows=summaryRows_(target).slice(1);
+    return rows.map(r=>pdfText_((r[0]?r[0]+': ':'')+(r[1]||''))).filter(Boolean);
+  }
+
+  function exportPdf_(){
+    if(!allowed_())return;
+    const target=activeTarget_();
+    if(!target)return toast('Menu yang akan diekspor belum tersedia.');
+
+    const JsPDF=window.jspdf?.jsPDF;
+    if(!JsPDF){
+      toast('Modul PDF belum termuat. Membuka dialog cetak; pilih Simpan sebagai PDF.');
+      fallbackPrint_(target);
+      return;
+    }
+
+    const tables=visibleTables_(target);
+    const tableData=tables.map(tableAOA_).filter(a=>a.length);
+    const maxCols=tableData.reduce((m,a)=>Math.max(m,a[0]?.length||0),0);
+    const landscape=maxCols>5;
+    const doc=new JsPDF({
+      orientation:landscape?'landscape':'portrait',
+      unit:'mm',
+      format:'a4',
+      compress:true
+    });
+
+    const pageW=doc.internal.pageSize.getWidth();
+    const pageH=doc.internal.pageSize.getHeight();
+    const margin=12;
+    const title=pdfText_(title_(target));
+    const role=pdfText_(ROLE_LABEL[role_()]||role_());
+    const generated=new Date().toLocaleString('id-ID');
+
+    function header_(pageNo){
+      doc.setFont('helvetica','bold');
+      doc.setFontSize(13);
+      doc.text(title||'Laporan SiDEt',margin,12);
+      doc.setFont('helvetica','normal');
+      doc.setFontSize(8);
+      doc.text('SiDEt - '+role+' | '+pdfText_(generated),margin,17);
+      doc.text('Halaman '+pageNo,pageW-margin,12,{align:'right'});
+      doc.setDrawColor(210);
+      doc.line(margin,20,pageW-margin,20);
+    }
+
+    header_(1);
+    let y=26;
+
+    const summary=pdfSummaryLines_(target);
+    if(summary.length){
+      doc.setFont('helvetica','normal');
+      doc.setFontSize(8.5);
+      for(const line of summary.slice(0,30)){
+        const parts=doc.splitTextToSize(line,pageW-margin*2);
+        if(y+(parts.length*4)>pageH-14){
+          doc.addPage();
+          header_(doc.getNumberOfPages());
+          y=26;
+        }
+        doc.text(parts,margin,y);
+        y+=parts.length*4+1;
+      }
+      y+=2;
+    }
+
+    if(tableData.length && typeof doc.autoTable==='function'){
+      tableData.forEach((aoa,idx)=>{
+        const head=[(aoa[0]||[]).map(pdfText_)];
+        const body=aoa.slice(1).map(r=>r.map(pdfText_));
+        const tableTitle=pdfText_(
+          clean_(tables[idx]?.querySelector('caption')?.textContent||
+          tables[idx]?.closest('.card')?.querySelector('h2,h3,h4')?.textContent||
+          ('Tabel '+(idx+1)))
+        );
+
+        if(y>pageH-35){
+          doc.addPage();
+          header_(doc.getNumberOfPages());
+          y=26;
+        }
+        doc.setFont('helvetica','bold');
+        doc.setFontSize(9);
+        doc.text(tableTitle,margin,y);
+        y+=3;
+
+        doc.autoTable({
+          head:head,
+          body:body,
+          startY:y,
+          margin:{left:margin,right:margin,top:24,bottom:12},
+          theme:'grid',
+          styles:{
+            font:'helvetica',
+            fontSize:maxCols>12?5.2:(maxCols>7?6.2:7.2),
+            cellPadding:1.4,
+            overflow:'linebreak',
+            valign:'middle'
+          },
+          headStyles:{fontStyle:'bold'},
+          horizontalPageBreak:maxCols>12,
+          horizontalPageBreakRepeat:0,
+          didDrawPage:function(){
+            header_(doc.getNumberOfPages());
+          }
+        });
+
+        y=(doc.lastAutoTable?.finalY||26)+7;
+      });
+    }else if(!tableData.length){
+      const txt=pdfText_(clean_(target.innerText));
+      const lines=doc.splitTextToSize(txt,pageW-margin*2);
+      doc.setFont('helvetica','normal');
+      doc.setFontSize(8.5);
+      lines.forEach(line=>{
+        if(y>pageH-14){
+          doc.addPage();
+          header_(doc.getNumberOfPages());
+          y=26;
+        }
+        doc.text(line,margin,y);
+        y+=4;
+      });
+    }
+
+    doc.save(fileBase_(target)+'.pdf');
+  }
+
+  function toolbarHtml_(){
+    return '<div class="v99-export-meta">'+
+      '<div class="v99-export-icon">⬇️</div>'+
+      '<div><span>Ekspor menu aktif</span><b id="v99ExportTitle">Dashboard</b></div>'+
+      '</div>'+
+      '<div class="actions">'+
+        '<button type="button" class="btn v99-pdf" onclick="v99ExportPDF()">📄 Unduh PDF</button>'+
+        '<button type="button" class="btn v99-xlsx" onclick="v99ExportExcel()">📊 Unduh Excel</button>'+
+      '</div>';
+  }
+
+  function ensureToolbar_(){
+    const bars=[...document.querySelectorAll('.v99-exportbar')];
+    if(!allowed_()){
+      bars.forEach(x=>x.remove());
+      return;
+    }
+
+    const page=pageForRole_();
+    if(!page)return;
+    // Keep exactly one toolbar, inside the active role page.
+    bars.forEach(x=>{if(x.parentElement!==page)x.remove()});
+
+    let bar=page.querySelector(':scope > .v99-exportbar');
+    if(!bar){
+      bar=document.createElement('div');
+      bar.className='v99-exportbar';
+      bar.innerHTML=toolbarHtml_();
+      page.insertBefore(bar,page.firstChild);
+    }
+    const target=activeTarget_();
+    const titleEl=bar.querySelector('#v99ExportTitle');
+    if(titleEl)titleEl.textContent=title_(target);
+  }
+
+  window.v99ExportPDF=exportPdf_;
+  window.v99ExportExcel=exportExcel_;
+
+  // Re-attach toolbar after role/menu rendering.
+  if(typeof window.showPage==='function'){
+    const oldShowPage=window.showPage;
+    window.showPage=function(){
+      const r=oldShowPage.apply(this,arguments);
+      setTimeout(ensureToolbar_,0);
+      return r;
+    };
+  }
+
+  let timer=null;
+  const observer=new MutationObserver(()=>{
+    clearTimeout(timer);
+    timer=setTimeout(ensureToolbar_,90);
+  });
+  ['teacherPage','adminPage','kepsekPage','wakasekPage'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el)observer.observe(el,{childList:true,subtree:true,characterData:true});
+  });
+
+  window.addEventListener('resize',()=>{
+    clearTimeout(timer);
+    timer=setTimeout(ensureToolbar_,120);
+  });
+
+  if(document.readyState==='loading'){
+    document.addEventListener('DOMContentLoaded',()=>setTimeout(ensureToolbar_,120));
+  }else{
+    setTimeout(ensureToolbar_,120);
+  }
+})();
+</script>
+
+
+<script id="sidet-v100-verification-fix">
+(function(){
+  function statusInfo_(rec){
+    const verification=String(rec?.verificationStatus||'').trim().toUpperCase();
+    const locClass=String(rec?.locationClass||'').trim().toUpperCase();
+    const locStatus=String(rec?.locationStatus||'').trim().toUpperCase();
+    const far=locClass==='JAUH_DARI_SEKOLAH'||locStatus.includes('JAUH');
+
+    if(verification==='MENUNGGU_VERIFIKASI'){
+      return {key:'pending',label:'Menunggu Admin',text:'Presensi dari lokasi jauh sedang menunggu keputusan Admin.'};
+    }
+    if(verification==='DITOLAK'){
+      return {key:'rejected',label:'Ditolak',text:'Presensi lokasi jauh ditolak oleh Admin.'};
+    }
+    if(verification==='DISETUJUI'||(verification==='VALID'&&far)){
+      return {key:'approved',label:'Disetujui',text:'Presensi lokasi jauh telah disetujui oleh Admin.'};
+    }
+    return far
+      ? {key:'pending',label:'Menunggu Admin',text:'Presensi lokasi jauh belum memiliki keputusan Admin.'}
+      : {key:'normal',label:'Valid',text:'Lokasi presensi tidak memerlukan verifikasi khusus.'};
+  }
+
+  function verificationRecords_(){
+    return (state.data.attendance||[])
+      .filter(x=>String(x.userId||'')===String(state.user?.id||'')||
+                 String(x.nisn||'')===String(state.user?.nisn||''))
+      .filter(x=>{
+        const s=statusInfo_(x);
+        return s.key!=='normal';
+      })
+      .sort((a,b)=>String(b.tanggal||b.timestamp||'').localeCompare(String(a.tanggal||a.timestamp||'')));
+  }
+
+  function ensureStudentBox_(){
+    if(String(state.user?.role||'').toLowerCase()!=='siswa')return null;
+    const page=$('siswaPage');
+    if(!page)return null;
+
+    let box=$('v100StudentVerification');
+    if(box)return box;
+
+    const primary=page.querySelector('.student-layout > .grid');
+    if(!primary)return null;
+
+    box=document.createElement('div');
+    box.id='v100StudentVerification';
+    box.className='card v100-verify-card';
+
+    const statusCard=primary.querySelector('.card');
+    if(statusCard&&statusCard.nextSibling)primary.insertBefore(box,statusCard.nextSibling);
+    else primary.appendChild(box);
+    return box;
+  }
+
+  function renderStudentVerification_(){
+    const box=ensureStudentBox_();
+    if(!box)return;
+
+    const rows=verificationRecords_();
+    if(!rows.length){
+      box.innerHTML=
+        '<div class="card-title"><div><div class="section-label">Verifikasi lokasi</div>'+
+        '<h3 style="margin:0">Respons Admin</h3></div>'+
+        '<span class="badge ok">Tidak ada antrean</span></div>'+
+        '<p class="muted" style="margin-bottom:0">Tidak ada presensi lokasi jauh yang memerlukan tanggapan Admin.</p>';
+      return;
+    }
+
+    const pending=rows.filter(x=>statusInfo_(x).key==='pending').length;
+    box.innerHTML=
+      '<div class="card-title"><div><div class="section-label">Verifikasi lokasi</div>'+
+      '<h3 style="margin:0">Respons Admin</h3></div>'+
+      '<span class="badge '+(pending?'warn':'ok')+'">'+
+      (pending?pending+' menunggu':'Selesai')+'</span></div>'+
+      '<div class="v100-verify-list">'+
+      rows.slice(0,8).map(rec=>{
+        const s=statusInfo_(rec);
+        const by=String(rec.verifiedBy||'').trim();
+        const when=rec.verifiedAt?new Date(rec.verifiedAt).toLocaleString('id-ID'):'';
+        const meta=[
+          String(rec.tanggal||''),
+          String(rec.jam||''),
+          String(rec.type||rec.jenis||''),
+          rec.jarak!==undefined&&rec.jarak!==null&&String(rec.jarak)!==''?Math.round(Number(rec.jarak))+' m':''
+        ].filter(Boolean).join(' · ');
+        return '<div class="v100-verify-item '+s.key+'">'+
+          '<div><b>'+v7Esc_(s.text)+'</b>'+
+          '<small>'+v7Esc_(meta)+'</small>'+
+          (by?'<small>Diproses oleh: '+v7Esc_(by)+(when?' · '+v7Esc_(when):'')+'</small>':'')+
+          '</div>'+
+          '<span class="v100-verify-badge '+s.key+'">'+
+            (s.key==='approved'?'✓ ':s.key==='rejected'?'✕ ':'⏳ ')+v7Esc_(s.label)+
+          '</span>'+
+        '</div>';
+      }).join('')+
+      '</div>';
+  }
+
+  // Override after original render so student sees Admin decision immediately after refresh.
+  if(typeof window.renderEmpHistory==='function'){
+    const oldRenderEmpHistory=window.renderEmpHistory;
+    window.renderEmpHistory=function(){
+      const r=oldRenderEmpHistory.apply(this,arguments);
+
+      try{
+        const raw=(state.data.attendance||[]).filter(x=>
+          String(x.userId||'')===String(state.user?.id||'')||
+          String(x.nisn||'')===String(state.user?.nisn||'')
+        );
+        const today=typeof v7LocalDate_==='function'?v7LocalDate_():new Date().toISOString().slice(0,10);
+        const todayRows=raw.filter(x=>(x.tanggal||String(x.timestamp||'').slice(0,10))===today);
+        const masuk=todayRows.find(x=>String(x.type||x.jenis||'').toUpperCase()==='MASUK');
+        const pulang=todayRows.find(x=>String(x.type||x.jenis||'').toUpperCase()==='PULANG');
+
+        [[masuk,'masukSub','masukBadge'],[pulang,'pulangSub','pulangBadge']].forEach(([rec,subId,badgeId])=>{
+          if(!rec)return;
+          const s=statusInfo_(rec);
+          if(s.key==='normal')return;
+
+          const sub=$(subId),badge=$(badgeId);
+          if(sub)sub.textContent=s.text;
+          if(badge){
+            badge.textContent=(s.key==='approved'?'✓ Disetujui':s.key==='rejected'?'✕ Ditolak':'⏳ Menunggu');
+            badge.className='badge '+(s.key==='approved'?'ok':s.key==='rejected'?'danger':'warn');
+          }
+        });
+
+        const states=todayRows.map(statusInfo_);
+        const rejected=states.some(s=>s.key==='rejected');
+        const pending=states.some(s=>s.key==='pending');
+        if(rejected&&$('todayStatus')){
+          $('todayStatus').textContent='Ada presensi ditolak';
+          $('todayStatus').className='badge danger';
+        }else if(pending&&$('todayStatus')){
+          $('todayStatus').textContent='Menunggu verifikasi';
+          $('todayStatus').className='badge warn';
+        }
+
+        renderStudentVerification_();
+      }catch(e){
+        console.warn('Render verifikasi siswa:',e);
+      }
+      return r;
+    };
+  }
+
+  // Stronger Admin verifier: clear message + refresh after successful response.
+  window.v7VerifyFar_=async function(id,decision,btn){
+    if(!id)return toast('ID presensi tidak ditemukan.');
+    const approved=String(decision).toUpperCase()==='SETUJUI';
+    const label=approved?'menyetujui':'menolak';
+    if(!confirm('Yakin ingin '+label+' presensi lokasi jauh ini?'))return;
+
+    const row=btn?.closest('tr');
+    const buttons=row?[...row.querySelectorAll('button')]:[];
+    buttons.forEach(b=>b.disabled=true);
+    const oldText=btn?.textContent;
+    if(btn)btn.textContent=approved?'Menyetujui…':'Menolak…';
+
+    let info=$('v100AdminVerifyResult');
+    if(!info){
+      const host=$('adminContent');
+      if(host){
+        info=document.createElement('div');
+        info.id='v100AdminVerifyResult';
+        info.className='alert v100-admin-result';
+        host.insertBefore(info,host.firstChild);
+      }
+    }
+    if(info){
+      info.textContent='Memproses keputusan Admin…';
+      info.className='alert info v100-admin-result';
+    }
+
+    try{
+      const j=await api('attendanceVerify',{
+        attendanceId:String(id),
+        decision:approved?'SETUJUI':'TOLAK',
+        actorName:state.user?.name||'Admin',
+        adminId:state.user?.id||''
+      });
+
+      if(!j?.ok)throw Error(j?.message||'Server belum mengonfirmasi verifikasi.');
+
+      if(info){
+        info.textContent=j.message||'Keputusan verifikasi berhasil disimpan.';
+        info.className='alert ok v100-admin-result';
+      }
+      toast(j.message||'Verifikasi tersimpan.',true);
+
+      // Refresh daftar setelah pesan sukses terlihat.
+      setTimeout(()=>v7AdminFar_(),450);
+    }catch(e){
+      buttons.forEach(b=>b.disabled=false);
+      if(btn&&oldText)btn.textContent=oldText;
+      if(info){
+        info.textContent='Verifikasi gagal: '+String(e?.message||e);
+        info.className='alert bad v100-admin-result';
+      }
+      toast(e?.message||'Verifikasi gagal.');
+    }
+  };
+
+  // Refresh student verification whenever data changes.
+  if(typeof window.loadData==='function'){
+    const oldLoadData=window.loadData;
+    window.loadData=async function(){
+      const r=await oldLoadData.apply(this,arguments);
+      if(String(state.user?.role||'').toLowerCase()==='siswa'){
+        setTimeout(renderStudentVerification_,0);
+      }
+      return r;
+    };
+  }
+
+  if(document.readyState==='loading'){
+    document.addEventListener('DOMContentLoaded',()=>setTimeout(renderStudentVerification_,500));
+  }else{
+    setTimeout(renderStudentVerification_,500);
+  }
 })();
 </script>
 
