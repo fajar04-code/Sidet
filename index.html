@@ -2134,7 +2134,7 @@ body{overflow-x:hidden}
 
 <script>
 const initialSchoolData = {};
-const CLASS_ORDER=["Kelas XA", "Kelas XB", "Kelas XC", "Kelas XD", "Kelas XIA", "Kelas XIB", "Kelas XIC", "Kelas XID", "Kelas XIIA", "Kelas XIIB", "Kelas XIIC", "Kelas XIID"];
+const CLASS_ORDER=["X-A", "X-B", "X-C", "X-D", "XI-A", "XI-B", "XI-C", "XI-D", "XII-A", "XII-B", "XII-C", "XII-D"];
 const INITIAL_STUDENTS=Object.entries(initialSchoolData).flatMap(([kelas,arr])=>arr.map(x=>({...x,kelas,sekolah:'SMAN 2 Nunukan Selatan',active:true})));
 const SIDET_DEFAULT_API_URL='https://script.google.com/macros/s/AKfycbxfl79GgtRFPcDsojojvjiHzUpRV34FitJBRqqoCdtdfKl8tfhHJVDiK9dDujXlGRj1/exec';
 const SIDET_STORED_API_URL=(localStorage.getItem('sidet_api')||'').trim();
@@ -2362,7 +2362,7 @@ function adminTab(tab){
  if(tab==='settings') c.innerHTML=`<div class="card"><h3>Pengaturan Sistem</h3><div class="field"><label>URL Google Apps Script Web App</label><input id="apiInput" value="${state.api}" placeholder="https://script.google.com/macros/s/.../exec"></div><div class="grid two"><div class="field"><label>Radius Geofence (meter)</label><input id="radius" type="number" min="10" value="${state.data.settings?.radius||100}"></div><div class="field"><label>Jadwal Tetap</label><input value="Sen–Kam 07.30–15.30 · Jumat 07.30–16.00" readonly></div></div><div class="actions"><button class="btn primary" onclick="saveSettings()">Simpan Pengaturan</button><button class="btn" onclick="testApi()">Tes Koneksi</button><button class="btn warn" onclick="setCenter()">Ambil Titik Geofence dari GPS</button></div><div id="setMsg" class="alert">Pastikan URL Web App menggunakan deployment /exec.</div></div>`;
 }
 function userForm(){
- $('modal').classList.remove('hidden');$('modalBox').innerHTML=`<h3>Tambah Siswa</h3><div class="field"><label>NISN / Username</label><input id="uNisn"></div><div class="field"><label>Nama Lengkap</label><input id="uName"></div><div class="grid two"><div class="field"><label>Sekolah</label><input id="uSekolah" value="SMAN 2 Nunukan Selatan"></div><div class="field"><label>Kelas</label><input id="uKelas" value="Kelas XA"></div></div><div class="field"><label>No. WhatsApp Orang Tua</label><input id="uWaOrtu" placeholder="08xxxxxxxxxx"></div><div class="field"><label>Password</label><input id="uPass" value="0123SMAN2Nusa"></div><div class="actions"><button class="btn" onclick="closeModal()">Batal</button><button class="btn primary" onclick="addUser()">Simpan</button></div>`
+ $('modal').classList.remove('hidden');$('modalBox').innerHTML=`<h3>Tambah Siswa</h3><div class="field"><label>NISN / Username</label><input id="uNisn"></div><div class="field"><label>Nama Lengkap</label><input id="uName"></div><div class="grid two"><div class="field"><label>Sekolah</label><input id="uSekolah" value="SMAN 2 Nunukan Selatan"></div><div class="field"><label>Kelas</label><input id="uKelas" value="X-A"></div></div><div class="field"><label>No. WhatsApp Orang Tua</label><input id="uWaOrtu" placeholder="08xxxxxxxxxx"></div><div class="field"><label>Password</label><input id="uPass" value="0123SMAN2Nusa"></div><div class="actions"><button class="btn" onclick="closeModal()">Batal</button><button class="btn primary" onclick="addUser()">Simpan</button></div>`
 }
 async function addUser(){const u={nisn:$('uNisn').value.trim(),nip:$('uNisn').value.trim(),name:$('uName').value.trim(),sekolah:$('uSekolah').value,kelas:$('uKelas').value,waOrtu:$('uWaOrtu').value.trim(),password:$('uPass').value};if(!u.nisn||!u.name)return toast('NISN dan nama wajib diisi');try{if(apiReady())await api('userSave',u);else{state.data.users.push({...u,id:u.nisn});}closeModal();toast('Siswa disimpan',true);loadData()}catch(e){toast(e.message)}}
 
@@ -9399,7 +9399,7 @@ body[data-sidet-role="admin"] #adminPage>div.card{display:none!important}
 <script id="sidet-v1025-aesthetic-dashboard-runtime">
 (function(){
   'use strict';
-  const VERSION='10.25';
+  const VERSION='10.28';
   const esc=s=>String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   function role_(){try{return String((typeof state!=='undefined'&&state.user&&state.user.role)||window.state?.user?.role||'').toLowerCase()}catch(e){return ''}}
   const icons={
@@ -9425,6 +9425,593 @@ body[data-sidet-role="admin"] #adminPage>div.card{display:none!important}
   function enhance_(){hideLegacyAdmin_();decorateQuick_();roleChip_();markEmpty_();markVersion_()}
   let timer=0;const obs=new MutationObserver(()=>{clearTimeout(timer);timer=setTimeout(enhance_,35)});obs.observe(document.documentElement,{childList:true,subtree:true});
   document.addEventListener('DOMContentLoaded',()=>setTimeout(enhance_,100));setTimeout(enhance_,250);setTimeout(enhance_,900);
+})();
+</script>
+
+
+
+<!-- SiDEt V10.28 — CLEAN NAV + FORMAT KELAS "Kelas XA" FINAL -->
+<style id="sidet-v1028-class-format-style">
+/* Satu navigasi + satu format kelas resmi: Kelas XA ... Kelas XIID */
+body.sidet-v1024-role-nav #teacherPage .v7-menu,
+body.sidet-v1024-role-nav #adminPage .v7-menu,
+body.sidet-v1024-role-nav #kepsekPage .v7-menu,
+body.sidet-v1024-role-nav #wakasekPage .v7-menu{display:none!important}
+body.sidet-v1024-role-nav [data-v106-admin-recap]{display:none!important}
+select option[data-sidet-class-option="1"]{font-variant-numeric:tabular-nums;font-weight:650}
+</style>
+<script id="sidet-v1028-class-format-runtime">
+(function(){
+  'use strict';
+  const KEYS=['XA','XB','XC','XD','XIA','XIB','XIC','XID','XIIA','XIIB','XIIC','XIID'];
+  const LABELS={XA:'Kelas XA',XB:'Kelas XB',XC:'Kelas XC',XD:'Kelas XD',XIA:'Kelas XIA',XIB:'Kelas XIB',XIC:'Kelas XIC',XID:'Kelas XID',XIIA:'Kelas XIIA',XIIB:'Kelas XIIB',XIIC:'Kelas XIIC',XIID:'Kelas XIID'};
+
+  function classKey_(value){
+    let v=String(value==null?'':value).trim().toUpperCase()
+      .replace(/\u00A0/g,' ')
+      .replace(/[–—−]/g,'-')
+      .replace(/^KELAS\s+/,'')
+      .replace(/\s+/g,'')
+      .replace(/-/g,'');
+    const m=v.match(/^(XII|XI|X)([A-D])$/);
+    return m ? (m[1]+m[2]) : '';
+  }
+  function isClass_(v){return KEYS.includes(classKey_(v));}
+  function classLabel_(v){const k=classKey_(v);return LABELS[k]||String(v==null?'':v).trim();}
+  function rank_(v){const i=KEYS.indexOf(classKey_(v));return i<0?999:i;}
+  function preferRaw_(a,b){
+    // Untuk request server, pertahankan nilai yang benar-benar sudah ada pada aplikasi/data.
+    // Bila ada dua varian, prioritaskan bentuk "Kelas XA" karena itu format resmi sekolah.
+    const score=x=>/^KELAS\s+(XII|XI|X)[A-D]$/i.test(String(x||'').trim())?3:/^(XII|XI|X)-[A-D]$/i.test(String(x||'').trim())?2:1;
+    return score(b)>score(a)?b:a;
+  }
+
+  function normalizeSelect_(sel){
+    if(!sel || sel.tagName!=='SELECT')return;
+    const opts=[...sel.options];
+    const classOpts=opts.filter(o=>isClass_(o.value)||isClass_(o.textContent));
+    if(!classOpts.length)return;
+    const currentKey=classKey_(sel.value)||classKey_(sel.options[sel.selectedIndex]?.textContent||'');
+    const specials=[]; const byKey=new Map();
+    opts.forEach(o=>{
+      const rawValue=String(o.value||'').trim();
+      const rawText=String(o.textContent||'').trim();
+      const k=classKey_(rawValue)||classKey_(rawText);
+      if(k){
+        const raw=rawValue||rawText;
+        if(!byKey.has(k))byKey.set(k,raw);
+        else byKey.set(k,preferRaw_(byKey.get(k),raw));
+      }else if(rawValue==='' || /semua\s*kelas|pilih\s*kelas/i.test(rawText||rawValue)){
+        const sk=(rawValue+'|'+rawText).toLowerCase();
+        if(!specials.some(x=>x.key===sk))specials.push({key:sk,value:rawValue,text:rawText});
+      }
+    });
+    if(!byKey.size)return;
+    const frag=document.createDocumentFragment();
+    specials.forEach(x=>{const o=document.createElement('option');o.value=x.value;o.textContent=x.text;frag.appendChild(o);});
+    [...byKey.keys()].sort((a,b)=>KEYS.indexOf(a)-KEYS.indexOf(b)).forEach(k=>{
+      const o=document.createElement('option');o.value=byKey.get(k)||LABELS[k];o.textContent=LABELS[k];o.dataset.sidetClassOption='1';frag.appendChild(o);
+    });
+    sel.replaceChildren(frag);
+    if(currentKey){const hit=[...sel.options].find(o=>classKey_(o.value)===currentKey||classKey_(o.textContent)===currentKey);if(hit)sel.value=hit.value;}
+  }
+
+  function normalizeClassArray_(arr){
+    if(!Array.isArray(arr))return arr;
+    const byKey=new Map();
+    arr.forEach(raw=>{const k=classKey_(raw);if(!k)return;if(!byKey.has(k))byKey.set(k,raw);else byKey.set(k,preferRaw_(byKey.get(k),raw));});
+    return [...byKey.keys()].sort((a,b)=>KEYS.indexOf(a)-KEYS.indexOf(b)).map(k=>byKey.get(k));
+  }
+  function normalizeClassCaches_(){
+    try{if(Array.isArray(window.__v7Classes))window.__v7Classes=normalizeClassArray_(window.__v7Classes);}catch(e){}
+  }
+
+  function normalizeVisibleText_(root){
+    if(!root)return;
+    const walker=document.createTreeWalker(root,NodeFilter.SHOW_TEXT,{acceptNode(node){
+      const p=node.parentElement;
+      if(!p||['SCRIPT','STYLE','TEXTAREA','OPTION'].includes(p.tagName))return NodeFilter.FILTER_REJECT;
+      const t=node.nodeValue||'';
+      return /\b(?:Kelas\s+){0,2}(?:XII|XI|X)\s*-?\s*[A-D]\b/i.test(t)?NodeFilter.FILTER_ACCEPT:NodeFilter.FILTER_REJECT;
+    }});
+    const nodes=[];while(walker.nextNode())nodes.push(walker.currentNode);
+    nodes.forEach(n=>{
+      let t=n.nodeValue||'';
+      // Kelas Kelas X-A / Kelas X-A / X-A (dalam konteks label kelas) -> Kelas XA.
+      t=t.replace(/\bKelas\s+Kelas\s+(XII|XI|X)\s*-?\s*([A-D])\b/gi,(_,r,l)=>'Kelas '+r.toUpperCase()+l.toUpperCase());
+      t=t.replace(/\bKelas\s+(XII|XI|X)\s*-?\s*([A-D])\b/gi,(_,r,l)=>'Kelas '+r.toUpperCase()+l.toUpperCase());
+      n.nodeValue=t;
+    });
+  }
+
+  function normalizeDefaultInputs_(){
+    document.querySelectorAll('input[id*="Kelas" i],input[name*="kelas" i]').forEach(inp=>{
+      if(isClass_(inp.value))inp.value=classLabel_(inp.value);
+    });
+  }
+
+  function removeDuplicateButtons_(){
+    document.querySelectorAll('#nav,.sidet-v1024-role-nav-inner,.sidet-v1024-admin-hub,.sidet-v1024-quick').forEach(g=>{
+      const seen=new Set();
+      [...g.querySelectorAll(':scope > button')].forEach(b=>{
+        const key=String(b.dataset.module||b.textContent||'').replace(/\s+/g,' ').trim().toLowerCase();
+        if(!key)return;if(seen.has(key))b.remove();else seen.add(key);
+      });
+    });
+  }
+
+  function cleanLegacyCopy_(){
+    document.querySelectorAll('.sidet-v106-recap-sub').forEach(el=>{el.textContent='Pilih satu kelas dan bulan. Data baru dimuat setelah tombol Tampilkan ditekan agar aplikasi tetap ringan.';});
+    document.querySelectorAll('[data-sidet-version-label]').forEach(el=>el.remove());
+  }
+
+  let running=false;
+  function clean_(){
+    if(running)return;running=true;
+    try{
+      normalizeClassCaches_();
+      document.querySelectorAll('select').forEach(normalizeSelect_);
+      normalizeDefaultInputs_();
+      normalizeVisibleText_(document.body);
+      removeDuplicateButtons_();
+      cleanLegacyCopy_();
+      const v=document.querySelector('.brand .muted');if(v&&/^v\d/i.test(v.textContent||''))v.textContent='v10.28';
+    }finally{running=false;}
+  }
+
+  window.sidetClassKey_=classKey_;
+  window.sidetClassLabel_=classLabel_;
+  window.sidetCanonicalClass_=classLabel_;
+  window.sidetV1028NormalizeClasses_=clean_;
+  const observer=new MutationObserver(()=>{clearTimeout(window.__sidetV1028Timer);window.__sidetV1028Timer=setTimeout(clean_,45);});
+  function start_(){clean_();observer.observe(document.body,{childList:true,subtree:true});}
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start_,{once:true});else start_();
+})();
+</script>
+
+
+
+<!-- SiDEt V10.29 — DATA PRESENSI CLASS LABEL FINAL -->
+<style id="sidet-v1029-attendance-class-style">
+/* Nilai internal kelas tetap mengikuti server, label UI selalu "Kelas XA ... Kelas XIID". */
+#v7TClass option[data-sidet-v1029-class="1"],
+#v80AClass option[data-sidet-v1029-class="1"],
+#v7WClass option[data-sidet-v1029-class="1"]{font-weight:700}
+</style>
+<script id="sidet-v1029-attendance-class-runtime">
+(function(){
+  'use strict';
+  const KEYS=['XA','XB','XC','XD','XIA','XIB','XIC','XID','XIIA','XIIB','XIIC','XIID'];
+  const LABELS={XA:'Kelas XA',XB:'Kelas XB',XC:'Kelas XC',XD:'Kelas XD',XIA:'Kelas XIA',XIB:'Kelas XIB',XIC:'Kelas XIC',XID:'Kelas XID',XIIA:'Kelas XIIA',XIIB:'Kelas XIIB',XIIC:'Kelas XIIC',XIID:'Kelas XIID'};
+  function key_(value){
+    let v=String(value==null?'':value).trim().toUpperCase()
+      .replace(/\u00A0/g,' ').replace(/[–—−]/g,'-')
+      .replace(/^KELAS\s+/,'').replace(/\s+/g,'').replace(/-/g,'');
+    const m=v.match(/^(XII|XI|X)([A-D])$/);
+    return m?(m[1]+m[2]):'';
+  }
+  function label_(value){const k=key_(value);return LABELS[k]||String(value==null?'':value).trim();}
+  function esc_(v){return String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));}
+
+  // Ubah hanya teks yang terlihat. VALUE option tidak diubah agar request API tetap cocok dengan data Sheet/server.
+  function fixSelect_(sel){
+    if(!sel||sel.tagName!=='SELECT')return;
+    const current=sel.value;
+    const seen=new Set();
+    [...sel.options].forEach(o=>{
+      const k=key_(o.value)||key_(o.textContent);
+      if(!k)return;
+      if(seen.has(k)){o.remove();return;}
+      seen.add(k);
+      o.textContent=LABELS[k];
+      o.dataset.sidetV1029Class='1';
+    });
+    if(current){
+      const curKey=key_(current);
+      const hit=[...sel.options].find(o=>key_(o.value)===curKey||key_(o.textContent)===curKey);
+      if(hit)sel.value=hit.value;
+    }
+  }
+
+  function fixTable_(root){
+    if(!root)return;
+    root.querySelectorAll('table').forEach(table=>{
+      const heads=[...table.querySelectorAll('thead th')];
+      const idx=heads.findIndex(th=>/^kelas$/i.test(String(th.textContent||'').trim()));
+      if(idx<0)return;
+      table.querySelectorAll('tbody tr').forEach(tr=>{
+        const td=tr.children[idx];
+        if(!td)return;
+        const raw=String(td.textContent||'').trim();
+        const k=key_(raw);
+        if(k)td.textContent=LABELS[k];
+      });
+      table.querySelectorAll('tfoot tr').forEach(tr=>{
+        const td=tr.children[idx];
+        if(!td)return;
+        const raw=String(td.textContent||'').trim();
+        const k=key_(raw);if(k)td.textContent=LABELS[k];
+      });
+    });
+  }
+
+  function fixAttendanceUI_(){
+    ['v7TClass','v80AClass','v7WClass'].forEach(id=>fixSelect_(document.getElementById(id)));
+    ['v7TResult','v80AResult','v7WResult'].forEach(id=>fixTable_(document.getElementById(id)));
+  }
+
+  // Guru: renderer dibuat eksplisit agar dropdown langsung tampil "Kelas XA" tanpa menunggu observer.
+  const baseTeacherMenu=window.v7TeacherAttendance_;
+  window.v7TeacherAttendance_=function(){
+    const h=document.getElementById('v7TeacherHost');
+    if(!h){return typeof baseTeacherMenu==='function'?baseTeacherMenu.apply(this,arguments):undefined;}
+    const raw=[...(window.__v7Classes||[])];
+    const fallback=['X-A','X-B','X-C','X-D','XI-A','XI-B','XI-C','XI-D','XII-A','XII-B','XII-C','XII-D'];
+    const arr=raw.length?raw:fallback;
+    const byKey=new Map();arr.forEach(x=>{const k=key_(x);if(k&&!byKey.has(k))byKey.set(k,x);});
+    const options=KEYS.filter(k=>byKey.has(k)).map(k=>'<option value="'+esc_(byKey.get(k))+'" data-sidet-v1029-class="1">'+LABELS[k]+'</option>').join('');
+    const date=(typeof window.v7LocalDate_==='function'?window.v7LocalDate_():new Date().toISOString().slice(0,10));
+    h.innerHTML='<h3>📋 Data Presensi</h3><p class="muted">Pilih tanggal dan kelas terlebih dahulu.</p><div class="grid two"><div class="field"><label>Tanggal</label><input id="v7TDate" type="date" value="'+esc_(date)+'"></div><div class="field"><label>Kelas</label><select id="v7TClass"><option value="">Pilih kelas</option>'+options+'</select></div></div><button class="btn primary" onclick="v7TeacherAttendanceLoad_()">Tampilkan</button><div id="v7TResult"></div>';
+    fixAttendanceUI_();
+  };
+
+  // Setelah renderer/load lama selesai, perbaiki label tabel. Tidak mengubah payload API.
+  ['v7TeacherAttendanceLoad_','sidetV1024AdminAttendanceLoad_','v7WakasekAttendanceLoad_'].forEach(name=>{
+    const base=window[name];if(typeof base!=='function'||base.__sidetV1029)return;
+    const wrapped=async function(){
+      const result=await base.apply(this,arguments);
+      requestAnimationFrame(()=>{fixAttendanceUI_();setTimeout(fixAttendanceUI_,80);});
+      return result;
+    };
+    wrapped.__sidetV1029=true;window[name]=wrapped;
+  });
+
+  // Navigasi V10.24 merender select secara dinamis. Jalankan perbaikan segera setelah modul berpindah.
+  const baseGo=window.sidetV1024Go_;
+  if(typeof baseGo==='function'&&!baseGo.__sidetV1029){
+    const wrappedGo=async function(){
+      const r=await baseGo.apply(this,arguments);
+      requestAnimationFrame(()=>{fixAttendanceUI_();setTimeout(fixAttendanceUI_,70);});
+      return r;
+    };
+    wrappedGo.__sidetV1029=true;window.sidetV1024Go_=wrappedGo;
+  }
+
+  // Jaga UI tetap konsisten bila tabel/select digambar ulang oleh patch lama.
+  let timer=0;
+  const obs=new MutationObserver(()=>{clearTimeout(timer);timer=setTimeout(fixAttendanceUI_,25);});
+  function start(){fixAttendanceUI_();obs.observe(document.body,{childList:true,subtree:true});}
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
+
+  window.sidetV1029FixAttendanceClasses_=fixAttendanceUI_;
+  window.sidetV1029ClassLabel_=label_;
+  setTimeout(()=>{const v=document.querySelector('.brand .muted');if(v&&/^v\d/i.test(v.textContent||''))v.textContent='v10.29';},120);
+})();
+</script>
+
+
+
+<!-- SiDEt V10.30 — FIX DATA PRESENSI CLASS FILTER -->
+<style id="sidet-v1030-attendance-filter-style">
+#v7TResult .sidet-v1030-empty,#v80AResult .sidet-v1030-empty,#v7WResult .sidet-v1030-empty{
+  padding:24px;text-align:center;border:1px dashed #cbd8e8;border-radius:16px;background:#f8fbff;color:#60758c;margin-top:12px
+}
+</style>
+<script id="sidet-v1030-attendance-filter-runtime">
+(function(){
+  'use strict';
+  const LABELS={XA:'Kelas XA',XB:'Kelas XB',XC:'Kelas XC',XD:'Kelas XD',XIA:'Kelas XIA',XIB:'Kelas XIB',XIC:'Kelas XIC',XID:'Kelas XID',XIIA:'Kelas XIIA',XIIB:'Kelas XIIB',XIIC:'Kelas XIIC',XIID:'Kelas XIID'};
+  let seqTeacher=0,seqAdmin=0,seqWakasek=0;
+  function key_(value){
+    let v=String(value==null?'':value).trim().toUpperCase().replace(/\u00A0/g,' ').replace(/[–—−]/g,'-').replace(/^KELAS\s+/,'').replace(/\s+/g,'').replace(/-/g,'');
+    const m=v.match(/^(XII|XI|X)([A-D])$/);return m?(m[1]+m[2]):'';
+  }
+  function label_(v){return LABELS[key_(v)]||String(v==null?'':v).trim();}
+  function esc_(v){return String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));}
+  function st_(){try{return state}catch(e){return window.state||{data:{}}}}
+  function badge_(v){return typeof window.v7StatusBadge_==='function'?window.v7StatusBadge_(v):esc_(v||'—');}
+  function photo_(url,label){return typeof window.v7PhotoLink_==='function'?window.v7PhotoLink_(url,label):'—';}
+  function loading_(text){return '<div class="sidet-v1024-skeleton"><i></i><i></i><i></i><small class="muted">'+esc_(text)+'</small></div>';}
+  function sameClass_(a,b){const ka=key_(a),kb=key_(b);return !!ka&&ka===kb;}
+
+  // PENTING: query harian tidak lagi mengirim nama kelas ke backend.
+  // Backend mengambil data untuk tanggal tersebut, lalu UI memfilter dengan classKey.
+  // Ini membuat X-A / XA / Kelas XA / Kelas X-A selalu dianggap kelas yang sama.
+  window.v7TeacherAttendanceLoad_=async function(){
+    const date=document.getElementById('v7TDate')?.value||'';
+    const selected=document.getElementById('v7TClass')?.value||'';
+    const el=document.getElementById('v7TResult');
+    if(!date||!selected)return window.toast?.('Pilih tanggal dan kelas.');
+    if(!el)return;
+    const my=++seqTeacher, k=key_(selected), shown=label_(selected);
+    el.innerHTML=loading_('Memuat Data Presensi '+shown+'…');
+    try{
+      const j=await window.api('teacherDashboard',{date:date,metaOnly:false});
+      if(my!==seqTeacher)return;
+      const d=j?.data||{};
+      const users=(d.users||[]).filter(u=>u.active!==false&&key_(u.kelas)===k);
+      const attendance=(d.attendance||[]).filter(a=>!a.kelas||key_(a.kelas)===k);
+      const rows=typeof window.sidetV80GroupClassDaily_==='function'?window.sidetV80GroupClassDaily_(users,attendance,d.leave||[],date,d.settings||{}):[];
+      st_().data={...st_().data,...d,attendance:attendance};
+      if(!users.length){el.innerHTML='<div class="sidet-v1030-empty">Data siswa untuk <b>'+esc_(shown)+'</b> tidak ditemukan. Periksa penamaan kelas pada data siswa.</div>';return;}
+      el.innerHTML='<div class="tablewrap"><table><thead><tr><th>Nama Siswa</th><th>Kelas</th><th>Jam Masuk</th><th>Jarak Masuk</th><th>Status Masuk</th><th>Jam Pulang</th><th>Jarak Pulang</th><th>Status Pulang</th><th>Keterangan</th><th>Foto</th></tr></thead><tbody>'+
+        rows.map(x=>'<tr><td><b>'+esc_(x.user?.name||'')+'</b><br><small class="muted">'+esc_(x.user?.nisn||'')+'</small></td><td>'+esc_(label_(x.user?.kelas||selected))+'</td><td>'+esc_(x.masuk?.jam||'—')+'</td><td>'+(x.masuk?.jarakMeter!==undefined&&x.masuk?.jarakMeter!==''?Math.round(Number(x.masuk.jarakMeter))+' m':(x.masuk?.jarak!==undefined&&x.masuk?.jarak!==''?Math.round(Number(x.masuk.jarak))+' m':'—'))+'</td><td>'+badge_(x.statusMasuk)+'</td><td>'+esc_(x.pulang?.jam||'—')+'</td><td>'+(x.pulang?.jarakMeter!==undefined&&x.pulang?.jarakMeter!==''?Math.round(Number(x.pulang.jarakMeter))+' m':(x.pulang?.jarak!==undefined&&x.pulang?.jarak!==''?Math.round(Number(x.pulang.jarak))+' m':'—'))+'</td><td>'+badge_(x.statusPulang)+'</td><td>'+esc_(x.keterangan||'')+'</td><td>'+photo_(x.masuk?.photoUrl,'Masuk')+' '+photo_(x.pulang?.photoUrl,'Pulang')+'</td></tr>').join('')+
+        '</tbody></table></div>';
+      window.sidetV1029FixAttendanceClasses_?.();
+    }catch(e){if(my===seqTeacher)el.innerHTML='<div class="alert bad">'+esc_(e?.message||e)+'</div>';}
+  };
+
+  window.sidetV1024AdminAttendanceLoad_=async function(){
+    const date=document.getElementById('v80ADate')?.value||'';
+    const selected=document.getElementById('v80AClass')?.value||'';
+    const el=document.getElementById('v80AResult');
+    if(!date||!selected)return window.toast?.('Pilih tanggal dan kelas.');
+    if(!el)return;
+    const my=++seqAdmin,k=key_(selected),shown=label_(selected);
+    el.innerHTML=loading_('Memuat Data Presensi '+shown+'…');
+    try{
+      const j=await window.api('dashboard',{date:date,limit:1000});
+      if(my!==seqAdmin)return;
+      const d=j?.data||{};
+      const users=(d.users||[]).filter(u=>u.active!==false&&key_(u.kelas)===k);
+      const attendance=(d.attendance||[]).filter(a=>!a.kelas||key_(a.kelas)===k);
+      st_().data={...st_().data,...d,attendance:attendance};
+      const rows=typeof window.sidetV80GroupClassDaily_==='function'?window.sidetV80GroupClassDaily_(users,attendance,d.leave||[],date,d.settings||{}):[];
+      if(!users.length){el.innerHTML='<div class="sidet-v1030-empty">Data siswa untuk <b>'+esc_(shown)+'</b> tidak ditemukan.</div>';return;}
+      el.innerHTML='<div class="tablewrap"><table><thead><tr><th>Nama Siswa</th><th>Kelas</th><th>Jam Masuk</th><th>Jarak Masuk</th><th>Status Masuk</th><th>Jam Pulang</th><th>Jarak Pulang</th><th>Status Pulang</th><th>Keterangan</th><th>Foto</th></tr></thead><tbody>'+
+        rows.map(x=>'<tr><td><b>'+esc_(x.user?.name||'')+'</b><br><small class="muted">'+esc_(x.user?.nisn||'')+'</small></td><td>'+esc_(label_(x.user?.kelas||selected))+'</td><td>'+esc_(x.masuk?.jam||'—')+'</td><td>'+(x.masuk?.jarakMeter!==undefined&&x.masuk?.jarakMeter!==''?Math.round(Number(x.masuk.jarakMeter))+' m':(x.masuk?.jarak!==undefined&&x.masuk?.jarak!==''?Math.round(Number(x.masuk.jarak))+' m':'—'))+'</td><td>'+badge_(x.statusMasuk)+'</td><td>'+esc_(x.pulang?.jam||'—')+'</td><td>'+(x.pulang?.jarakMeter!==undefined&&x.pulang?.jarakMeter!==''?Math.round(Number(x.pulang.jarakMeter))+' m':(x.pulang?.jarak!==undefined&&x.pulang?.jarak!==''?Math.round(Number(x.pulang.jarak))+' m':'—'))+'</td><td>'+badge_(x.statusPulang)+'</td><td>'+esc_(x.keterangan||'')+'</td><td>'+photo_(x.masuk?.photoUrl,'Masuk')+' '+photo_(x.pulang?.photoUrl,'Pulang')+'</td></tr>').join('')+
+        '</tbody></table></div>';
+      window.sidetV1029FixAttendanceClasses_?.();
+    }catch(e){if(my===seqAdmin)el.innerHTML='<div class="alert bad">'+esc_(e?.message||e)+'</div>';}
+  };
+
+  // Alias lama Admin bila masih dipanggil oleh renderer tertentu.
+  window.v80AdminAttendanceLoad_=window.sidetV1024AdminAttendanceLoad_;
+
+  window.v7WakasekAttendanceLoad_=async function(){
+    const date=document.getElementById('v7WDate')?.value||'';
+    const selected=document.getElementById('v7WClass')?.value||'';
+    const el=document.getElementById('v7WResult');
+    if(!date)return window.toast?.('Pilih tanggal.');
+    if(!el)return;
+    const my=++seqWakasek,k=key_(selected),shown=selected?label_(selected):'Semua Kelas';
+    el.innerHTML=loading_('Memuat Data Presensi '+shown+'…');
+    try{
+      const j=await window.api('teacherDashboard',{date:date,metaOnly:false});
+      if(my!==seqWakasek)return;
+      const d=j?.data||{};
+      const attendance=(d.attendance||[]).filter(a=>!k||key_(a.kelas)===k);
+      const rows=typeof window.v7GroupAttendanceRows_==='function'?window.v7GroupAttendanceRows_(attendance,date):[];
+      el.innerHTML='<div class="tablewrap"><table><thead><tr><th>Nama</th><th>Kelas</th><th>Jam Masuk</th><th>Jarak Masuk</th><th>Status Masuk</th><th>Jam Pulang</th><th>Jarak Pulang</th><th>Status Pulang</th><th>Foto Masuk</th><th>Foto Pulang</th></tr></thead><tbody>'+
+        (rows.map(x=>'<tr><td><b>'+esc_(x.name||'')+'</b></td><td>'+esc_(label_(x.kelas||selected))+'</td><td>'+esc_(x.jamMasuk||'—')+'</td><td>'+esc_(x.jarakMasuk||'—')+'</td><td>'+badge_(x.statusMasuk)+'</td><td>'+esc_(x.jamPulang||'—')+'</td><td>'+esc_(x.jarakPulang||'—')+'</td><td>'+badge_(x.statusPulang)+'</td><td>'+photo_(x.fotoMasuk,'Masuk')+'</td><td>'+photo_(x.fotoPulang,'Pulang')+'</td></tr>').join('')||'<tr><td colspan="10">Tidak ada data presensi untuk filter ini.</td></tr>')+
+        '</tbody></table></div>';
+      window.sidetV1029FixAttendanceClasses_?.();
+    }catch(e){if(my===seqWakasek)el.innerHTML='<div class="alert bad">'+esc_(e?.message||e)+'</div>';}
+  };
+
+  window.sidetV1030ClassKey_=key_;
+  window.sidetV1030ClassLabel_=label_;
+  setTimeout(()=>{const v=document.querySelector('.brand .muted');if(v&&/^v\d/i.test(v.textContent||''))v.textContent='v10.30';},100);
+})();
+</script>
+
+<style id="sidet-v1031-student-redesign-style">
+/* SiDEt V10.31 — Student Dashboard Redesign 2026 */
+body.sidet-v1031-student{--stu-blue:#0875e8;--stu-navy:#063b73;--stu-teal:#0aa98f;--stu-green:#16a56b;--stu-soft:#f4f9ff;--stu-line:#dce9f7;--stu-text:#12365a;--stu-muted:#607d99;background:linear-gradient(180deg,#eef8ff 0,#f7fbff 34%,#f4f8fc 100%)!important}
+body.sidet-v1031-student .top{background:linear-gradient(105deg,#07559b,#0875e8 56%,#0aa98f)!important;border-bottom:0!important;box-shadow:0 8px 28px rgba(6,59,115,.15)!important;color:#fff!important}
+body.sidet-v1031-student .top .brand{gap:10px!important;font-weight:900!important;color:#fff!important}
+body.sidet-v1031-student .top .brand>.logo{width:42px!important;height:42px!important;border-radius:12px!important;background:rgba(255,255,255,.96)!important;padding:3px!important;display:grid!important;place-items:center!important;box-shadow:0 5px 14px rgba(0,0,0,.12)!important;overflow:hidden!important}
+body.sidet-v1031-student .top .brand>.logo img{width:100%!important;height:100%!important;object-fit:contain!important}
+body.sidet-v1031-student .top .brand .muted{color:rgba(255,255,255,.75)!important}
+body.sidet-v1031-student .top #who{color:rgba(255,255,255,.88)!important}
+body.sidet-v1031-student .top .actions>.btn{background:rgba(255,255,255,.12)!important;color:#fff!important;border-color:rgba(255,255,255,.25)!important}
+body.sidet-v1031-student #siswaPage{max-width:1180px;margin:0 auto;padding-bottom:10px}
+
+/* Identitas / hero siswa */
+body.sidet-v1031-student #siswaPage>.student-hero{position:relative;overflow:hidden;display:grid!important;grid-template-columns:auto 1fr auto;align-items:center;gap:16px;padding:22px 24px!important;border:0!important;border-radius:25px!important;background:linear-gradient(120deg,#0759a5 0%,#0875e8 55%,#0aa98f 115%)!important;color:#fff!important;box-shadow:0 16px 38px rgba(8,91,165,.18)!important}
+body.sidet-v1031-student #siswaPage>.student-hero:before{content:"";position:absolute;width:230px;height:230px;border-radius:50%;right:-75px;top:-105px;background:rgba(255,255,255,.10)}
+body.sidet-v1031-student #siswaPage>.student-hero:after{content:"";position:absolute;width:150px;height:150px;border-radius:50%;right:110px;bottom:-115px;background:rgba(255,255,255,.08)}
+.sidet-v1031-hero-logo{width:68px;height:68px;border-radius:19px;background:rgba(255,255,255,.97);padding:5px;object-fit:contain;box-shadow:0 8px 22px rgba(0,0,0,.16);z-index:1}
+body.sidet-v1031-student #siswaPage>.student-hero>div{z-index:1}
+body.sidet-v1031-student #siswaPage>.student-hero .muted{color:#cfeaff!important;font-size:11px!important;font-weight:900!important;letter-spacing:.08em}
+body.sidet-v1031-student #siswaPage .student-name{font-size:28px!important;line-height:1.1!important;margin:4px 0 7px!important;letter-spacing:-.035em!important;color:#fff!important}
+body.sidet-v1031-student #siswaPage .student-meta{display:flex!important;flex-wrap:wrap!important;gap:6px 9px!important;color:rgba(255,255,255,.9)!important;font-size:12px!important}
+body.sidet-v1031-student #siswaPage .student-meta span{background:rgba(255,255,255,.10);border:1px solid rgba(255,255,255,.13);border-radius:999px;padding:4px 8px}
+body.sidet-v1031-student #siswaPage .livebox{background:rgba(255,255,255,.12)!important;border:1px solid rgba(255,255,255,.18)!important;border-radius:18px!important;padding:10px 14px!important;backdrop-filter:blur(8px)}
+body.sidet-v1031-student #siswaPage .livebox .time{font-size:23px!important;color:#fff!important;font-weight:900!important}
+body.sidet-v1031-student #siswaPage .livebox .date{color:#dff7ff!important;font-size:10px!important}
+.sidet-v1031-motto{margin-top:8px;font-size:11px;color:#dff8f3;font-weight:700}
+
+/* Home */
+body.sidet-v1031-student #siswaPage[data-sidet-tab="home"] .student-layout{display:block!important}
+body.sidet-v1031-student #siswaPage[data-sidet-tab="home"] .student-layout>.grid{display:block!important}
+body.sidet-v1031-student #siswaPage[data-sidet-tab="home"] .sidet-student-action-card-v1017,
+body.sidet-v1031-student #siswaPage[data-sidet-tab="home"] .side-stack{display:none!important}
+body.sidet-v1031-student #siswaPage .sidet-student-status-card-v1017{border:1px solid var(--stu-line)!important;border-radius:25px!important;padding:20px!important;background:#fff!important;box-shadow:0 12px 32px rgba(16,76,124,.075)!important;margin-top:14px!important}
+body.sidet-v1031-student #siswaPage .sidet-student-status-card-v1017 .card-title{margin-bottom:13px!important}
+body.sidet-v1031-student #siswaPage .sidet-student-status-card-v1017 .section-label{color:#1781dc!important;font-size:10px!important;letter-spacing:.09em!important}
+body.sidet-v1031-student #siswaPage .sidet-student-status-card-v1017 h3{font-size:20px!important;color:var(--stu-text)!important}
+body.sidet-v1031-student #siswaPage .today-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:11px!important}
+body.sidet-v1031-student #siswaPage .today-item{border:1px solid #e3edf7!important;border-radius:18px!important;padding:14px 15px!important;background:linear-gradient(180deg,#fff,#f9fcff)!important;min-height:103px!important}
+body.sidet-v1031-student #siswaPage .today-item:first-child{background:linear-gradient(135deg,#f0fff8,#f7fffb)!important;border-color:#caefdb!important}
+body.sidet-v1031-student #siswaPage .today-item>b{font-size:26px!important;color:#123d62!important;letter-spacing:-.03em}
+body.sidet-v1031-student #siswaPage .today-item small{color:#6a8299!important;font-size:11px!important;line-height:1.45}
+.sidet-v1031-gps-line{display:flex;align-items:center;gap:8px;margin:12px 0 0;padding:10px 12px;border-radius:14px;background:#effaf7;border:1px solid #d1f0e4;color:#17684e;font-size:11px;font-weight:800}
+.sidet-v1031-gps-line svg{width:17px;height:17px;stroke:currentColor;fill:none;stroke-width:2;flex:0 0 auto}
+.sidet-v1031-main-presensi{width:100%;margin-top:12px;min-height:52px!important;border-radius:15px!important;border:0!important;background:linear-gradient(105deg,#0673e7,#1087f2)!important;color:#fff!important;font-size:16px!important;font-weight:900!important;box-shadow:0 10px 22px rgba(8,117,232,.20)!important;display:flex!important;align-items:center!important;justify-content:center!important;gap:9px!important}
+.sidet-v1031-main-presensi svg{width:21px;height:21px;stroke:currentColor;fill:none;stroke-width:2}
+.sidet-v1031-month-title{display:flex;align-items:center;justify-content:space-between;margin:18px 2px 9px;color:var(--stu-text)}
+.sidet-v1031-month-title strong{font-size:14px}.sidet-v1031-month-title button{border:0;background:none;color:#0875e8;font:inherit;font-size:11px;font-weight:900;cursor:pointer}
+.sidet-v1031-recap{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px}
+.sidet-v1031-stat{border-radius:16px;padding:11px 10px;text-align:center;border:1px solid #e1ebf5;background:#f8fbff}.sidet-v1031-stat small{display:block;font-size:10px;font-weight:800;color:#687f95;margin-bottom:4px}.sidet-v1031-stat b{display:block;font-size:24px;line-height:1;font-weight:950}.sidet-v1031-stat.hadir{background:#effcf5;border-color:#cdeedc}.sidet-v1031-stat.hadir b{color:#0b9862}.sidet-v1031-stat.late{background:#fff8ed;border-color:#ffe0b6}.sidet-v1031-stat.late b{color:#e87616}.sidet-v1031-stat.izin{background:#eff7ff;border-color:#cce3ff}.sidet-v1031-stat.izin b{color:#0875e8}.sidet-v1031-stat.sakit{background:#fff2f2;border-color:#ffd4d4}.sidet-v1031-stat.sakit b{color:#e34747}
+
+/* Pengumuman */
+body.sidet-v1031-student #siswaPage[data-sidet-tab="home"] #v7StudentExtras{display:block!important;margin-top:14px!important}
+body.sidet-v1031-student #v7StudentExtras>.card:first-child{border:1px solid var(--stu-line)!important;border-radius:22px!important;padding:17px!important;box-shadow:0 10px 28px rgba(16,76,124,.055)!important;background:#fff!important}
+body.sidet-v1031-student #v7StudentExtras>.card:first-child>.hero{background:none!important;padding:0!important;min-height:0!important;color:var(--stu-text)!important;box-shadow:none!important;border-radius:0!important}
+body.sidet-v1031-student #v7StudentExtras>.card:first-child>.hero h3{font-size:16px!important;margin:0!important}
+body.sidet-v1031-student #v7StudentExtras>.card:first-child>.hero .muted{font-size:10px!important}
+body.sidet-v1031-student #v7StudentAnnouncements{display:grid;gap:8px;margin-top:10px!important}
+body.sidet-v1031-student #v7StudentAnnouncements .v7-announcement{border:1px solid #e4edf6!important;border-left:4px solid #0875e8!important;border-radius:14px!important;background:#fbfdff!important;padding:11px 12px!important;margin:0!important}
+body.sidet-v1031-student #v7StudentAnnouncements .v7-announcement:nth-child(n+3){display:none!important}
+body.sidet-v1031-student #v7StudentAnnouncements h4{font-size:12px!important;color:#173e61!important}
+body.sidet-v1031-student #v7StudentAnnouncements p{font-size:10.5px!important;color:#5f7890!important;line-height:1.5!important;margin:5px 0!important}
+
+/* History */
+body.sidet-v1031-student #siswaPage[data-sidet-tab="history"] .sidet-student-history-card-v1017{display:block!important;border:1px solid var(--stu-line)!important;border-radius:23px!important;padding:18px!important;box-shadow:0 10px 30px rgba(16,76,124,.06)!important}
+.sidet-v1031-history-cards{display:none;gap:9px}
+.sidet-v1031-history-card{display:grid;grid-template-columns:48px 1fr auto;gap:10px;align-items:center;border:1px solid #e3edf6;border-radius:16px;padding:10px;background:#fff}.sidet-v1031-datebox{width:45px;height:45px;border-radius:13px;display:grid;place-items:center;background:#eef7ff;color:#0875e8;font-size:10px;font-weight:800;line-height:1}.sidet-v1031-datebox b{font-size:18px}.sidet-v1031-history-card.is-late .sidet-v1031-datebox{background:#fff5e8;color:#df751b}.sidet-v1031-history-main strong{display:block;font-size:12px;color:#163d60}.sidet-v1031-history-main small{display:block;font-size:10px;color:#72889c;margin-top:4px}.sidet-v1031-history-status{font-size:9px;font-weight:900;border-radius:999px;padding:5px 8px;background:#eafaf2;color:#11845a}.sidet-v1031-history-card.is-late .sidet-v1031-history-status{background:#fff1dc;color:#d96c0c}
+
+/* Tab panels */
+body.sidet-v1031-student .sidet-student-tab-panel{border:1px solid var(--stu-line)!important;border-radius:24px!important;background:#fff!important;box-shadow:0 12px 34px rgba(16,76,124,.07)!important;padding:19px!important}
+body.sidet-v1031-student .sidet-student-tab-head-v1017 h2{color:var(--stu-text)!important;font-size:21px!important}
+body.sidet-v1031-student .sidet-student-tab-head-v1017 p{color:#6a8299!important}
+body.sidet-v1031-student .sidet-student-mini-v1017{border-radius:15px!important;background:#f8fbff!important;border-color:#e0ebf6!important}
+.sidet-v1031-leave-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:11px 0 16px}.sidet-v1031-leave-action{min-height:92px;border:1px solid #dfeaf5;border-radius:17px;background:#f7fbff;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:6px;font:inherit;font-weight:900;color:#1664ae;cursor:pointer}.sidet-v1031-leave-action.sick{background:#effbf5;color:#13875b;border-color:#cfeedd}.sidet-v1031-leave-action svg{width:24px;height:24px;stroke:currentColor;fill:none;stroke-width:2}
+body.sidet-v1031-student .sidet-student-account-v1017{border-radius:18px!important;border-color:#e1ebf5!important;background:#fbfdff!important}
+body.sidet-v1031-student .sidet-student-avatar-v1017{background:#fff!important;border:1px solid #dce9f7!important;padding:5px!important;box-shadow:none!important;color:transparent!important;overflow:hidden!important}
+body.sidet-v1031-student .sidet-student-avatar-v1017 img{width:100%;height:100%;object-fit:contain}
+
+/* Bottom nav */
+body.sidet-v1031-student #sidetStudentNavV1017{background:rgba(255,255,255,.96)!important;border-color:#dce8f4!important;box-shadow:0 14px 38px rgba(15,63,105,.15)!important}
+body.sidet-v1031-student #sidetStudentNavV1017 button{color:#667f98!important;border-radius:13px!important;font-weight:850!important}
+body.sidet-v1031-student #sidetStudentNavV1017 button.active{background:#edf6ff!important;color:#0875e8!important;box-shadow:none!important}
+body.sidet-v1031-student #sidetStudentNavV1017 button.active:after{background:#0875e8!important}
+body.sidet-v1031-student #sidetStudentNavV1017 .sidet-camera-nav-v1020{background:#0875e8!important;color:#fff!important;border:0!important;box-shadow:0 7px 16px rgba(8,117,232,.22)!important}
+
+/* Account: no photo/avatar, school logo only */
+.sidet-v1031-account-brand{display:flex;align-items:center;gap:13px;padding:15px;border:1px solid #e0ebf6;border-radius:18px;background:#fbfdff;margin-bottom:12px}.sidet-v1031-account-brand img{width:60px;height:60px;object-fit:contain;padding:4px;border-radius:16px;background:#fff;border:1px solid #e0ebf6}.sidet-v1031-account-brand strong{font-size:17px;color:#173d60}.sidet-v1031-account-brand small{display:block;color:#71889c;margin-top:3px}
+
+@media(max-width:760px){
+  body.sidet-v1031-student .container{padding:10px 10px 96px!important}
+  body.sidet-v1031-student .top{height:58px!important;padding:0 11px!important}
+  body.sidet-v1031-student .top .brand>.logo{width:38px!important;height:38px!important}
+  body.sidet-v1031-student .top #who{display:none!important}
+  body.sidet-v1031-student #siswaPage>.student-hero{grid-template-columns:54px 1fr!important;padding:17px 16px!important;border-radius:21px!important;gap:11px!important}
+  .sidet-v1031-hero-logo{width:54px;height:54px;border-radius:15px}
+  body.sidet-v1031-student #siswaPage>.student-hero .livebox{position:absolute;right:12px;top:11px;padding:5px 8px!important;border-radius:11px!important}
+  body.sidet-v1031-student #siswaPage .livebox .time{font-size:13px!important}
+  body.sidet-v1031-student #siswaPage .livebox .date{display:none!important}
+  body.sidet-v1031-student #siswaPage .student-name{font-size:21px!important;margin-right:62px!important}
+  body.sidet-v1031-student #siswaPage .student-meta{font-size:9.5px!important;gap:4px!important}
+  body.sidet-v1031-student #siswaPage .student-meta span{padding:3px 6px!important}
+  .sidet-v1031-motto{font-size:9px;margin-top:5px}
+  body.sidet-v1031-student #siswaPage .sidet-student-status-card-v1017{padding:14px!important;border-radius:20px!important;margin-top:10px!important}
+  body.sidet-v1031-student #siswaPage .today-grid{grid-template-columns:1fr!important}
+  body.sidet-v1031-student #siswaPage .today-item{min-height:79px!important;padding:11px 12px!important}
+  body.sidet-v1031-student #siswaPage .today-item>b{font-size:22px!important}
+  .sidet-v1031-recap{grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}.sidet-v1031-stat{padding:9px 4px;border-radius:13px}.sidet-v1031-stat small{font-size:8.5px}.sidet-v1031-stat b{font-size:20px}
+  body.sidet-v1031-student #v7StudentExtras>.card:first-child{padding:13px!important;border-radius:19px!important}
+  .sidet-v1031-history-cards{display:grid}.sidet-student-history-card-v1017>.tablewrap{display:none!important}
+  .sidet-v1031-leave-actions{grid-template-columns:1fr 1fr}
+  body.sidet-v1031-student .sidet-student-tab-panel{padding:14px!important;border-radius:20px!important}
+  body.sidet-v1031-student #sidetStudentNavV1017{left:6px!important;right:6px!important;bottom:max(6px,env(safe-area-inset-bottom))!important;border-radius:18px!important;padding:5px 4px!important;grid-template-columns:repeat(6,minmax(0,1fr))!important}
+  body.sidet-v1031-student #sidetStudentNavV1017 button{min-height:52px!important;padding:5px 1px!important}
+  body.sidet-v1031-student #sidetStudentNavV1017 .sidet-nav-label-v1017{font-size:8.2px!important}
+  body.sidet-v1031-student #sidetStudentNavV1017 .sidet-nav-icon-v1017,body.sidet-v1031-student #sidetStudentNavV1017 .sidet-nav-icon-v1017 svg{width:19px!important;height:19px!important}
+}
+@media(min-width:761px){body.sidet-v1031-student #sidetStudentNavV1017{grid-template-columns:repeat(6,minmax(0,1fr))!important;max-width:920px;margin-left:auto!important;margin-right:auto!important}}
+@media(prefers-reduced-motion:reduce){body.sidet-v1031-student *{scroll-behavior:auto!important}}
+</style>
+<script id="sidet-v1031-student-redesign-runtime">
+(function(){
+'use strict';
+const VERSION='10.31';
+const role_=()=>String((typeof state!=='undefined'&&state.user&&state.user.role)||window.state?.user?.role||'').toLowerCase();
+const user_=()=>((typeof state!=='undefined'&&state.user)||window.state?.user||{});
+const data_=()=>((typeof state!=='undefined'&&state.data)||window.state?.data||{});
+const esc_=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+function schoolLogo_(){return document.querySelector('.login-logo-school')?.src||''}
+function classLabel_(v){
+  let s=String(v||'').toUpperCase().trim().replace(/^KELAS\s*/,'').replace(/[\s_–—-]+/g,'');
+  const m=s.match(/^(XII|XI|X)([ABCD])$/);return m?'Kelas '+m[1]+m[2]:(v?String(v):'Kelas —');
+}
+function validAtt_(x){const a=String(x?.status||'').toUpperCase(),b=String(x?.verificationStatus||'').toUpperCase();return a!=='DITOLAK'&&b!=='DITOLAK'}
+function rowDate_(x){return String(x?.tanggal||x?.date||'').slice(0,10)}
+function rowTime_(x){return String(x?.jam||x?.time||'').slice(0,8)}
+function rowType_(x){return String(x?.type||x?.jenis||'').toUpperCase()}
+function late_(x){const n=Number(x?.terlambatMenit||x?.late||0);if(n>0)return true;const t=rowTime_(x).slice(0,5);return rowType_(x)==='MASUK'&&/^\d\d:\d\d$/.test(t)&&t>'07:30'}
+function todayKey_(){try{const p=new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Makassar',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(new Date()),o={};p.forEach(x=>o[x.type]=x.value);return o.year+'-'+o.month+'-'+o.day}catch(e){return new Date().toISOString().slice(0,10)}}
+function monthKey_(){return todayKey_().slice(0,7)}
+function dateObj_(s){const d=new Date(String(s).slice(0,10)+'T00:00:00');return isNaN(d)?null:d}
+function fmtLong_(s){const d=dateObj_(s);return d?d.toLocaleDateString('id-ID',{weekday:'long',day:'numeric',month:'long',year:'numeric'}):String(s||'—')}
+function fmtShort_(s){const d=dateObj_(s);return d?d.toLocaleDateString('id-ID',{weekday:'short',day:'numeric',month:'short'}):String(s||'—')}
+function approvedLeaveDays_(type,month){
+ const set=new Set();(Array.isArray(data_().leave)?data_().leave:[]).forEach(x=>{if(String(x.status||'').toUpperCase()!=='DISETUJUI'||String(x.type||x.jenis||'').toUpperCase()!==type)return;let a=dateObj_(x.tanggalMulai),b=dateObj_(x.tanggalSelesai||x.tanggalMulai);if(!a||!b)return;for(let d=new Date(a);d<=b;d.setDate(d.getDate()+1)){const k=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');if(k.startsWith(month)&&d.getDay()!==0&&d.getDay()!==6)set.add(k)}});return set.size
+}
+function installLogo_(){
+ const src=schoolLogo_();if(!src)return;
+ const topLogo=document.querySelector('.top .brand>.logo');if(topLogo&&!topLogo.querySelector('img'))topLogo.innerHTML='<img src="'+src+'" alt="Logo SMAN 2 Nunukan Selatan">';
+ const hero=document.querySelector('#siswaPage>.student-hero');if(hero&&!hero.querySelector('.sidet-v1031-hero-logo')){const img=document.createElement('img');img.className='sidet-v1031-hero-logo';img.src=src;img.alt='Logo SMAN 2 Nunukan Selatan';hero.insertBefore(img,hero.firstChild)}
+ document.querySelectorAll('.sidet-student-avatar-v1017').forEach(a=>{if(!a.querySelector('img'))a.innerHTML='<img src="'+src+'" alt="Logo SMAN 2 Nunukan Selatan">'});
+}
+function polishHero_(){
+ const u=user_(),hero=document.querySelector('#siswaPage>.student-hero');if(!hero)return;
+ const welcome=document.getElementById('welcome');if(welcome)welcome.textContent='Selamat datang, '+String(u.name||'Siswa');
+ const nisn=document.getElementById('studentNisn');if(nisn)nisn.textContent='NISN '+(u.nisn||'—');
+ const kelas=document.getElementById('studentKelas');if(kelas)kelas.textContent=classLabel_(u.kelas);
+ const detail=document.getElementById('profileDetail');if(detail)detail.textContent='NISN '+(u.nisn||'—')+' · '+classLabel_(u.kelas);
+ if(!hero.querySelector('.sidet-v1031-motto')){const info=hero.querySelector(':scope>div:not(.livebox)');if(info){const m=document.createElement('div');m.className='sidet-v1031-motto';m.textContent='Disiplin · Berkarakter · Berprestasi';info.appendChild(m)}}
+}
+function ensureHomeWidgets_(){
+ const card=document.querySelector('.sidet-student-status-card-v1017');if(!card)return;
+ const title=card.querySelector('.card-title h3');if(title)title.textContent='Presensi Hari Ini';
+ const label=card.querySelector('.card-title .section-label');if(label)label.textContent=fmtLong_(todayKey_());
+ if(!document.getElementById('sidetV1031GpsLine')){
+  const grid=card.querySelector('.today-grid');if(grid){
+    const line=document.createElement('div');line.id='sidetV1031GpsLine';line.className='sidet-v1031-gps-line';line.innerHTML='<svg viewBox="0 0 24 24"><path d="M20 10c0 5-8 11-8 11S4 15 4 10a8 8 0 1 1 16 0Z"/><circle cx="12" cy="10" r="2.5"/></svg><span id="sidetV1031GpsText">Memeriksa lokasi perangkat…</span>';grid.after(line);
+    const b=document.createElement('button');b.type='button';b.className='btn sidet-v1031-main-presensi';b.onclick=()=>{if(typeof window.sidetOpenCameraNavV1020==='function')window.sidetOpenCameraNavV1020();else document.getElementById('btnMasuk')?.click()};b.innerHTML='<svg viewBox="0 0 24 24"><path d="M5 7h3l1.5-2h5L16 7h3a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2Z"/><circle cx="12" cy="13" r="3.5"/></svg><span>Presensi</span>';line.after(b);
+    const mt=document.createElement('div');mt.className='sidet-v1031-month-title';mt.innerHTML='<strong>Rekap Bulan Ini</strong><button type="button" onclick="sidetStudentTabV1017(\'history\')">Lihat riwayat</button>';
+    b.after(mt);
+    const recap=document.createElement('div');recap.id='sidetV1031Recap';recap.className='sidet-v1031-recap';mt.after(recap);
+  }
+ }
+ syncGps_();renderRecap_();
+}
+function syncGps_(){
+ const out=document.getElementById('sidetV1031GpsText');if(!out)return;
+ const d=String(document.getElementById('gpsDistanceValue')?.textContent||'').trim();
+ const q=String(document.getElementById('gpsQualityValue')?.textContent||'').trim();
+ const s=String(document.getElementById('gpsStatus')?.textContent||'').trim();
+ if(d&&d!=='—')out.textContent='Lokasi terbaca · '+d+' dari sekolah'+(q&&q!=='—'?' · GPS '+q.toLowerCase():'');else out.textContent=s||'Memeriksa lokasi perangkat…';
+}
+function renderRecap_(){
+ const host=document.getElementById('sidetV1031Recap');if(!host)return;const m=monthKey_();
+ const a=(Array.isArray(data_().attendance)?data_().attendance:[]).filter(x=>validAtt_(x)&&rowDate_(x).startsWith(m));
+ const hadir=new Set(a.filter(x=>rowType_(x)==='MASUK').map(rowDate_));const terlambat=new Set(a.filter(x=>rowType_(x)==='MASUK'&&late_(x)).map(rowDate_));
+ const izin=approvedLeaveDays_('IZIN',m),sakit=approvedLeaveDays_('SAKIT',m);
+ host.innerHTML='<div class="sidet-v1031-stat hadir"><small>Hadir</small><b>'+hadir.size+'</b></div><div class="sidet-v1031-stat late"><small>Terlambat</small><b>'+terlambat.size+'</b></div><div class="sidet-v1031-stat izin"><small>Izin</small><b>'+izin+'</b></div><div class="sidet-v1031-stat sakit"><small>Sakit</small><b>'+sakit+'</b></div>';
+}
+function renderHistoryCards_(){
+ const card=document.querySelector('.sidet-student-history-card-v1017');if(!card)return;let host=document.getElementById('sidetV1031HistoryCards');if(!host){host=document.createElement('div');host.id='sidetV1031HistoryCards';host.className='sidet-v1031-history-cards';const wrap=card.querySelector('.tablewrap');card.insertBefore(host,wrap||null)}
+ const rows=(Array.isArray(data_().attendance)?data_().attendance:[]).filter(validAtt_);const by={};rows.forEach(x=>{const d=rowDate_(x);if(!d)return;(by[d]||(by[d]={}))[rowType_(x)]=x});
+ host.innerHTML=Object.keys(by).sort().reverse().slice(0,45).map(d=>{const r=by[d],mi=r.MASUK,pu=r.PULANG,isLate=!!mi&&late_(mi),dt=dateObj_(d);const day=dt?dt.getDate():'',wk=dt?dt.toLocaleDateString('id-ID',{weekday:'short'}):'';return '<div class="sidet-v1031-history-card '+(isLate?'is-late':'')+'"><div class="sidet-v1031-datebox"><b>'+esc_(day)+'</b><span>'+esc_(wk)+'</span></div><div class="sidet-v1031-history-main"><strong>'+esc_(fmtShort_(d))+'</strong><small>Masuk '+esc_(mi?rowTime_(mi).slice(0,5):'—')+' · Pulang '+esc_(pu?rowTime_(pu).slice(0,5):'—')+'</small></div><span class="sidet-v1031-history-status">'+(isLate?'Terlambat':'Tepat Waktu')+'</span></div>'}).join('')||'<div class="sidet-student-empty-v1017">Belum ada riwayat presensi.</div>';
+}
+function polishLeave_(){
+ const p=document.getElementById('sidetStudentLeavePanelV1017');if(!p||p.querySelector('.sidet-v1031-leave-actions'))return;
+ const head=p.querySelector('.sidet-student-tab-head-v1017');if(head){head.querySelector('button')?.remove();const h=head.querySelector('h2');if(h)h.textContent='Izin & Sakit'}
+ const actions=document.createElement('div');actions.className='sidet-v1031-leave-actions';actions.innerHTML='<button class="sidet-v1031-leave-action" onclick="v7LeaveForm_()"><svg viewBox="0 0 24 24"><path d="M5 4h14v16H5z"/><path d="M8 8h8M8 12h5"/><path d="m14 17 4-4"/></svg><span>Ajukan Izin</span></button><button class="sidet-v1031-leave-action sick" onclick="v7LeaveForm_()"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/><circle cx="12" cy="12" r="9"/></svg><span>Ajukan Sakit</span></button>';head?.after(actions);
+}
+function polishAccount_(){
+ const p=document.getElementById('sidetStudentAccountPanelV1017');if(!p)return;installLogo_();
+ const u=user_(),src=schoolLogo_();if(!p.querySelector('.sidet-v1031-account-brand')&&src){const old=p.querySelector('.sidet-student-account-v1017');const b=document.createElement('div');b.className='sidet-v1031-account-brand';b.innerHTML='<img src="'+src+'" alt="Logo SMAN 2 Nunukan Selatan"><div><strong>'+esc_(u.name||'Siswa')+'</strong><small>NISN '+esc_(u.nisn||'—')+'</small><small>'+esc_(classLabel_(u.kelas))+' · SMAN 2 Nunukan Selatan</small></div>';old?.replaceWith(b)}
+}
+function polishReport_(){const p=document.getElementById('sidetStudentReportPanelV1017');if(!p)return;installLogo_();const h=p.querySelector('h2');if(h)h.textContent='Laporan Individu'}
+function nav_(){
+ const n=document.getElementById('sidetStudentNavV1017');if(!n)return;
+ const camera=n.querySelector('.sidet-camera-nav-v1020');if(camera){const history=n.querySelector('button[data-tab="history"]');if(history&&camera!==history.nextElementSibling)n.insertBefore(camera,history.nextSibling)}
+}
+function activeStudent_(){return role_()==='siswa'&&document.getElementById('app')&&!document.getElementById('app').classList.contains('hidden')}
+function ensure_(){
+ if(!activeStudent_())return;document.body.classList.add('sidet-v1031-student');installLogo_();polishHero_();ensureHomeWidgets_();renderHistoryCards_();polishLeave_();polishReport_();polishAccount_();nav_();
+ const ver=document.querySelector('.brand .muted');if(ver)ver.textContent='v'+VERSION;
+}
+function wrap_(name,after){const fn=window[name];if(typeof fn!=='function'||fn.__v1031)return;const w=function(){const r=fn.apply(this,arguments);if(r&&typeof r.then==='function')return r.finally(()=>setTimeout(after,0));setTimeout(after,0);return r};w.__v1031=true;window[name]=w}
+function installHooks_(){
+ wrap_('renderStudentProfile',ensure_);wrap_('renderEmpHistory',()=>{ensure_();renderRecap_();renderHistoryCards_()});wrap_('updateGPSUI_',()=>{syncGps_()});wrap_('v7LoadAnnouncements_',ensure_);wrap_('sidetStudentTabV1017',()=>{setTimeout(()=>{ensure_();polishLeave_();polishReport_();polishAccount_()},0)});
+}
+const mo=new MutationObserver(()=>{if(!activeStudent_())return;clearTimeout(window.__v1031t);window.__v1031t=setTimeout(()=>{installHooks_();ensure_()},40)});mo.observe(document.documentElement,{childList:true,subtree:true});
+document.addEventListener('DOMContentLoaded',()=>setTimeout(()=>{installHooks_();ensure_()},120));setInterval(()=>{if(activeStudent_()){syncGps_();renderRecap_()}},2500);setTimeout(()=>{installHooks_();ensure_()},500);setTimeout(ensure_,1400);
 })();
 </script>
 
