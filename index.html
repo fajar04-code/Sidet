@@ -2012,6 +2012,63 @@ body{overflow-x:hidden}
 @keyframes v1011spin{to{transform:rotate(360deg)}}
 </style>
 
+
+<style id="sidet-v1040-wa-sync-indicator-style">
+.wa-sync-indicator{display:grid;grid-template-columns:auto minmax(0,1fr);gap:12px;align-items:flex-start;padding:14px 15px;margin:12px 0;border-radius:14px;border:1px solid var(--line);background:var(--card)}
+.wa-sync-indicator .wa-sync-icon{width:38px;height:38px;border-radius:12px;display:grid;place-items:center;font-size:20px;font-weight:900}
+.wa-sync-indicator strong{display:block;font-size:14px;margin-bottom:3px}.wa-sync-indicator small{display:block;line-height:1.55;color:var(--muted)}
+.wa-sync-indicator .wa-sync-issues{margin:7px 0 0;padding-left:17px;font-size:12px;line-height:1.55}
+.wa-sync-indicator.syncing{border-color:#f3d58c;background:#fffaf0}.wa-sync-indicator.syncing .wa-sync-icon{background:#fff1c9;color:#9a6700}
+.wa-sync-indicator.ok{border-color:#a9e2c8;background:#f1fbf6}.wa-sync-indicator.ok .wa-sync-icon{background:#d9f5e8;color:#087449}
+.wa-sync-indicator.incomplete{border-color:#f3bf7b;background:#fff7ec}.wa-sync-indicator.incomplete .wa-sync-icon{background:#ffe3b8;color:#a85700}
+.wa-sync-indicator.error{border-color:#f0aaaa;background:#fff2f2}.wa-sync-indicator.error .wa-sync-icon{background:#ffdede;color:#b42318}
+.wa-sync-lock{padding:12px 14px;border:1px solid #efb3b3;border-radius:12px;background:#fff3f3;color:#8f1d1d;font-size:12px;line-height:1.6;margin:10px 0}
+.wa-sync-detail-card{margin-top:12px;border:1px solid #efc083;border-radius:14px;background:#fffdfa;overflow:hidden;color:var(--text)}
+.wa-sync-detail-head{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;padding:13px 14px;background:#fff7ea;border-bottom:1px solid #f1d6ad}
+.wa-sync-detail-head strong{display:block;font-size:13px;color:#8a4b08}.wa-sync-detail-head small{display:block;margin-top:3px;color:var(--muted);line-height:1.5}
+.wa-sync-detail-count{white-space:nowrap;background:#fff0d2;border:1px solid #efce97;color:#8a4b08;padding:5px 8px;border-radius:999px;font-size:11px;font-weight:800}
+.wa-sync-detail-table{overflow:auto;max-height:360px}.wa-sync-detail-table table{min-width:820px;width:100%;border-collapse:collapse}
+.wa-sync-detail-table th,.wa-sync-detail-table td{padding:9px 10px;border-bottom:1px solid var(--line);vertical-align:top;text-align:left;font-size:11px}
+.wa-sync-detail-table th{position:sticky;top:0;z-index:1;background:#fffaf2!important;color:#805018!important;text-transform:none!important;letter-spacing:0!important}
+.wa-sync-detail-table td b{font-size:12px}.wa-sync-detail-muted{color:var(--muted);font-size:10px;line-height:1.45;margin-top:2px}
+.wa-sync-code{display:inline-block;padding:3px 6px;border-radius:7px;background:#fff0d7;border:1px solid #f0d0a0;color:#91520b;font-size:10px;font-weight:800}
+.wa-sync-row{font-variant-numeric:tabular-nums;font-weight:800;color:#9a4d00}
+.wa-sync-help{padding:10px 13px;background:#fff9ef;border-top:1px solid #f1d6ad;color:#79511f;font-size:11px;line-height:1.55}
+@media(max-width:600px){.wa-sync-indicator{padding:12px;gap:9px}.wa-sync-indicator .wa-sync-icon{width:34px;height:34px}.wa-sync-detail-head{flex-direction:column}.wa-sync-detail-count{white-space:normal}.wa-sync-detail-table{max-height:320px}}
+</style>
+
+<style id="sidet-v1041-wa-sender-style">
+.wa-sender-panel{margin:12px 0;padding:14px 15px;border:1px solid var(--line);border-radius:14px;background:var(--card)}
+.wa-sender-panel.ready{border-color:#b7e4ce;background:#f4fcf8}.wa-sender-panel.missing{border-color:#f0d69a;background:#fffaf0}
+.wa-sender-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:12px}.wa-sender-head strong{display:block}.wa-sender-head small{display:block;margin-top:3px;color:var(--muted);line-height:1.5}
+.wa-sender-panel .actions{align-items:center;flex-wrap:wrap}.wa-sender-panel .muted{font-size:11px}
+@media(max-width:640px){.wa-sender-head{flex-direction:column}.wa-sender-panel .grid.two{grid-template-columns:1fr!important}}
+</style>
+
+<style id="sidet-v1042-wa-status-style">
+.wa-status.waiting{background:#fff7d6!important;color:#8a5b00!important;border:1px solid #f1d77b!important}
+.wa-status.failed{background:#ffe7e7!important;color:#a12222!important;border:1px solid #f4b8b8!important}
+.wa-status.duplicate{background:#e4f8ee!important;color:#087048!important;border:1px solid #bfe8d2!important}
+</style>
+
+<style id="sidet-v1043-wa-date-filter-style">
+.wa-date-filter-v1043{display:grid;grid-template-columns:minmax(190px,280px) auto auto minmax(0,1fr);gap:10px;align-items:end;padding:13px 14px;margin:12px 0;border:1px solid var(--line);border-radius:14px;background:var(--soft)}
+.wa-date-filter-v1043 .field{margin:0}.wa-date-filter-v1043 .wa-date-note{font-size:11px;line-height:1.55;color:var(--muted);align-self:center}.wa-date-filter-v1043 .btn{min-height:42px}
+.wa-date-history-badge{display:inline-flex;align-items:center;gap:5px;padding:4px 8px;margin-left:6px;border-radius:999px;background:#fff2dc;color:#8a5700;font-size:10px;font-weight:800;vertical-align:middle}
+@media(max-width:760px){.wa-date-filter-v1043{grid-template-columns:1fr 1fr}.wa-date-filter-v1043 .field,.wa-date-filter-v1043 .wa-date-note{grid-column:1/-1}}
+@media(max-width:480px){.wa-date-filter-v1043{grid-template-columns:1fr}.wa-date-filter-v1043 .field,.wa-date-filter-v1043 .wa-date-note{grid-column:auto}}
+</style>
+
+<style id="sidet-v1044-wa-date-range-style">
+.wa-date-range-v1044{display:grid;grid-template-columns:minmax(170px,1fr) minmax(170px,1fr) auto auto;gap:10px;align-items:end;padding:13px 14px;margin:12px 0;border:1px solid var(--line);border-radius:14px;background:var(--soft)}
+.wa-date-range-v1044 .field{margin:0}.wa-date-range-v1044 .btn{min-height:42px}.wa-date-range-v1044 .wa-date-note{grid-column:1/-1;font-size:11px;line-height:1.55;color:var(--muted)}
+.wa-range-summary-v1044{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin:10px 0}.wa-range-summary-v1044>div{padding:10px 11px;border:1px solid var(--line);border-radius:12px;background:var(--card)}.wa-range-summary-v1044 small{display:block;color:var(--muted);font-size:10px}.wa-range-summary-v1044 b{font-size:18px}
+.wa-range-partial-v1044{padding:11px 12px;border:1px solid #f3bf7b;background:#fff7ec;border-radius:12px;color:#7a4500;font-size:12px;line-height:1.55;margin:10px 0}.wa-range-partial-v1044 b{display:block;margin-bottom:3px}
+.wa-date-cell-v1044{white-space:nowrap;font-weight:800}.wa-date-cell-v1044 small{display:block;font-weight:500;color:var(--muted)}
+@media(max-width:760px){.wa-date-range-v1044{grid-template-columns:1fr 1fr}.wa-date-range-v1044 .btn{width:100%}.wa-range-summary-v1044{grid-template-columns:1fr 1fr}}
+@media(max-width:480px){.wa-date-range-v1044{grid-template-columns:1fr}.wa-range-summary-v1044{grid-template-columns:1fr 1fr}}
+</style>
+
 </head>
 <body>
 
@@ -2137,9 +2194,9 @@ const initialSchoolData = {};
 const CLASS_ORDER=["X-A", "X-B", "X-C", "X-D", "XI-A", "XI-B", "XI-C", "XI-D", "XII-A", "XII-B", "XII-C", "XII-D"];
 const INITIAL_STUDENTS=Object.entries(initialSchoolData).flatMap(([kelas,arr])=>arr.map(x=>({...x,kelas,sekolah:'SMAN 2 Nunukan Selatan',active:true})));
 const SIDET_DEFAULT_API_URL='https://script.google.com/macros/s/AKfycbxfl79GgtRFPcDsojojvjiHzUpRV34FitJBRqqoCdtdfKl8tfhHJVDiK9dDujXlGRj1/exec';
-const SIDET_FRONTEND_VERSION='10.37';
-const SIDET_REQUIRED_SERVER_VERSION='10.37';
-// V10.37: URL Web App bawaan file adalah satu-satunya sumber permanen.
+const SIDET_FRONTEND_VERSION='10.45';
+const SIDET_REQUIRED_SERVER_VERSION='10.45';
+// V10.45: URL Web App bawaan file adalah satu-satunya sumber permanen.
 // Hapus nilai legacy agar HP tidak terus memakai deployment lama dari localStorage.
 try{localStorage.removeItem('sidet_api');}catch(e){}
 const state={role:'auto',user:null,api:SIDET_DEFAULT_API_URL,data:{attendance:[],users:INITIAL_STUDENTS,leave:[],settings:{}}};
@@ -2376,7 +2433,7 @@ function adminTab(tab){
  if(tab==='users') c.innerHTML=`<div class="card"><div class="hero"><div><h3>Kelola Siswa</h3><div class="muted">Data siswa dan nomor WhatsApp orang tua/wali</div></div><div class="actions"><button class="btn" onclick="waBulkPhoneModal_()">📥 Impor WA Massal</button><button class="btn primary" onclick="userForm()">+ Tambah</button></div></div><div class="tablewrap"><table><thead><tr><th>NISN</th><th>Nama</th><th>Kelas</th><th>WA Orang Tua</th><th>Status</th><th>Aksi</th></tr></thead><tbody>${(state.data.users||[]).map((u,i)=>`<tr><td>${waEsc_(u.nisn||u.id)}</td><td>${waEsc_(u.name||'-')}</td><td>${waEsc_(u.kelas||'-')}</td><td>${waEsc_(u.waOrtu||u.noWaOrtu||u.whatsappOrtu||u.whatsapp||u.wa||'-')}</td><td>${u.active===false?'Nonaktif':'Aktif'}</td><td><button class="btn" onclick="editUserForm_(${i})">✏️ Edit</button></td></tr>`).join('')||'<tr><td colspan="6">Belum ada data.</td></tr>'}</tbody></table></div></div>`;
  if(tab==='attendance') c.innerHTML=`<div class="card"><div class="hero"><h3>Data Presensi</h3><button class="btn ok" onclick="exportExcel()">Ekspor</button></div><div class="tablewrap"><table><thead><tr><th>Tanggal</th><th>NISN</th><th>Nama</th><th>Jenis</th><th>Jam</th><th>Status</th><th>Jarak</th></tr></thead><tbody>${(state.data.attendance||[]).slice().reverse().map(x=>`<tr><td>${x.tanggal||'-'}</td><td>${x.nip||'-'}</td><td>${x.name||'-'}</td><td>${x.type||x.jenis||'-'}</td><td>${x.jam||'-'}</td><td><span class="badge ok">${x.status||'VALID'}</span></td><td>${x.jarak?Math.round(x.jarak)+' m':'-'}</td></tr>`).join('')||'<tr><td colspan="7">Belum ada data.</td></tr>'}</tbody></table></div></div>`;
  if(tab==='leave') c.innerHTML=`<div class="card"><h3>Persetujuan Izin</h3><div class="tablewrap"><table><thead><tr><th>Nama</th><th>Jenis</th><th>Tanggal</th><th>Alasan</th><th>Status</th><th>Aksi</th></tr></thead><tbody>${(state.data.leave||[]).map(x=>`<tr><td>${x.name||x.nip}</td><td>${x.type}</td><td>${x.tanggalMulai||''} s/d ${x.tanggalSelesai||''}</td><td>${x.alasan||'-'}</td><td>${x.status}</td><td>${x.status==='MENUNGGU'?`<button class="btn ok" onclick="approveLeave('${x.id}','DISETUJUI')">Setujui</button> <button class="btn danger" onclick="approveLeave('${x.id}','DITOLAK')">Tolak</button>`:'-'}</td></tr>`).join('')||'<tr><td colspan="6">Belum ada pengajuan.</td></tr>'}</tbody></table></div></div>`;
- if(tab==='wa') renderWaAdmin_();
+ if(tab==='wa') return window.renderWaAdmin_ ? window.renderWaAdmin_() : renderWaAdmin_();
  if(tab==='settings') c.innerHTML=`<div class="card"><h3>Pengaturan Sistem</h3><div class="field"><label>URL Google Apps Script Web App (aktif hanya sesi ini)</label><input id="apiInput" value="${state.api}" placeholder="https://script.google.com/macros/s/.../exec"><small class="muted">URL deployment tidak disimpan permanen di perangkat. Saat aplikasi dibuka ulang, SiDEt selalu kembali ke URL bawaan versi ini.</small></div><div class="grid two"><div class="field"><label>Radius Geofence (meter)</label><input id="radius" type="number" min="10" value="${state.data.settings?.radius||100}"></div><div class="field"><label>Jadwal Tetap</label><input value="Sen–Kam 07.30–15.30 · Jumat 07.30–16.00" readonly></div></div><div class="actions"><button class="btn primary" onclick="saveSettings()">Simpan Pengaturan</button><button class="btn" onclick="testApi()">Tes Koneksi</button><button class="btn warn" onclick="setCenter()">Ambil Titik Geofence dari GPS</button></div><div id="setMsg" class="alert">Pastikan URL Web App menggunakan deployment /exec.</div></div>`;
 }
 function userForm(){
@@ -2432,8 +2489,94 @@ function setCenter(){if(!navigator.geolocation)return toast('GPS tidak tersedia'
    ========================================================= */
 const SIDET_WA_CFG={jamMasuk:'07:30',cekBelumMasuk:'08:00',jamPulang:'15:30',cekBelumPulang:'16:00'};
 let SIDET_WA_QUEUE=[];let SIDET_WA_INDEX=0;let SIDET_WA_FILTERED=[];
-function waToday_(){return new Intl.DateTimeFormat('en-CA',{year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date())}
+function waClientDate_(){return new Intl.DateTimeFormat('en-CA',{year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date())}
+function waToday_(){return window.__sidetWaServerDate||window.__sidetWaSelectedDate||waClientDate_()}
+function waSelectedDate_(){return String(window.__sidetWaSelectedDate||'').trim()}
 function waNowTime_(){return new Intl.DateTimeFormat('en-GB',{hour:'2-digit',minute:'2-digit',hour12:false}).format(new Date())}
+async function waSyncTodayFromServer_(){
+ if(!apiReady())throw Error('Koneksi server SiDEt tidak tersedia. Daftar penerima WA tidak dibuat untuk mencegah penggunaan data lama.');
+ const requested=waSelectedDate_();
+ const r=await api('waTodaySnapshot',requested?{date:requested}:{}),d=r?.data;
+ if(!d||d.source!=='SERVER_LIVE_DATE'||!d.date||!Array.isArray(d.users)||!Array.isArray(d.attendance)||!Array.isArray(d.leave))throw Error('Snapshot presensi tanggal terpilih dari server tidak valid. Coba sinkronkan kembali.');
+ window.__sidetWaSelectedDate=d.date;
+ window.__sidetWaServerDate=d.date;
+ window.__sidetWaServerToday=d.serverToday||d.date;
+ window.__sidetWaHistorical=!!d.historical;
+ window.__sidetWaEvaluationClock=d.evaluationClock||d.serverClock||waNowTime_();
+ window.__sidetWaLastServerSync=d.serverTime||new Date().toISOString();
+ window.__sidetWaServerClock=d.serverClock||'';
+ window.__sidetWaSnapshotCounts=d.counts||{};
+ window.__sidetWaSnapshotIntegrity=d.integrity||{complete:false,status:'INCOMPLETE',issues:['Server belum mengirim hasil pemeriksaan kelengkapan data.'],details:[]};
+ window.__sidetWaSchoolDay=window.__sidetWaSnapshotIntegrity.schoolDay!==false;
+ window.__sidetWaSnapshotDetails=Array.isArray(window.__sidetWaSnapshotIntegrity.details)?window.__sidetWaSnapshotIntegrity.details:[];
+ window.__sidetWaSnapshotDetailCount=Number(window.__sidetWaSnapshotIntegrity.detailCount||window.__sidetWaSnapshotDetails.length||0);
+ window.__sidetWaSnapshotDetailsTruncated=!!window.__sidetWaSnapshotIntegrity.detailsTruncated;
+ state.data={...state.data,users:d.users,attendance:d.attendance,leave:d.leave,settings:d.settings||state.data.settings||{}};
+ const input=document.getElementById('waDateFilter');if(input){input.value=d.date;if(d.serverToday)input.max=d.serverToday}
+ const note=document.getElementById('waDateNote');if(note)note.innerHTML=d.historical?'Tanggal historis dipilih. Status ketidakhadiran dievaluasi setelah hari selesai.':'Menggunakan tanggal hari ini dari server SiDEt.';
+ return d;
+}
+async function waApplyDateFilter_(){
+ const v=String(document.getElementById('waDateFilter')?.value||'').trim();
+ if(!v)return toast('Pilih tanggal yang akan diproses.');
+ const today=String(window.__sidetWaServerToday||'');
+ if(today&&v>today)return toast('Tanggal masa depan tidak dapat diproses.');
+ window.__sidetWaSelectedDate=v;window.__sidetWaServerDate='';
+ SIDET_WA_QUEUE=[];SIDET_WA_INDEX=0;SIDET_WA_FILTERED=[];
+ await renderWaAdmin_();
+}
+async function waUseServerToday_(){
+ window.__sidetWaSelectedDate='';window.__sidetWaServerDate='';
+ SIDET_WA_QUEUE=[];SIDET_WA_INDEX=0;SIDET_WA_FILTERED=[];
+ await renderWaAdmin_();
+}
+function waSnapshotReady_(){
+ const i=window.__sidetWaSnapshotIntegrity;
+ return !!(window.__sidetWaServerDate&&i&&i.complete===true);
+}
+function waIssueLabel_(code){
+ const m={
+  MISSING_HEADER:'Header sheet tidak lengkap',
+  NO_ACTIVE_STUDENTS:'Siswa aktif tidak terbaca',
+  MISSING_STUDENT_IDENTITY:'Identitas siswa belum lengkap',
+  DUPLICATE_NISN:'NISN ganda',
+  INVALID_ATTENDANCE_TYPE:'Jenis presensi tidak valid',
+  ORPHAN_ATTENDANCE:'Presensi tidak cocok dengan siswa',
+  NO_ARRIVAL_AFTER_0800:'Presensi masuk belum terbaca'
+ };
+ return m[String(code||'').toUpperCase()]||String(code||'Masalah data').replaceAll('_',' ');
+}
+function waProblemDetailsHtml_(details,truncated,total){
+ const arr=Array.isArray(details)?details:[];
+ const totalCount=Number(total||arr.length||0);
+ if(!arr.length)return '<div class="wa-sync-detail-card"><div class="wa-sync-detail-head"><div><strong>Rincian teknis belum tersedia</strong><small>Sinkronkan kembali setelah backend V10.45 aktif. Jika masalah tetap muncul, periksa sheet SISWA dan PRESENSI.</small></div></div></div>';
+ const rows=arr.map((x,i)=>{
+   const place=(x.sheet||'—')+(x.row?` · baris ${x.row}`:'');
+   const person=[x.nisn||'',x.name||'',x.kelas||''].filter(Boolean);
+   const ids=[x.studentId?`ID ${x.studentId}`:'',x.attendanceId?`Presensi ${x.attendanceId}`:''].filter(Boolean).join(' · ');
+   return `<tr><td>${i+1}</td><td><span class="wa-sync-code">${waEsc_(waIssueLabel_(x.code))}</span></td><td><b>${waEsc_(x.sheet||'—')}</b>${x.row?`<div class="wa-sync-row">Baris ${waEsc_(x.row)}</div>`:'<div class="wa-sync-detail-muted">Tidak terkait satu baris tertentu</div>'}</td><td>${person.length?`<b>${waEsc_(x.name||'Nama belum ada')}</b><div class="wa-sync-detail-muted">NISN ${waEsc_(x.nisn||'—')} · ${waEsc_(x.kelas||'Kelas —')}</div>`:'<span class="muted">—</span>'}${ids?`<div class="wa-sync-detail-muted">${waEsc_(ids)}</div>`:''}</td><td>${waEsc_(x.detail||'Periksa data pada baris tersebut.')}</td></tr>`;
+ }).join('');
+ const note=truncated?`Menampilkan ${arr.length} dari ${totalCount} rincian. Perbaiki masalah yang tampil lalu sinkronkan kembali; daftar berikutnya akan diperbarui.`:`${totalCount} rincian masalah terdeteksi. Nomor baris mengacu langsung ke baris Google Sheet.`;
+ return `<div class="wa-sync-detail-card"><div class="wa-sync-detail-head"><div><strong>Rincian data yang harus diperbaiki</strong><small>Gunakan kolom Sheet/Baris untuk menemukan data yang bermasalah tanpa menebak-nebak siswa.</small></div><span class="wa-sync-detail-count">${waEsc_(totalCount)} masalah</span></div><div class="wa-sync-detail-table"><table><thead><tr><th>No.</th><th>Jenis masalah</th><th>Sheet / Baris</th><th>Siswa / Identitas</th><th>Rincian</th></tr></thead><tbody>${rows}</tbody></table></div><div class="wa-sync-help">${waEsc_(note)}</div></div>`;
+}
+function waSyncLockHtml_(message){
+ const details=window.__sidetWaSnapshotDetails||[],total=window.__sidetWaSnapshotDetailCount||details.length,truncated=window.__sidetWaSnapshotDetailsTruncated;
+ return '<div class="wa-sync-lock"><b>🔒 Pengiriman WA dinonaktifkan.</b><br>'+waEsc_(message||'Perbaiki data yang bermasalah, lalu tekan Sinkronkan Server. SiDEt tidak akan memakai data lama dari browser.')+'</div>'+waProblemDetailsHtml_(details,truncated,total);
+}
+function waSetSyncIndicator_(kind,title,detail,issues,problemDetails){
+ const el=document.getElementById('waSyncIndicator');if(!el)return;
+ const icon={syncing:'↻',ok:'✓',incomplete:'!',error:'×'}[kind]||'•';
+ const arr=Array.isArray(issues)?issues.filter(Boolean):[];
+ const details=Array.isArray(problemDetails)?problemDetails:[];
+ const detailText=details.length?`<small style="margin-top:6px;font-weight:800">${waEsc_(Number(window.__sidetWaSnapshotDetailCount||details.length))} rincian masalah tersedia di bawah.</small>`:'';
+ el.className='wa-sync-indicator '+kind;
+ el.innerHTML='<div class="wa-sync-icon">'+waEsc_(icon)+'</div><div><strong>'+waEsc_(title||'Status sinkronisasi')+'</strong><small>'+waEsc_(detail||'')+'</small>'+(arr.length?'<ul class="wa-sync-issues">'+arr.map(x=>'<li>'+waEsc_(x)+'</li>').join('')+'</ul>':'')+detailText+'</div>';
+}
+function waDescribeSnapshot_(){
+ const cnt=window.__sidetWaSnapshotCounts||{},clock=window.__sidetWaServerClock||'—',date=window.__sidetWaServerDate||'—';
+ const historical=!!window.__sidetWaHistorical;
+ return 'Tanggal dipilih '+date+(historical?' (historis)':' (hari ini)')+' · waktu server '+clock+' · '+Number(cnt.users||0)+' siswa aktif · '+Number(cnt.attendance||0)+' catatan presensi · '+Number(cnt.leave||0)+' izin/sakit.';
+}
 function waMins_(v){const p=String(v||'').slice(0,5).split(':').map(Number);return p.length===2&&Number.isFinite(p[0])&&Number.isFinite(p[1])?p[0]*60+p[1]:null}
 function waPhone_(v){let x=String(v||'').replace(/\D/g,'');if(x.startsWith('0'))x='62'+x.slice(1);else if(x.startsWith('8'))x='62'+x;return x}
 function waStudentPhone_(u){return waPhone_(u.waOrtu||u.noWaOrtu||u.whatsappOrtu||u.whatsapp||u.wa||'')}
@@ -2445,12 +2588,15 @@ function waLocalSave_(u,type,date,status,hasil){const prev=waLocalGet_(u,type,da
 function waIsBlockingStatus_(s){return ['DIBUKA','DIKONFIRMASI','TERKIRIM','SENT','DELIVERED','READ'].includes(String(s||'').toUpperCase())}
 function waAttendanceFor_(u,date){const id=waNisn_(u);return (state.data.attendance||[]).filter(x=>String(x.tanggal||String(x.timestamp||'').slice(0,10))===date&&String(x.nisn||x.nip||x.userId||x.id||'')===id)}
 function waLeaveFor_(u,date){const id=waNisn_(u);return (state.data.leave||[]).find(x=>String(x.nisn||x.nip||x.userId||'')===id&&String(x.status||'').toUpperCase()!=='DITOLAK'&&(!x.tanggalMulai||x.tanggalMulai<=date)&&(!x.tanggalSelesai||x.tanggalSelesai>=date))}
-function waStatusFor_(u,date=waToday_(),now=waNowTime_()){
+function waStatusFor_(u,date=waToday_(),now=(window.__sidetWaEvaluationClock||waNowTime_())){
+ if(window.__sidetWaSchoolDay===false)return null;
  const rows=waAttendanceFor_(u,date),leave=waLeaveFor_(u,date);if(leave){const z=String(leave.type||leave.jenis||'IZIN').toUpperCase();return z.includes('SAKIT')?'SAKIT':'IZIN'}
  const masuk=rows.filter(x=>String(x.type||x.jenis||'').toUpperCase()==='MASUK').sort((a,b)=>String(a.jam||a.timestamp||'').localeCompare(String(b.jam||b.timestamp||'')))[0];
  const pulang=rows.filter(x=>String(x.type||x.jenis||'').toUpperCase()==='PULANG').sort((a,b)=>String(a.jam||a.timestamp||'').localeCompare(String(b.jam||b.timestamp||''))).slice(-1)[0];
  const final=String(u.statusFinal||u.statusKehadiran||'').toUpperCase();if(['ALPA','BOLOS'].includes(final))return final;
- if(masuk){const jm=String(masuk.jam||'').slice(0,5);if(!pulang&&waMins_(now)>=waMins_(SIDET_WA_CFG.cekBelumPulang))return 'BELUM_PULANG';if(waMins_(jm)>waMins_(SIDET_WA_CFG.jamMasuk))return 'TERLAMBAT';return null}
+ const historical=!!window.__sidetWaHistorical;
+ if(masuk){const jm=String(masuk.jam||'').slice(0,5);if(!pulang&&(historical||waMins_(now)>=waMins_(SIDET_WA_CFG.cekBelumPulang)))return 'BELUM_PULANG';if(waMins_(jm)>waMins_(SIDET_WA_CFG.jamMasuk))return 'TERLAMBAT';return null}
+ if(historical)return 'ALPA';
  if(waMins_(now)>=waMins_(SIDET_WA_CFG.cekBelumMasuk))return 'BELUM_MASUK';return null
 }
 function waMessage_(u,type,date=waToday_()){
@@ -2463,39 +2609,125 @@ async function waServerCheck_(u,type,date){
  if(!apiReady()){const x=waLocalGet_(u,type,date);return {ok:true,exists:!!x,blocking:!!x&&waIsBlockingStatus_(x.status),data:x,local:true}}
  try{const r=await api('waLogCheck',{tanggal:date,nisn:waNisn_(u),jenis:type});return {...r,blocking:!!r.exists&&waIsBlockingStatus_(r.data?.status)}}catch(e){const x=waLocalGet_(u,type,date);return {ok:true,exists:!!x,blocking:!!x&&waIsBlockingStatus_(x.status),data:x,local:true,warning:e.message}}
 }
+let SIDET_WA_SENDER={number:'',name:'',configured:false};
+function waDeviceLabel_(){
+ const ua=String(navigator.userAgent||''),platform=String(navigator.userAgentData?.platform||navigator.platform||'');
+ let os=/Android/i.test(ua)?'Android':/iPhone|iPad|iPod/i.test(ua)?'iOS/iPadOS':/Windows/i.test(ua)?'Windows':/Macintosh|Mac OS X/i.test(ua)?'macOS':platform||'Perangkat';
+ let browser=/Edg\//.test(ua)?'Microsoft Edge':/Chrome\//.test(ua)?'Chrome':/Firefox\//.test(ua)?'Firefox':/Safari\//.test(ua)?'Safari':'Browser';
+ return (os+' · '+browser).slice(0,180);
+}
+function waSenderReady_(){return !!(SIDET_WA_SENDER&&SIDET_WA_SENDER.configured&&SIDET_WA_SENDER.number&&SIDET_WA_SENDER.name)}
+async function waLoadSenderConfig_(){
+ try{const r=await api('waSenderConfigRead',{});SIDET_WA_SENDER={number:String(r?.data?.number||''),name:String(r?.data?.name||''),configured:!!r?.data?.configured};return SIDET_WA_SENDER}
+ catch(e){SIDET_WA_SENDER={number:'',name:'',configured:false,error:e?.message||String(e)};return SIDET_WA_SENDER}
+}
+function waRenderSenderPanel_(){
+ const el=$('waSenderPanel');if(!el)return;const s=SIDET_WA_SENDER||{};
+ el.innerHTML=`<div class="wa-sender-panel ${waSenderReady_()?'ready':'missing'}"><div class="wa-sender-head"><div><strong>${waSenderReady_()?'✓ Pengirim WA terdaftar':'⚠ Pengirim WA belum lengkap'}</strong><small>${waSenderReady_()?'Setiap LOG_WA akan memakai identitas pengirim server ini.':'Isi nama dan nomor WA yang benar-benar digunakan Admin/WhatsApp Business pada perangkat pengirim.'}</small></div><span class="badge ${waSenderReady_()?'ok':'warn'}">${waSenderReady_()?'AKTIF':'WAJIB DIISI'}</span></div><div class="grid two"><div class="field"><label>Nama Pengirim</label><input id="waSenderName" maxlength="120" value="${waEsc_(s.name||state?.user?.name||'')}" placeholder="Contoh: SiDEt SMAN 2 Nunukan Selatan"></div><div class="field"><label>Nomor WA Pengirim</label><input id="waSenderNumber" inputmode="tel" value="${waEsc_(s.number||'')}" placeholder="08xxxxxxxxxx atau 628xxxxxxxxxx"></div></div><div class="actions"><button class="btn primary" onclick="waSaveSenderConfig_()">Simpan Pengirim</button><span class="muted">Perangkat saat ini: ${waEsc_(waDeviceLabel_())}</span></div>${s.error?`<div class="alert bad">${waEsc_(s.error)}</div>`:''}</div>`;
+}
+async function waSaveSenderConfig_(){
+ const name=String($('waSenderName')?.value||'').trim(),number=String($('waSenderNumber')?.value||'').trim();
+ if(!name||!number)return toast('Nama dan nomor WA pengirim wajib diisi.');
+ try{const r=await api('waSenderConfigSave',{namaPengirim:name,nomorPengirim:number});SIDET_WA_SENDER={number:String(r?.data?.number||''),name:String(r?.data?.name||''),configured:true};waRenderSenderPanel_();toast('Identitas pengirim WA tersimpan di server.',true);waApplyFilters_?.()}catch(e){toast(e?.message||String(e))}
+}
+
 async function waServerSave_(u,type,status,hasil,date=waToday_()){
  const local=waLocalSave_(u,type,date,status,hasil);if(!apiReady())return {ok:true,local:true,data:local};
- try{return await api('waLogSave',{tanggal:date,nisn:waNisn_(u),name:u.name||u.nama||'',kelas:u.kelas||'',jenis:type,nomorWa:waStudentPhone_(u),status,hasil,waktuProses:new Date().toISOString(),device:navigator.userAgent})}catch(e){console.warn('LOG_WA server gagal:',e);return {ok:false,local:true,message:e.message}}
+ try{return await api('waLogSave',{tanggal:date,nisn:waNisn_(u),name:u.name||u.nama||'',kelas:u.kelas||'',jenis:type,nomorWa:waStudentPhone_(u),status,hasil,waktuProses:new Date().toISOString(),device:String(navigator.userAgent||''),perangkat:waDeviceLabel_()})}catch(e){console.warn('LOG_WA server gagal:',e);return {ok:false,local:true,message:e.message}}
 }
 async function waServerList_(date){if(!apiReady())return [];try{const r=await api('waLogList',{tanggal:date});return r.data||[]}catch(e){return []}}
-async function waCandidates_(date=waToday_()){
- const out=[];for(const u of(state.data.users||[])){if(u.active===false)continue;const type=waStatusFor_(u,date);if(!type)continue;const phone=waStudentPhone_(u),check=await waServerCheck_(u,type,date);out.push({u,type,phone,duplicate:!!check.blocking,previous:check.data||null,failed:!!check.exists&&!check.blocking})}return out
+async function waCandidates_(){
+ const snap=await waSyncTodayFromServer_(),date=snap.date,integrity=snap.integrity||window.__sidetWaSnapshotIntegrity||{};
+ if(integrity.complete!==true){
+   const err=Error('Data presensi tanggal terpilih belum lengkap. Pengiriman WA dikunci sampai sinkronisasi dinyatakan lengkap.');
+   err.code='WA_SNAPSHOT_INCOMPLETE';err.issues=integrity.issues||[];err.details=integrity.details||[];err.snapshot=snap;throw err;
+ }
+ const out=[];
+ for(const u of(state.data.users||[])){if(u.active===false)continue;const type=waStatusFor_(u,date);if(!type)continue;const phone=waStudentPhone_(u),check=await waServerCheck_(u,type,date),prev=check.data||null,delivery=String(prev?.statusPengiriman||'').toUpperCase();out.push({u,type,phone,duplicate:!!check.blocking,previous:prev,deliveryStatus:delivery,waiting:delivery==='MENUNGGU',sent:delivery==='TERKIRIM',failed:delivery==='GAGAL'})}
+ return out
 }
 function waTypeClass_(t){return t==='TERLAMBAT'?'terlambat':t==='BELUM_MASUK'?'belum':t==='IZIN'?'izin':t==='SAKIT'?'sakit':t==='BELUM_PULANG'?'pulang':'belum'}
-function waFilterList_(list){const q=String($('waSearch')?.value||'').toLowerCase(),kelas=$('waClass')?.value||'',jenis=$('waType')?.value||'',log=$('waLogFilter')?.value||'';return list.filter(x=>(!q||`${waNisn_(x.u)} ${x.u.name||''}`.toLowerCase().includes(q))&&(!kelas||String(x.u.kelas||'')===kelas)&&(!jenis||x.type===jenis)&&(!log||(log==='READY'&&!x.duplicate&&x.phone)||(log==='DONE'&&x.duplicate)||(log==='FAILED'&&x.failed)||(log==='NOPHONE'&&!x.phone)))}
-async function renderWaAdmin_(){
- const c=$('adminContent');c.innerHTML=`<div class="card"><div class="hero"><div><h3>📲 Pusat Notifikasi WA Orang Tua</h3><div class="muted">Deteksi presensi · antrean aman · retry gagal · pencegahan duplikat · LOG_WA lintas perangkat</div></div><button class="btn" onclick="renderWaAdmin_()">↻ Sinkronkan</button></div><div class="alert">Mode gratis/semi otomatis: SiDEt membuka WhatsApp dengan pesan siap dikirim. Untuk akurasi audit, setelah Anda benar-benar menekan <b>Kirim</b> di WhatsApp, gunakan tombol <b>Konfirmasi Terkirim</b> pada log.</div><div id="waLoading" class="alert warn">Menyinkronkan presensi dan LOG_WA…</div><div id="waArea"></div></div>`;
- const list=await waCandidates_();window.__sidetWaList=list;const classes=[...new Set(list.map(x=>x.u.kelas).filter(Boolean))].sort();
- $('waArea').innerHTML=`<div class="wa-filter-grid"><div class="field"><label>Cari Nama / NISN</label><input id="waSearch" placeholder="Cari siswa…" oninput="waApplyFilters_()"></div><div class="field"><label>Kelas</label><select id="waClass" onchange="waApplyFilters_()"><option value="">Semua Kelas</option>${classes.map(x=>`<option>${waEsc_(x)}</option>`).join('')}</select></div><div class="field"><label>Jenis Notifikasi</label><select id="waType" onchange="waApplyFilters_()"><option value="">Semua Status</option>${['TERLAMBAT','BELUM_MASUK','IZIN','SAKIT','ALPA','BOLOS','BELUM_PULANG'].map(x=>`<option>${x}</option>`).join('')}</select></div><div class="field"><label>Status WA</label><select id="waLogFilter" onchange="waApplyFilters_()"><option value="">Semua</option><option value="READY">Siap</option><option value="DONE">Sudah Diproses</option><option value="FAILED">Gagal/Retry</option><option value="NOPHONE">No. WA Kosong</option></select></div></div><div id="waKpi"></div><div class="wa-toolbar"><button class="btn primary" onclick="waPrepareQueue_()">📲 Siapkan Antrean Terfilter</button><button class="btn ok" id="waNextBtn" onclick="waSendNext_()" disabled>▶ Kirim Berikutnya</button><button class="btn" onclick="waOpenLog_()">🧾 Lihat LOG_WA</button><button class="btn danger" onclick="waResetQueue_()">⏹ Hentikan Antrean</button></div><div class="wa-progress"><div id="waProgressBar"></div></div><div id="waProgressText" class="muted" style="margin:8px 0">Antrean belum dimulai.</div><div id="waTable"></div><div id="waLogBox" class="wa-logbox" style="margin-top:12px"><div class="muted">Aktivitas proses akan tampil di sini.</div></div>`;
- $('waLoading').classList.add('hidden');waApplyFilters_()
+function waFilterList_(list){const q=String($('waSearch')?.value||'').toLowerCase(),kelas=$('waClass')?.value||'',jenis=$('waType')?.value||'',log=$('waLogFilter')?.value||'';return list.filter(x=>(!q||`${waNisn_(x.u)} ${x.u.name||''}`.toLowerCase().includes(q))&&(!kelas||String(x.u.kelas||'')===kelas)&&(!jenis||x.type===jenis)&&(!log||(log==='READY'&&!x.previous&&x.phone)||(log==='WAITING'&&x.waiting)||(log==='DONE'&&x.sent)||(log==='FAILED'&&x.failed)||(log==='NOPHONE'&&!x.phone)))}
+async function renderWaAdminLegacyV1043_(){
+ const c=$('adminContent');
+ c.innerHTML=`<div class="card"><div class="hero"><div><h3>📲 Pusat Notifikasi WA Orang Tua</h3><div class="muted">Server-first · pilih tanggal hari ini atau tanggal yang telah lewat untuk memproses notifikasi WA</div></div><button class="btn" onclick="renderWaAdmin_()">↻ Sinkronkan Server</button></div><div class="wa-date-filter-v1043"><div class="field"><label>Tanggal Notifikasi WA</label><input id="waDateFilter" type="date" value="${waEsc_(waSelectedDate_())}" ${window.__sidetWaServerToday?`max="${waEsc_(window.__sidetWaServerToday)}"`:''}></div><button class="btn primary" onclick="waApplyDateFilter_()">Tampilkan Tanggal</button><button class="btn" onclick="waUseServerToday_()">Hari Ini</button><div id="waDateNote" class="wa-date-note">Kosong berarti tanggal hari ini menurut server. Tanggal masa depan tidak dapat diproses.</div></div><div id="waSenderPanel"><div class="alert warn">Memuat identitas pengirim WA dari server…</div></div><div id="waSyncIndicator" class="wa-sync-indicator syncing"><div class="wa-sync-icon">↻</div><div><strong>Menyinkronkan presensi tanggal terpilih…</strong><small>SiDEt sedang membaca langsung Google Sheets/server. Pengiriman WA belum dapat dilakukan.</small></div></div><div class="alert">Mode gratis/semi otomatis: SiDEt membuka WhatsApp dengan pesan siap dikirim. Setelah Anda benar-benar menekan <b>Kirim</b> di WhatsApp, gunakan tombol <b>Konfirmasi Terkirim</b> pada log.</div><div id="waLoading" class="alert warn">Memvalidasi kelengkapan data tanggal terpilih dari server…</div><div id="waArea"></div></div>`;
+ window.__sidetWaList=[];SIDET_WA_QUEUE=[];SIDET_WA_INDEX=0;
+ await waLoadSenderConfig_();waRenderSenderPanel_();
+ let list;
+ try{
+   list=await waCandidates_();
+ }catch(e){
+   const integrity=window.__sidetWaSnapshotIntegrity||{},issues=e?.issues||integrity.issues||[],details=e?.details||integrity.details||window.__sidetWaSnapshotDetails||[];
+   if(e?.code==='WA_SNAPSHOT_INCOMPLETE'||integrity.complete===false){
+     waSetSyncIndicator_('incomplete','DATA TANGGAL TERPILIH BELUM LENGKAP',waDescribeSnapshot_()+' Antrean dan tombol kirim dikunci untuk mencegah notifikasi yang salah.',issues,details);
+     $('waLoading').className='alert warn';$('waLoading').textContent='Sinkronisasi berhasil tersambung ke server, tetapi ditemukan data yang perlu diperbaiki. Lihat rincian sheet, baris, dan siswa di bawah.';
+     $('waArea').innerHTML=waSyncLockHtml_('Perbaiki baris/siswa yang tercantum di bawah, lalu tekan Sinkronkan Server. SiDEt tidak akan memakai data lama dari browser.');
+   }else{
+     waSetSyncIndicator_('error','SINKRONISASI PRESENSI GAGAL','SiDEt tidak dapat memastikan data tanggal terpilih. Tidak ada penerima WA yang akan ditampilkan.',[e?.message||String(e)],[]);
+     $('waLoading').className='alert bad';$('waLoading').textContent='Pengiriman WA DIKUNCI sampai server berhasil disinkronkan.';
+     $('waArea').innerHTML=waSyncLockHtml_('Server gagal memberikan snapshot valid. Periksa koneksi/deployment lalu sinkronkan kembali.');
+   }
+   return;
+ }
+ window.__sidetWaList=list;
+ const classes=[...new Set(list.map(x=>x.u.kelas).filter(Boolean))].sort(),cnt=window.__sidetWaSnapshotCounts||{};
+ waSetSyncIndicator_('ok','SINKRON SERVER BERHASIL · DATA LENGKAP',waDescribeSnapshot_()+' Data ini menjadi satu-satunya dasar penentuan penerima WA.',[]);
+ $('waLoading').className='alert ok';$('waLoading').innerHTML=`Siap digunakan untuk <b>${waEsc_(window.__sidetWaServerDate||'')}</b>${window.__sidetWaHistorical?'<span class="wa-date-history-badge">Tanggal historis</span>':''}. ${Number(cnt.arrival||0)} presensi masuk · ${Number(cnt.departure||0)} presensi pulang terdeteksi.`;
+ $('waArea').innerHTML=`<div class="wa-filter-grid"><div class="field"><label>Cari Nama / NISN</label><input id="waSearch" placeholder="Cari siswa…" oninput="waApplyFilters_()"></div><div class="field"><label>Kelas</label><select id="waClass" onchange="waApplyFilters_()"><option value="">Semua Kelas</option>${classes.map(x=>`<option>${waEsc_(x)}</option>`).join('')}</select></div><div class="field"><label>Jenis Notifikasi</label><select id="waType" onchange="waApplyFilters_()"><option value="">Semua Status</option>${['TERLAMBAT','BELUM_MASUK','IZIN','SAKIT','ALPA','BOLOS','BELUM_PULANG'].map(x=>`<option>${x}</option>`).join('')}</select></div><div class="field"><label>Status WA</label><select id="waLogFilter" onchange="waApplyFilters_()"><option value="">Semua</option><option value="READY">Siap</option><option value="WAITING">Menunggu</option><option value="DONE">Terkirim</option><option value="FAILED">Gagal/Retry</option><option value="NOPHONE">No. WA Kosong</option></select></div></div><div id="waKpi"></div><div class="wa-toolbar"><button class="btn primary" id="waPrepareBtn" onclick="waPrepareQueue_()">📲 Siapkan Antrean Terfilter</button><button class="btn ok" id="waNextBtn" onclick="waSendNext_()" disabled>▶ Kirim Berikutnya</button><button class="btn" onclick="waOpenLog_()">🧾 Lihat LOG_WA</button><button class="btn danger" onclick="waResetQueue_()">⏹ Hentikan Antrean</button></div><div class="wa-progress"><div id="waProgressBar"></div></div><div id="waProgressText" class="muted" style="margin:8px 0">Antrean belum dimulai.</div><div id="waTable"></div><div id="waLogBox" class="wa-logbox" style="margin-top:12px"><div class="muted">Aktivitas proses akan tampil di sini.</div></div>`;
+ waApplyFilters_();
 }
-function waApplyFilters_(){const list=waFilterList_(window.__sidetWaList||[]);SIDET_WA_FILTERED=list;const ready=list.filter(x=>x.phone&&!x.duplicate),done=list.filter(x=>x.duplicate),failed=list.filter(x=>x.failed),noPhone=list.filter(x=>!x.phone);$('waKpi').innerHTML=`<div class="wa-kpi"><div class="card"><div class="muted">Perlu WA</div><b>${list.length}</b></div><div class="card"><div class="muted">Siap</div><b>${ready.length}</b></div><div class="card"><div class="muted">Sudah Diproses</div><b>${done.length}</b></div><div class="card"><div class="muted">Bisa Retry</div><b>${failed.length}</b></div><div class="card"><div class="muted">WA Kosong</div><b>${noPhone.length}</b></div></div>`;$('waTable').innerHTML=`<div class="tablewrap"><table><thead><tr><th>NISN</th><th>Nama</th><th>Kelas</th><th>Kejadian</th><th>No. WA</th><th>Status LOG</th><th>Aksi</th></tr></thead><tbody>${list.map(x=>{const i=(window.__sidetWaList||[]).indexOf(x);const status=x.duplicate?'SUDAH DIPROSES':x.failed?'GAGAL / RETRY':x.phone?'SIAP':'WA KOSONG';return `<tr class="${x.failed?'wa-row-failed':x.duplicate?'wa-row-done':''}"><td>${waEsc_(waNisn_(x.u))}</td><td><b>${waEsc_(x.u.name||'-')}</b></td><td>${waEsc_(x.u.kelas||'-')}</td><td><span class="wa-chip ${waTypeClass_(x.type)}">${waEsc_(x.type)}</span></td><td>${x.phone?waEsc_(x.phone):'<span class="badge bad">Kosong</span>'}</td><td><span class="wa-status ${x.duplicate?'duplicate':x.failed?'failed':'ready'}">${status}</span>${x.previous?.waktuProses?`<div class="wa-mini muted">${waEsc_(x.previous.waktuProses)}</div>`:''}</td><td><div class="wa-actions-inline"><button class="btn" ${(!x.phone||x.duplicate)?'disabled':''} onclick="waSendOneByIndex_(${i})">${x.failed?'↻ Retry':'Kirim WA'}</button>${x.duplicate?`<button class="btn ok" onclick="waConfirmByIndex_(${i})">✓ Konfirmasi</button>`:''}</div></td></tr>`}).join('')||'<tr><td colspan="7">Tidak ada data sesuai filter.</td></tr>'}</tbody></table></div>`}
+function waApplyFilters_(){
+ const list=waFilterList_(window.__sidetWaList||[]),senderOk=waSenderReady_();SIDET_WA_FILTERED=list;
+ const ready=list.filter(x=>x.phone&&!x.previous),waiting=list.filter(x=>x.waiting),sent=list.filter(x=>x.sent),failed=list.filter(x=>x.failed),noPhone=list.filter(x=>!x.phone);
+ $('waKpi').innerHTML=`${!senderOk?'<div class="alert warn"><b>Pengiriman dikunci:</b> simpan nama dan nomor WA pengirim terlebih dahulu.</div>':''}<div class="wa-kpi"><div class="card"><div class="muted">Perlu WA</div><b>${list.length}</b></div><div class="card"><div class="muted">Siap</div><b>${ready.length}</b></div><div class="card"><div class="muted">Menunggu</div><b>${waiting.length}</b></div><div class="card"><div class="muted">Terkirim</div><b>${sent.length}</b></div><div class="card"><div class="muted">Gagal</div><b>${failed.length}</b></div><div class="card"><div class="muted">WA Kosong</div><b>${noPhone.length}</b></div></div>`;
+ const prep=$('waPrepareBtn');if(prep)prep.disabled=!senderOk;
+ $('waTable').innerHTML=`<div class="tablewrap"><table><thead><tr><th>NISN</th><th>Nama</th><th>Kelas</th><th>Kejadian</th><th>No. WA</th><th>Status Pengiriman</th><th>Perubahan Status</th><th>Aksi</th></tr></thead><tbody>${list.map(x=>{const i=(window.__sidetWaList||[]).indexOf(x);const status=x.sent?'TERKIRIM':x.failed?'GAGAL':x.waiting?'MENUNGGU':x.phone?'SIAP':'WA KOSONG';const ts=x.previous?.waktuPerubahanStatus||x.previous?.waktuKirim||x.previous?.waktuProses||'';return `<tr class="${x.failed?'wa-row-failed':x.sent?'wa-row-done':''}"><td>${waEsc_(waNisn_(x.u))}</td><td><b>${waEsc_(x.u.name||'-')}</b></td><td>${waEsc_(x.u.kelas||'-')}</td><td><span class="wa-chip ${waTypeClass_(x.type)}">${waEsc_(x.type)}</span></td><td>${x.phone?waEsc_(x.phone):'<span class="badge bad">Kosong</span>'}</td><td><span class="wa-status ${x.sent?'duplicate':x.failed?'failed':x.waiting?'waiting':'ready'}">${status}</span></td><td><span class="wa-mini muted">${waEsc_(ts||'-')}</span></td><td><div class="wa-actions-inline"><button class="btn" ${(!senderOk||!x.phone||x.duplicate)?'disabled':''} onclick="waSendOneByIndex_(${i})">${x.failed?'↻ Retry':'Kirim WA'}</button>${x.waiting&&x.duplicate?`<button class="btn ok" onclick="waConfirmByIndex_(${i})">✓ Konfirmasi Terkirim</button>`:''}</div></td></tr>`}).join('')||'<tr><td colspan="8">Tidak ada data sesuai filter.</td></tr>'}</tbody></table></div>`;
+}
 function waLogUI_(text,ok=true){const b=$('waLogBox');if(!b)return;b.insertAdjacentHTML('afterbegin',`<div class="wa-logitem">${ok?'✅':'❌'} ${waEsc_(text)}</div>`)}
-async function waSendOne_(item){const {u,type,phone}=item,date=waToday_();if(!phone){waLogUI_(`${u.name}: nomor WA belum tersedia.`,false);await waServerSave_(u,type,'GAGAL','Nomor WA orang tua belum tersedia.',date);return false}const check=await waServerCheck_(u,type,date);if(check.blocking){waLogUI_(`${u.name}: dilewati, ${type} sudah diproses.`,false);return false}const w=window.open(`https://wa.me/${phone}?text=${encodeURIComponent(waMessage_(u,type,date))}`,'_blank');if(!w){await waServerSave_(u,type,'GAGAL','Popup WhatsApp diblokir browser.',date);waLogUI_(`${u.name}: popup diblokir.`,false);return false}await waServerSave_(u,type,'DIBUKA','WhatsApp dibuka; pesan siap dikirim.',date);waLogUI_(`${u.name} · ${type} · WhatsApp dibuka.`);return true}
+async function waSendOne_(item){
+ if(!waSenderReady_()){toast('Atur nama dan nomor WA pengirim terlebih dahulu.');waRenderSenderPanel_();return false}
+ const {u,type,phone}=item,date=waToday_();
+ if(!phone){waLogUI_(`${u.name}: nomor WA belum tersedia.`,false);await waServerSave_(u,type,'GAGAL','Nomor WA orang tua belum tersedia.',date);return false}
+ const check=await waServerCheck_(u,type,date);if(check.blocking){waLogUI_(`${u.name}: dilewati, ${type} sudah diproses.`,false);return false}
+ // Status MENUNGGU dibuat sebelum WhatsApp dibuka. Jika proses gagal, baris yang sama berubah menjadi GAGAL.
+ const waitingLog=await waServerSave_(u,type,'MENUNGGU','Menunggu WhatsApp dibuka dan pesan dikirim oleh Admin.',date);
+ if(waitingLog?.ok===false){waLogUI_(`${u.name}: LOG_WA gagal mencatat status MENUNGGU. Pengiriman dibatalkan demi keamanan audit.`,false);toast('LOG_WA gagal disimpan. Pesan tidak dibuka.');return false}
+ const w=window.open(`https://wa.me/${phone}?text=${encodeURIComponent(waMessage_(u,type,date))}`,'_blank');
+ if(!w){await waServerSave_(u,type,'GAGAL','Popup WhatsApp diblokir browser.',date);waLogUI_(`${u.name}: popup diblokir.`,false);return false}
+ await waServerSave_(u,type,'DIBUKA','WhatsApp dibuka; status tetap MENUNGGU sampai Admin mengonfirmasi pesan benar-benar terkirim.',date);
+ waLogUI_(`${u.name} · ${type} · WhatsApp dibuka · MENUNGGU konfirmasi.`);return true
+}
 async function waSendOneByIndex_(i){const item=(window.__sidetWaList||[])[i];if(!item)return;await waSendOne_(item);await renderWaAdmin_()}
 async function waConfirmByIndex_(i){const item=(window.__sidetWaList||[])[i];if(!item)return;await waServerSave_(item.u,item.type,'DIKONFIRMASI','Admin mengonfirmasi pesan telah dikirim melalui WhatsApp.',waToday_());toast('Status WA dikonfirmasi terkirim',true);await renderWaAdmin_()}
-async function waPrepareQueue_(){const base=SIDET_WA_FILTERED.length||((window.__sidetWaList||[]).length)?SIDET_WA_FILTERED:(window.__sidetWaList||[]);SIDET_WA_QUEUE=base.filter(x=>x.phone&&!x.duplicate);SIDET_WA_INDEX=0;const b=$('waNextBtn');if(b)b.disabled=!SIDET_WA_QUEUE.length;waUpdateProgress_();waLogUI_(`Antrean siap: ${SIDET_WA_QUEUE.length} laporan. Proses satu per satu agar browser tidak memblokir popup.`)}
+async function waPrepareQueue_(){
+ if(!waSenderReady_()){toast('Simpan nama dan nomor WA pengirim sebelum membuat antrean.');waRenderSenderPanel_();return}
+ const b=$('waNextBtn'),prep=$('waPrepareBtn');if(b)b.disabled=true;if(prep)prep.disabled=true;
+ waSetSyncIndicator_('syncing','MEMERIKSA ULANG DATA SERVER','Antrean belum dibuat. SiDEt membaca ulang presensi tanggal terpilih agar tidak memakai data yang sudah berubah.',[]);
+ waLogUI_('Menyinkronkan ulang presensi tanggal terpilih dari server sebelum membuat antrean…');
+ let fresh;
+ try{fresh=await waCandidates_()}catch(e){
+   SIDET_WA_QUEUE=[];SIDET_WA_INDEX=0;waUpdateProgress_();
+   const integrity=window.__sidetWaSnapshotIntegrity||{},issues=e?.issues||integrity.issues||[],details=e?.details||integrity.details||window.__sidetWaSnapshotDetails||[];
+   window.__sidetWaList=[];SIDET_WA_FILTERED=[];
+   if(e?.code==='WA_SNAPSHOT_INCOMPLETE'||integrity.complete===false){
+     waSetSyncIndicator_('incomplete','ANTREAN DIBATALKAN · DATA BELUM LENGKAP',waDescribeSnapshot_(),issues,details);
+     const area=$('waArea');if(area)area.innerHTML=waSyncLockHtml_('Data berubah atau ditemukan masalah saat pemeriksaan ulang. Perbaiki baris/siswa di bawah lalu sinkronkan kembali.');
+   }else{
+     waSetSyncIndicator_('error','ANTREAN DIBATALKAN · SINKRONISASI GAGAL','Tidak ada pesan WA yang diproses.',[e?.message||String(e)],[]);
+     const area=$('waArea');if(area)area.innerHTML=waSyncLockHtml_('Pemeriksaan ulang ke server gagal. Antrean lama dibuang demi keamanan.');
+   }
+   waLogUI_('Antrean dibatalkan: '+(e?.message||e),false);if(prep)prep.disabled=false;return
+ }
+ window.__sidetWaList=fresh;waSetSyncIndicator_('ok','DATA TERBARU SIAP UNTUK ANTREAN',waDescribeSnapshot_()+' Antrean dibuat dari snapshot ini.',[]);
+ waApplyFilters_();
+ const base=SIDET_WA_FILTERED.length||fresh.length?SIDET_WA_FILTERED:fresh;SIDET_WA_QUEUE=base.filter(x=>x.phone&&!x.duplicate);SIDET_WA_INDEX=0;if(b)b.disabled=!SIDET_WA_QUEUE.length;if(prep)prep.disabled=false;waUpdateProgress_();waLogUI_(`Antrean server terbaru siap: ${SIDET_WA_QUEUE.length} laporan. Proses satu per satu agar browser tidak memblokir popup.`)
+}
 async function waSendNext_(){if(SIDET_WA_INDEX>=SIDET_WA_QUEUE.length){waLogUI_('Antrean selesai.');const b=$('waNextBtn');if(b)b.disabled=true;return}const item=SIDET_WA_QUEUE[SIDET_WA_INDEX++],b=$('waNextBtn');if(b)b.disabled=true;await waSendOne_(item);waUpdateProgress_();if(b)b.disabled=SIDET_WA_INDEX>=SIDET_WA_QUEUE.length;if(SIDET_WA_INDEX>=SIDET_WA_QUEUE.length)waLogUI_('Semua antrean telah diproses.')}
 function waUpdateProgress_(){const total=SIDET_WA_QUEUE.length,p=total?Math.round(SIDET_WA_INDEX/total*100):0;if($('waProgressBar'))$('waProgressBar').style.width=p+'%';if($('waProgressText'))$('waProgressText').textContent=`${p}% — ${SIDET_WA_INDEX} dari ${total} diproses`}
 function waResetQueue_(){SIDET_WA_QUEUE=[];SIDET_WA_INDEX=0;waUpdateProgress_();const b=$('waNextBtn');if(b)b.disabled=true;waLogUI_('Antrean dihentikan.',false)}
-async function waOpenLog_(){const date=waToday_(),rows=await waServerList_(date);$('modal').classList.remove('hidden');$('modalBox').innerHTML=`<div class="hero"><div><h3>🧾 LOG_WA · ${date}</h3><div class="muted">Riwayat proses notifikasi hari ini</div></div><button class="btn" onclick="closeModal()">Tutup</button></div><div class="tablewrap" style="margin-top:12px"><table><thead><tr><th>Waktu</th><th>NISN</th><th>Nama</th><th>Jenis</th><th>Status</th><th>Hasil</th></tr></thead><tbody>${rows.map(r=>`<tr><td>${waEsc_(r.waktuProses||r.timestamp||'-')}</td><td>${waEsc_(r.nisn||'-')}</td><td>${waEsc_(r.nama||'-')}</td><td>${waEsc_(r.jenis||'-')}</td><td>${waEsc_(r.status||'-')}</td><td>${waEsc_(r.hasil||'-')}</td></tr>`).join('')||'<tr><td colspan="6">Belum ada log server atau backend LOG_WA belum aktif.</td></tr>'}</tbody></table></div>`}
-
-function exportExcel(){
- const wb=XLSX.utils.book_new(),a=state.data.attendance||[],u=state.data.users||[],l=state.data.leave||[];
- XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(a.map((x,i)=>({No:i+1,Tanggal:x.tanggal||'',Jam:x.jam||'',NISN:x.nip||'',Nama:x.name||'',Jenis:x.type||x.jenis||'',Status:x.status||'',TerlambatMenit:x.terlambatMenit||0,Latitude:x.lat||'',Longitude:x.lng||'',AkurasiGPS:x.accuracy||'',JarakMeter:x.jarak||'',Foto:x.photoUrl||x.photo||''}))),"PRESENSI");
- XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(u.map((x,i)=>({No:i+1,NISN:x.nisn||x.nip||x.id,Nama:x.name,Sekolah:x.sekolah||'',Kelas:x.kelas||'',WhatsAppOrtu:x.waOrtu||x.noWaOrtu||x.whatsappOrtu||x.whatsapp||x.wa||'',Aktif:x.active!==false}))),"SISWA");
- XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(l.map((x,i)=>({No:i+1,NISN:x.nip||'',Nama:x.name||'',Jenis:x.type||'',Mulai:x.tanggalMulai||'',Selesai:x.tanggalSelesai||'',Alasan:x.alasan||'',Status:x.status||''}))),"IZIN");
- XLSX.writeFile(wb,'SiDEt_v2_Laporan_'+new Date().toISOString().slice(0,10)+'.xlsx')
+async function waOpenLog_(){
+ const date=waToday_(),rows=await waServerList_(date);$('modal').classList.remove('hidden');
+ $('modalBox').innerHTML=`<div class="hero"><div><h3>🧾 LOG_WA · ${date}</h3><div class="muted">Status ringkas: MENUNGGU, TERKIRIM, atau GAGAL. Waktu perubahan status dicatat oleh server.</div></div><button class="btn" onclick="closeModal()">Tutup</button></div><div class="tablewrap" style="margin-top:12px;max-width:100%;overflow:auto"><table style="min-width:2150px"><thead><tr><th>Waktu Kirim</th><th>NISN</th><th>Nama</th><th>Kelas</th><th>Jenis</th><th>Status Teknis</th><th>Status Pengiriman</th><th>Menunggu</th><th>Terkirim</th><th>Gagal</th><th>Waktu Perubahan Status</th><th>No. Tujuan</th><th>Nama Pengirim</th><th>No. Pengirim</th><th>Perangkat</th><th>Hasil</th></tr></thead><tbody>${rows.map(r=>`<tr><td>${waEsc_(r.waktuKirim||r.waktuProses||r.timestamp||'-')}</td><td>${waEsc_(r.nisn||'-')}</td><td>${waEsc_(r.nama||'-')}</td><td>${waEsc_(r.kelas||'-')}</td><td>${waEsc_(r.jenis||'-')}</td><td>${waEsc_(r.status||'-')}</td><td><b>${waEsc_(r.statusPengiriman||'-')}</b></td><td>${waEsc_(r.statusMenunggu||'-')}</td><td>${waEsc_(r.statusTerkirim||'-')}</td><td>${waEsc_(r.statusGagal||'-')}</td><td>${waEsc_(r.waktuPerubahanStatus||'-')}</td><td>${waEsc_(r.nomorWa||'-')}</td><td>${waEsc_(r.namaPengirim||'Belum tercatat')}</td><td>${waEsc_(r.nomorPengirim||'Belum tercatat')}</td><td>${waEsc_(r.perangkat||r.device||'-')}</td><td>${waEsc_(r.hasil||'-')}</td></tr>`).join('')||'<tr><td colspan="16">Belum ada log server.</td></tr>'}</tbody></table></div>`
 }
 function exportSummary(){const a=state.data.attendance||[],m={};a.forEach(x=>{const k=x.tanggal||'';m[k]=(m[k]||0)+1});const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(Object.entries(m).map(([Tanggal,Jumlah])=>({Tanggal,Jumlah}))),"RINGKASAN");XLSX.writeFile(wb,'SiDEt_v2_Ringkasan.xlsx')}
 </script>
@@ -4104,7 +4336,7 @@ renderStudentProfile=function(){v85OldRenderProfile_(); const card=document.quer
     if(document.getElementById('sidetVersionBadge'))return;
     const el=document.createElement('div');
     el.id='sidetVersionBadge';
-    el.textContent='SiDEt V10.37 • Frontend/Backend Sinkron';
+    el.textContent='SiDEt V10.45 • Frontend/Backend Sinkron';
     el.style.cssText='position:fixed;right:8px;bottom:6px;z-index:9000;font:500 10px system-ui;color:#64748b;background:rgba(255,255,255,.88);padding:3px 7px;border-radius:999px;pointer-events:none';
     document.body.appendChild(el);
   }
@@ -4130,7 +4362,7 @@ renderStudentProfile=function(){v85OldRenderProfile_(); const card=document.quer
     if(version)version.textContent='v9.8';
 
     const oldBadge=document.getElementById('sidetVersionBadge');
-    if(oldBadge)oldBadge.textContent='SiDEt V10.37 • Frontend/Backend Sinkron';
+    if(oldBadge)oldBadge.textContent='SiDEt V10.45 • Frontend/Backend Sinkron';
   }
 
   let resizeTimer=null;
@@ -4913,7 +5145,7 @@ renderStudentProfile=function(){v85OldRenderProfile_(); const card=document.quer
   // Penanda versi yang mudah dilihat.
   function version_(){
     const badge=document.getElementById('sidetVersionBadge');
-    if(badge)badge.textContent='SiDEt V10.37 • Frontend/Backend Sinkron';
+    if(badge)badge.textContent='SiDEt V10.45 • Frontend/Backend Sinkron';
   }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',version_);
   else version_();
@@ -5026,7 +5258,7 @@ renderStudentProfile=function(){v85OldRenderProfile_(); const card=document.quer
     window.loadData=async function(){const r=await prev.apply(this,arguments);if(String(state.user?.role||'').toLowerCase()==='siswa')setTimeout(render_,0);return r;};
   }
 
-  function version_(){const b=document.getElementById('sidetVersionBadge');if(b)b.textContent='SiDEt V10.37 • Frontend/Backend Sinkron';}
+  function version_(){const b=document.getElementById('sidetVersionBadge');if(b)b.textContent='SiDEt V10.45 • Frontend/Backend Sinkron';}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>{setTimeout(render_,300);version_();});
   else{setTimeout(render_,300);version_();}
 })();
@@ -5243,7 +5475,7 @@ renderStudentProfile=function(){v85OldRenderProfile_(); const card=document.quer
 
   function version_(){
     const b=document.getElementById('sidetVersionBadge');
-    if(b)b.textContent='SiDEt V10.37 • Frontend/Backend Sinkron';
+    if(b)b.textContent='SiDEt V10.45 • Frontend/Backend Sinkron';
   }
 
   if(document.readyState==='loading'){
@@ -5261,7 +5493,7 @@ renderStudentProfile=function(){v85OldRenderProfile_(); const card=document.quer
 (function(){
   function mark_(){
     const badge=document.getElementById('sidetVersionBadge');
-    if(badge)badge.textContent='SiDEt V10.37 • Frontend/Backend Sinkron';
+    if(badge)badge.textContent='SiDEt V10.45 • Frontend/Backend Sinkron';
   }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',mark_);
   else mark_();
@@ -8207,7 +8439,7 @@ body.sidet-student-nav-active #sidetStudentNavV1017{display:grid;grid-template-c
 <script id="sidet-v1017-student-bottom-nav">
 (function(){
   'use strict';
-  const VERSION='10.37';
+  const VERSION='10.45';
   const esc_=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
   const role_=()=>String((typeof state!=='undefined'&&state.user&&state.user.role)||'').toLowerCase();
   const page_=()=>document.getElementById('siswaPage');
@@ -8626,7 +8858,7 @@ body.sidet-student-nav-active #sidetStudentNavV1017{
 <script id="sidet-v1020-camera-nav-runtime">
 (function(){
   'use strict';
-  const VERSION='10.37';
+  const VERSION='10.45';
   const role_=()=>String((typeof state!=='undefined'&&state.user&&state.user.role)||'').toLowerCase();
   const cameraSvg_='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 7h3l1.5-2h5L16 7h3a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2Z"/><circle cx="12" cy="13" r="3.5"/></svg>';
   const masukSvg_='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg>';
@@ -8781,7 +9013,7 @@ body.sidet-student-nav-active #sidetStudentNavV1017{
 <script id="sidet-v1021-student-individual-report-fix">
 (function(){
   'use strict';
-  const VERSION='10.37';
+  const VERSION='10.45';
   const prevOpenIndividual_=window.openIndividualReport_;
   const esc_=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
   const role_=()=>{try{return String(state?.user?.role||'').toLowerCase()}catch(e){return String(window.state?.user?.role||'').toLowerCase()}};
@@ -8886,7 +9118,7 @@ body.sidet-student-nav-active #sidetStudentNavV1017{
 <script id="sidet-v1022-student-export-runtime">
 (function(){
   'use strict';
-  const VERSION='10.37';
+  const VERSION='10.45';
   const prevPDF_=window.v99ExportPDF;
   const prevExcel_=window.v99ExportExcel;
   const SCHOOL={
@@ -9124,7 +9356,7 @@ body.sidet-v1024-role-nav #nav button svg{width:17px;height:17px;stroke:currentC
 <script id="sidet-v1024-lazy-nav-runtime">
 (function(){
 'use strict';
-const VERSION='10.37';
+const VERSION='10.45';
 const ALL_CLASSES=['X-A','X-B','X-C','X-D','XI-A','XI-B','XI-C','XI-D','XII-A','XII-B','XII-C','XII-D'];
 const CACHE=new Map();
 const SEQ={};
@@ -9432,7 +9664,7 @@ body[data-sidet-role="admin"] #adminPage>div.card{display:none!important}
 <script id="sidet-v1025-aesthetic-dashboard-runtime">
 (function(){
   'use strict';
-  const VERSION='10.37';
+  const VERSION='10.45';
   const esc=s=>String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   function role_(){try{return String((typeof state!=='undefined'&&state.user&&state.user.role)||window.state?.user?.role||'').toLowerCase()}catch(e){return ''}}
   const icons={
@@ -9598,7 +9830,7 @@ select option[data-sidet-class-option="1"]{font-variant-numeric:tabular-nums;fon
       normalizeVisibleText_(document.body);
       removeDuplicateButtons_();
       cleanLegacyCopy_();
-      const v=document.querySelector('.brand .muted');if(v&&/^v\d/i.test(v.textContent||''))v.textContent='v10.37';
+      const v=document.querySelector('.brand .muted');if(v&&/^v\d/i.test(v.textContent||''))v.textContent='v10.45';
     }finally{running=false;}
   }
 
@@ -9961,7 +10193,7 @@ body.sidet-v1031-student #sidetStudentNavV1017 .sidet-camera-nav-v1020{backgroun
 <script id="sidet-v1031-student-redesign-runtime">
 (function(){
 'use strict';
-const VERSION='10.37';
+const VERSION='10.45';
 const role_=()=>String((typeof state!=='undefined'&&state.user&&state.user.role)||window.state?.user?.role||'').toLowerCase();
 const user_=()=>((typeof state!=='undefined'&&state.user)||window.state?.user||{});
 const data_=()=>((typeof state!=='undefined'&&state.data)||window.state?.data||{});
@@ -10268,7 +10500,7 @@ select[data-sidet-v1034-class-select="1"]{min-height:50px!important;pointer-even
 <script id="sidet-v1035-recap-runtime">
 (function(){
   'use strict';
-  const VERSION='10.37';
+  const VERSION='10.45';
   const KEYS=['XA','XB','XC','XD','XIA','XIB','XIC','XID','XIIA','XIIB','XIIC','XIID'];
   const LABELS={XA:'Kelas XA',XB:'Kelas XB',XC:'Kelas XC',XD:'Kelas XD',XIA:'Kelas XIA',XIB:'Kelas XIB',XIC:'Kelas XIC',XID:'Kelas XID',XIIA:'Kelas XIIA',XIIB:'Kelas XIIB',XIIC:'Kelas XIIC',XIID:'Kelas XIID'};
   function clean_(v){return String(v==null?'':v).replace(/\u00a0/g,' ').replace(/\s+/g,' ').trim()}
@@ -10394,12 +10626,12 @@ select[data-sidet-v1034-class-select="1"]{min-height:50px!important;pointer-even
 </script>
 
 
-<!-- SiDEt V10.37 — EDIT SISWA ENDPOINT + WA ORANG TUA PERSISTENT STORAGE -->
+<!-- SiDEt V10.45 — EDIT SISWA ENDPOINT + WA ORANG TUA PERSISTENT STORAGE -->
 
 <script id="sidet-v1037-version-lock">
 (function(){
  'use strict';
- const V='10.37';
+ const V='10.45';
  function lockVersion_(){
    document.querySelectorAll('.brand .muted').forEach(el=>{if(/^v?\d/i.test(String(el.textContent||'').trim()))el.textContent='v'+V;});
    const badge=document.getElementById('sidetVersionBadge');
@@ -10410,4 +10642,213 @@ select[data-sidet-v1034-class-select="1"]{min-height:50px!important;pointer-even
  setTimeout(lockVersion_,300);setTimeout(lockVersion_,1200);
 })();
 </script>
+
+<!-- SiDEt V10.45 — WA SERVER-FIRST + DETAIL DIAGNOSTIC + SENDER AUDIT -->
+<script id="sidet-v1038-wa-server-first-marker">
+window.SIDET_WA_DATA_MODE='SERVER_LIVE_TODAY';
+</script>
+
+
+<script id="sidet-v1044-wa-date-range-upgrade">
+/* SiDEt V10.45 — WA RENTANG TANGGAL / HISTORICAL PENDING PROCESSOR */
+(function(){
+  function esc_(v){return typeof waEsc_==='function'?waEsc_(v):String(v??'')}
+  function rangeStart_(){return String(window.__sidetWaRangeStart||window.__sidetWaSelectedDate||'').trim()}
+  function rangeEnd_(){return String(window.__sidetWaRangeEnd||window.__sidetWaSelectedDate||'').trim()}
+  function dateDiffDays_(a,b){if(!a||!b)return 1;const da=new Date(a+'T00:00:00Z'),db=new Date(b+'T00:00:00Z');return Math.floor((db-da)/86400000)+1}
+  function rangeLabel_(){const a=rangeStart_(),b=rangeEnd_();if(!a&&!b)return 'hari ini';if(!b||a===b)return a||b;return a+' s.d. '+b}
+  function itemDate_(item){return String(item?.date||window.__sidetWaServerDate||waToday_())}
+  function uniqueBy_(arr,keyFn){const seen=new Set();return (arr||[]).filter(x=>{const k=keyFn(x);if(seen.has(k))return false;seen.add(k);return true})}
+  function rangeIncomplete_(){return Array.isArray(window.__sidetWaRangeIncomplete)?window.__sidetWaRangeIncomplete:[]}
+  function rangeReady_(){return Array.isArray(window.__sidetWaRangeReady)?window.__sidetWaRangeReady:[]}
+
+  window.waSyncDateRangeFromServer_=async function(){
+    if(!apiReady())throw Error('Koneksi server SiDEt tidak tersedia. Rentang WA tidak dibuat agar data lama tidak terpakai.');
+    const start=rangeStart_(),end=rangeEnd_()||start;
+    const payload=start?{startDate:start,endDate:end}:{};
+    const r=await api('waDateRangeSnapshot',payload),d=r?.data;
+    if(!d||d.source!=='SERVER_LIVE_RANGE'||!Array.isArray(d.snapshots)||!d.startDate||!d.endDate)throw Error('Snapshot rentang tanggal dari server tidak valid.');
+    window.__sidetWaRangeStart=d.startDate;window.__sidetWaRangeEnd=d.endDate;window.__sidetWaSelectedDate=d.startDate;
+    window.__sidetWaServerToday=d.serverToday||d.endDate;window.__sidetWaServerDate=d.endDate;window.__sidetWaLastServerSync=d.serverTime||new Date().toISOString();
+    window.__sidetWaRangeSnapshots=d.snapshots;window.__sidetWaRangeSummary=d.summary||{};
+    const ready=d.snapshots.filter(s=>s?.integrity?.complete===true);
+    const incomplete=d.snapshots.filter(s=>s?.integrity?.complete!==true);
+    window.__sidetWaRangeReady=ready;window.__sidetWaRangeIncomplete=incomplete;
+    const details=[];const issues=[];
+    incomplete.forEach(s=>{
+      (s?.integrity?.issues||[]).forEach(x=>issues.push(s.date+': '+x));
+      (s?.integrity?.details||[]).forEach(x=>details.push({...x,date:s.date}));
+    });
+    window.__sidetWaSnapshotDetails=details;window.__sidetWaSnapshotDetailCount=details.length;window.__sidetWaSnapshotDetailsTruncated=incomplete.some(s=>s?.integrity?.detailsTruncated);
+    window.__sidetWaSnapshotIntegrity={complete:incomplete.length===0,status:incomplete.length?'PARTIAL':'COMPLETE',issues,details,detailCount:details.length,detailsTruncated:window.__sidetWaSnapshotDetailsTruncated};
+    const allAttendance=d.snapshots.flatMap(s=>s.attendance||[]);
+    const allLeave=uniqueBy_(d.snapshots.flatMap(s=>s.leave||[]),x=>String(x.id||'')+'|'+String(x.nisn||x.userId||'')+'|'+String(x.tanggalMulai||'')+'|'+String(x.type||''));
+    const users=(d.users||d.snapshots[0]?.users||[]);
+    state.data={...state.data,users,attendance:allAttendance,leave:allLeave,settings:d.settings||d.snapshots[0]?.settings||state.data.settings||{}};
+    const a=document.getElementById('waDateStart'),b=document.getElementById('waDateEnd');
+    if(a){a.value=d.startDate;if(d.serverToday)a.max=d.serverToday}if(b){b.value=d.endDate;if(d.serverToday)b.max=d.serverToday}
+    return d;
+  };
+
+  window.waApplyDateRange_=async function(){
+    const a=String(document.getElementById('waDateStart')?.value||'').trim(),b=String(document.getElementById('waDateEnd')?.value||'').trim();
+    if(!a||!b)return toast('Pilih tanggal awal dan tanggal akhir.');
+    if(b<a)return toast('Tanggal akhir harus sama atau setelah tanggal awal.');
+    if(dateDiffDays_(a,b)>31)return toast('Rentang WA maksimal 31 hari sekali proses.');
+    const today=String(window.__sidetWaServerToday||'');if(today&&b>today)return toast('Tanggal masa depan tidak dapat diproses.');
+    window.__sidetWaRangeStart=a;window.__sidetWaRangeEnd=b;window.__sidetWaSelectedDate=a;window.__sidetWaServerDate='';
+    SIDET_WA_QUEUE=[];SIDET_WA_INDEX=0;SIDET_WA_FILTERED=[];
+    await renderWaAdmin_();
+  };
+  window.waApplyDateFilter_=window.waApplyDateRange_;
+  window.waUseServerToday_=async function(){
+    window.__sidetWaRangeStart='';window.__sidetWaRangeEnd='';window.__sidetWaSelectedDate='';window.__sidetWaServerDate='';
+    SIDET_WA_QUEUE=[];SIDET_WA_INDEX=0;SIDET_WA_FILTERED=[];await renderWaAdmin_();
+  };
+
+  const oldProblem=window.waProblemDetailsHtml_||waProblemDetailsHtml_;
+  window.waProblemDetailsHtml_=function(details,truncated,total){
+    const arr=Array.isArray(details)?details:[];if(!arr.some(x=>x&&x.date))return oldProblem(arr,truncated,total);
+    const totalCount=Number(total||arr.length||0);
+    if(!arr.length)return oldProblem(arr,truncated,total);
+    const rows=arr.map((x,i)=>{
+      const ids=[x.studentId?`ID ${x.studentId}`:'',x.attendanceId?`Presensi ${x.attendanceId}`:''].filter(Boolean).join(' · ');
+      return `<tr><td>${i+1}</td><td><b>${esc_(x.date||'—')}</b></td><td><span class="wa-sync-code">${esc_(waIssueLabel_(x.code))}</span></td><td><b>${esc_(x.sheet||'—')}</b>${x.row?`<div class="wa-sync-row">Baris ${esc_(x.row)}</div>`:''}</td><td>${x.name?`<b>${esc_(x.name)}</b><div class="wa-sync-detail-muted">NISN ${esc_(x.nisn||'—')} · ${esc_(x.kelas||'Kelas —')}</div>`:'<span class="muted">—</span>'}${ids?`<div class="wa-sync-detail-muted">${esc_(ids)}</div>`:''}</td><td>${esc_(x.detail||'Periksa data tersebut.')}</td></tr>`;
+    }).join('');
+    const note=truncated?`Menampilkan ${arr.length} dari ${totalCount} rincian masalah.`:`${totalCount} rincian masalah pada tanggal yang belum siap.`;
+    return `<div class="wa-sync-detail-card"><div class="wa-sync-detail-head"><div><strong>Rincian tanggal yang belum dapat diproses</strong><small>Tanggal bermasalah dikeluarkan dari antrean; tanggal lain yang lengkap tetap dapat diproses.</small></div><span class="wa-sync-detail-count">${esc_(totalCount)} masalah</span></div><div class="wa-sync-detail-table"><table><thead><tr><th>No.</th><th>Tanggal</th><th>Jenis masalah</th><th>Sheet / Baris</th><th>Siswa</th><th>Rincian</th></tr></thead><tbody>${rows}</tbody></table></div><div class="wa-sync-help">${esc_(note)}</div></div>`;
+  };
+
+  window.waStatusForSnapshot_=function(u,snap){
+    if(!snap||snap?.integrity?.schoolDay===false)return null;
+    const date=snap.date,rows=(snap.attendance||[]).filter(x=>String(x.nisn||x.nip||x.userId||x.id||'')===waNisn_(u));
+    const leave=(snap.leave||[]).find(x=>String(x.nisn||x.nip||x.userId||'')===waNisn_(u)&&String(x.status||'').toUpperCase()!=='DITOLAK'&&(!x.tanggalMulai||x.tanggalMulai<=date)&&(!x.tanggalSelesai||x.tanggalSelesai>=date));
+    if(leave){const z=String(leave.type||leave.jenis||'IZIN').toUpperCase();return z.includes('SAKIT')?'SAKIT':'IZIN'}
+    const masuk=rows.filter(x=>String(x.type||x.jenis||'').toUpperCase()==='MASUK').sort((a,b)=>String(a.jam||a.timestamp||'').localeCompare(String(b.jam||b.timestamp||'')))[0];
+    const pulang=rows.filter(x=>String(x.type||x.jenis||'').toUpperCase()==='PULANG').sort((a,b)=>String(a.jam||a.timestamp||'').localeCompare(String(b.jam||b.timestamp||''))).slice(-1)[0];
+    const historical=!!snap.historical,now=snap.evaluationClock||snap.serverClock||waNowTime_();
+    if(masuk){const jm=String(masuk.jam||'').slice(0,5);if(!pulang&&(historical||waMins_(now)>=waMins_(SIDET_WA_CFG.cekBelumPulang)))return 'BELUM_PULANG';if(waMins_(jm)>waMins_(SIDET_WA_CFG.jamMasuk))return 'TERLAMBAT';return null}
+    if(historical)return 'ALPA';
+    if(waMins_(now)>=waMins_(SIDET_WA_CFG.cekBelumMasuk))return 'BELUM_MASUK';return null;
+  };
+
+  window.waServerListRange_=async function(startDate,endDate){
+    if(!apiReady())return [];
+    try{const r=await api('waLogList',{startDate,endDate});return r.data||[]}catch(e){return []}
+  };
+
+  window.waCandidates_=async function(){
+    const range=await waSyncDateRangeFromServer_(),snaps=range.snapshots||[],ready=rangeReady_(),incomplete=rangeIncomplete_();
+    if(!ready.length){
+      const err=Error('Tidak ada tanggal dalam rentang yang dinyatakan lengkap oleh server.');err.code='WA_RANGE_NO_READY';err.issues=window.__sidetWaSnapshotIntegrity?.issues||[];err.details=window.__sidetWaSnapshotDetails||[];throw err;
+    }
+    const logs=await waServerListRange_(range.startDate,range.endDate),logMap=new Map();
+    logs.forEach(r=>logMap.set([r.tanggal,r.nisn,r.jenis].map(x=>String(x||'').toUpperCase()).join('|'),r));
+    const out=[];
+    for(const snap of ready){
+      if(snap?.integrity?.schoolDay===false)continue;
+      for(const u of(range.users||state.data.users||[])){
+        if(u.active===false)continue;
+        const type=waStatusForSnapshot_(u,snap);if(!type)continue;
+        const phone=waStudentPhone_(u),key=[snap.date,waNisn_(u),type].map(x=>String(x||'').toUpperCase()).join('|'),prev=logMap.get(key)||null;
+        const delivery=String(prev?.statusPengiriman||'').toUpperCase(),blocking=!!prev&&waIsBlockingStatus_(prev.status);
+        out.push({u,type,phone,date:snap.date,duplicate:blocking,previous:prev,deliveryStatus:delivery,waiting:delivery==='MENUNGGU',sent:delivery==='TERKIRIM',failed:delivery==='GAGAL'});
+      }
+    }
+    out.sort((a,b)=>String(a.date).localeCompare(String(b.date))||String(a.u?.kelas||'').localeCompare(String(b.u?.kelas||''))||String(a.u?.name||'').localeCompare(String(b.u?.name||'')));
+    return out;
+  };
+
+  window.waFilterList_=function(list){
+    const q=String($('waSearch')?.value||'').toLowerCase(),kelas=$('waClass')?.value||'',tanggal=$('waItemDate')?.value||'',jenis=$('waType')?.value||'',log=$('waLogFilter')?.value||'';
+    return (list||[]).filter(x=>(!q||`${waNisn_(x.u)} ${x.u.name||''}`.toLowerCase().includes(q))&&(!kelas||String(x.u.kelas||'')===kelas)&&(!tanggal||String(x.date||'')===tanggal)&&(!jenis||x.type===jenis)&&(!log||(log==='READY'&&!x.previous&&x.phone)||(log==='WAITING'&&x.waiting)||(log==='DONE'&&x.sent)||(log==='FAILED'&&x.failed)||(log==='NOPHONE'&&!x.phone)));
+  };
+
+  window.waDescribeSnapshot_=function(){
+    const s=window.__sidetWaRangeSummary||{},a=rangeStart_()||'—',b=rangeEnd_()||a;
+    return `Rentang ${a}${a!==b?' s.d. '+b:''} · ${Number(s.days||0)} hari dipindai · ${Number(s.complete||0)} tanggal lengkap · ${Number(s.incomplete||0)} tanggal bermasalah · ${Number(s.nonEffective||0)} hari non-efektif.`;
+  };
+
+  window.renderWaAdmin_=async function(){
+    const c=$('adminContent');if(!c)return;
+    c.innerHTML=`<div class="card"><div class="hero"><div><h3>📲 Pusat Notifikasi WA Orang Tua</h3><div class="muted">Server-first · pilih satu tanggal atau rentang sampai 31 hari untuk memproses WA tertunda</div></div><button class="btn" onclick="renderWaAdmin_()">↻ Sinkronkan Server</button></div><div class="wa-date-range-v1044"><div class="field"><label>Tanggal Awal</label><input id="waDateStart" type="date" value="${esc_(rangeStart_())}" ${window.__sidetWaServerToday?`max="${esc_(window.__sidetWaServerToday)}"`:''}></div><div class="field"><label>Tanggal Akhir</label><input id="waDateEnd" type="date" value="${esc_(rangeEnd_())}" ${window.__sidetWaServerToday?`max="${esc_(window.__sidetWaServerToday)}"`:''}></div><button class="btn primary" onclick="waApplyDateRange_()">Tampilkan Rentang</button><button class="btn" onclick="waUseServerToday_()">Hari Ini</button><div id="waDateNote" class="wa-date-note">Maksimal 31 hari sekali proses. Tanggal masa depan ditolak. Tanggal yang datanya bermasalah akan dikeluarkan dari antrean, sedangkan tanggal lain yang lengkap tetap dapat diproses.</div></div><div id="waSenderPanel"><div class="alert warn">Memuat identitas pengirim WA dari server…</div></div><div id="waSyncIndicator" class="wa-sync-indicator syncing"><div class="wa-sync-icon">↻</div><div><strong>Menyinkronkan rentang tanggal…</strong><small>SiDEt membaca presensi dan LOG_WA langsung dari server. Antrean belum dibuat.</small></div></div><div class="alert">Mode gratis/semi otomatis: SiDEt membuka WhatsApp dengan pesan siap dikirim. Setelah benar-benar menekan <b>Kirim</b> di WhatsApp, gunakan <b>Konfirmasi Terkirim</b>.</div><div id="waLoading" class="alert warn">Memvalidasi data setiap tanggal dalam rentang…</div><div id="waArea"></div></div>`;
+    window.__sidetWaList=[];SIDET_WA_QUEUE=[];SIDET_WA_INDEX=0;await waLoadSenderConfig_();waRenderSenderPanel_();
+    let list;
+    try{list=await waCandidates_()}catch(e){
+      const issues=e?.issues||window.__sidetWaSnapshotIntegrity?.issues||[],details=e?.details||window.__sidetWaSnapshotDetails||[];
+      waSetSyncIndicator_('error','RENTANG BELUM DAPAT DIPROSES',waDescribeSnapshot_(),issues,details);$('waLoading').className='alert bad';$('waLoading').textContent='Tidak ada tanggal lengkap yang aman dipakai untuk menentukan penerima WA.';$('waArea').innerHTML=waSyncLockHtml_('Perbaiki tanggal/baris yang bermasalah lalu sinkronkan kembali.');return;
+    }
+    window.__sidetWaList=list;
+    const ready=rangeReady_(),bad=rangeIncomplete_(),summary=window.__sidetWaRangeSummary||{},classes=[...new Set(list.map(x=>x.u.kelas).filter(Boolean))].sort(),dates=[...new Set(list.map(x=>x.date).filter(Boolean))].sort();
+    if(bad.length){waSetSyncIndicator_('incomplete','SEBAGIAN TANGGAL DIKUNCI · TANGGAL LAIN SIAP',waDescribeSnapshot_()+' Antrean hanya menggunakan tanggal yang lolos pemeriksaan server.',window.__sidetWaSnapshotIntegrity?.issues||[],window.__sidetWaSnapshotDetails||[])}
+    else{waSetSyncIndicator_('ok','SEMUA TANGGAL SIAP DIPROSES',waDescribeSnapshot_()+' Seluruh calon penerima dihitung dari snapshot server.',[])}
+    $('waLoading').className=bad.length?'alert warn':'alert ok';$('waLoading').innerHTML=`Rentang aktif: <b>${esc_(rangeLabel_())}</b> · ${ready.length} tanggal siap · ${bad.length} tanggal dikunci · ${list.length} kejadian membutuhkan evaluasi WA.`;
+    const partial=bad.length?`<div class="wa-range-partial-v1044"><b>⚠ ${bad.length} tanggal tidak dimasukkan ke antrean</b>${bad.map(s=>esc_(s.date)).join(', ')}. Perbaiki data tanggal tersebut lalu sinkronkan ulang; tanggal lain tetap aman diproses.</div>`:'';
+    $('waArea').innerHTML=`<div class="wa-range-summary-v1044"><div><small>Hari dipindai</small><b>${Number(summary.days||0)}</b></div><div><small>Tanggal lengkap</small><b>${ready.length}</b></div><div><small>Tanggal bermasalah</small><b>${bad.length}</b></div><div><small>Calon notifikasi</small><b>${list.length}</b></div></div>${partial}<div class="wa-filter-grid"><div class="field"><label>Cari Nama / NISN</label><input id="waSearch" placeholder="Cari siswa…" oninput="waApplyFilters_()"></div><div class="field"><label>Tanggal</label><select id="waItemDate" onchange="waApplyFilters_()"><option value="">Semua Tanggal</option>${dates.map(x=>`<option value="${esc_(x)}">${esc_(x)}</option>`).join('')}</select></div><div class="field"><label>Kelas</label><select id="waClass" onchange="waApplyFilters_()"><option value="">Semua Kelas</option>${classes.map(x=>`<option>${esc_(x)}</option>`).join('')}</select></div><div class="field"><label>Jenis Notifikasi</label><select id="waType" onchange="waApplyFilters_()"><option value="">Semua Status</option>${['TERLAMBAT','BELUM_MASUK','IZIN','SAKIT','ALPA','BOLOS','BELUM_PULANG'].map(x=>`<option>${x}</option>`).join('')}</select></div><div class="field"><label>Status WA</label><select id="waLogFilter" onchange="waApplyFilters_()"><option value="">Semua</option><option value="READY">Siap</option><option value="WAITING">Menunggu</option><option value="DONE">Terkirim</option><option value="FAILED">Gagal/Retry</option><option value="NOPHONE">No. WA Kosong</option></select></div></div><div id="waKpi"></div><div class="wa-toolbar"><button class="btn primary" id="waPrepareBtn" onclick="waPrepareQueue_()">📲 Siapkan Antrean Terfilter</button><button class="btn ok" id="waNextBtn" onclick="waSendNext_()" disabled>▶ Kirim Berikutnya</button><button class="btn" onclick="waOpenLog_()">🧾 Lihat LOG_WA Rentang</button><button class="btn danger" onclick="waResetQueue_()">⏹ Hentikan Antrean</button></div><div class="wa-progress"><div id="waProgressBar"></div></div><div id="waProgressText" class="muted" style="margin:8px 0">Antrean belum dimulai.</div><div id="waTable"></div><div id="waLogBox" class="wa-logbox" style="margin-top:12px"><div class="muted">Aktivitas proses akan tampil di sini.</div></div>${bad.length?waProblemDetailsHtml_(window.__sidetWaSnapshotDetails||[],window.__sidetWaSnapshotDetailsTruncated,window.__sidetWaSnapshotDetailCount):''}`;
+    waApplyFilters_();
+  };
+
+  window.waApplyFilters_=function(){
+    const list=waFilterList_(window.__sidetWaList||[]),senderOk=waSenderReady_();SIDET_WA_FILTERED=list;
+    const ready=list.filter(x=>x.phone&&!x.previous),waiting=list.filter(x=>x.waiting),sent=list.filter(x=>x.sent),failed=list.filter(x=>x.failed),noPhone=list.filter(x=>!x.phone);
+    $('waKpi').innerHTML=`${!senderOk?'<div class="alert warn"><b>Pengiriman dikunci:</b> simpan nama dan nomor WA pengirim terlebih dahulu.</div>':''}<div class="wa-kpi"><div class="card"><div class="muted">Perlu WA</div><b>${list.length}</b></div><div class="card"><div class="muted">Siap</div><b>${ready.length}</b></div><div class="card"><div class="muted">Menunggu</div><b>${waiting.length}</b></div><div class="card"><div class="muted">Terkirim</div><b>${sent.length}</b></div><div class="card"><div class="muted">Gagal</div><b>${failed.length}</b></div><div class="card"><div class="muted">WA Kosong</div><b>${noPhone.length}</b></div></div>`;
+    const prep=$('waPrepareBtn');if(prep)prep.disabled=!senderOk;
+    $('waTable').innerHTML=`<div class="tablewrap"><table><thead><tr><th>Tanggal</th><th>NISN</th><th>Nama</th><th>Kelas</th><th>Kejadian</th><th>No. WA</th><th>Status Pengiriman</th><th>Perubahan Status</th><th>Aksi</th></tr></thead><tbody>${list.map(x=>{const i=(window.__sidetWaList||[]).indexOf(x),status=x.sent?'TERKIRIM':x.failed?'GAGAL':x.waiting?'MENUNGGU':x.phone?'SIAP':'WA KOSONG',ts=x.previous?.waktuPerubahanStatus||x.previous?.waktuKirim||x.previous?.waktuProses||'';return `<tr class="${x.failed?'wa-row-failed':x.sent?'wa-row-done':''}"><td class="wa-date-cell-v1044">${esc_(x.date||'—')}</td><td>${esc_(waNisn_(x.u))}</td><td><b>${esc_(x.u.name||'-')}</b></td><td>${esc_(x.u.kelas||'-')}</td><td><span class="wa-chip ${waTypeClass_(x.type)}">${esc_(x.type)}</span></td><td>${x.phone?esc_(x.phone):'<span class="badge bad">Kosong</span>'}</td><td><span class="wa-status ${x.sent?'duplicate':x.failed?'failed':x.waiting?'waiting':'ready'}">${status}</span></td><td><span class="wa-mini muted">${esc_(ts||'-')}</span></td><td><div class="wa-actions-inline"><button class="btn" ${(!senderOk||!x.phone||x.duplicate)?'disabled':''} onclick="waSendOneByIndex_(${i})">${x.failed?'↻ Retry':'Kirim WA'}</button>${x.waiting&&x.duplicate?`<button class="btn ok" onclick="waConfirmByIndex_(${i})">✓ Konfirmasi Terkirim</button>`:''}</div></td></tr>`}).join('')||'<tr><td colspan="9">Tidak ada data sesuai filter.</td></tr>'}</tbody></table></div>`;
+  };
+
+  window.waSendOne_=async function(item){
+    if(!waSenderReady_()){toast('Atur nama dan nomor WA pengirim terlebih dahulu.');waRenderSenderPanel_();return false}
+    const {u,type,phone}=item,date=itemDate_(item);
+    if(!phone){waLogUI_(`${u.name}: nomor WA belum tersedia.`,false);await waServerSave_(u,type,'GAGAL','Nomor WA orang tua belum tersedia.',date);return false}
+    const check=await waServerCheck_(u,type,date);if(check.blocking){waLogUI_(`${date} · ${u.name}: dilewati, ${type} sudah diproses.`,false);return false}
+    const waitingLog=await waServerSave_(u,type,'MENUNGGU','Menunggu WhatsApp dibuka dan pesan dikirim oleh Admin.',date);if(waitingLog?.ok===false){waLogUI_(`${date} · ${u.name}: gagal mencatat MENUNGGU.`,false);return false}
+    const w=window.open(`https://wa.me/${phone}?text=${encodeURIComponent(waMessage_(u,type,date))}`,'_blank');if(!w){await waServerSave_(u,type,'GAGAL','Popup WhatsApp diblokir browser.',date);waLogUI_(`${date} · ${u.name}: popup diblokir.`,false);return false}
+    await waServerSave_(u,type,'DIBUKA','WhatsApp dibuka; status tetap MENUNGGU sampai Admin mengonfirmasi pesan benar-benar terkirim.',date);waLogUI_(`${date} · ${u.name} · ${type} · WhatsApp dibuka.`);return true;
+  };
+  window.waConfirmByIndex_=async function(i){const item=(window.__sidetWaList||[])[i];if(!item)return;await waServerSave_(item.u,item.type,'DIKONFIRMASI','Admin mengonfirmasi pesan telah dikirim melalui WhatsApp.',itemDate_(item));toast('Status WA dikonfirmasi terkirim',true);await renderWaAdmin_()};
+
+  window.waPrepareQueue_=async function(){
+    if(!waSenderReady_()){toast('Simpan nama dan nomor WA pengirim sebelum membuat antrean.');waRenderSenderPanel_();return}
+    const b=$('waNextBtn'),prep=$('waPrepareBtn');if(b)b.disabled=true;if(prep)prep.disabled=true;
+    waSetSyncIndicator_('syncing','MEMERIKSA ULANG RENTANG SERVER','Antrean belum dibuat. Semua tanggal dipindai ulang agar perubahan terbaru ikut terbaca.',[]);waLogUI_('Menyinkronkan ulang seluruh rentang sebelum membuat antrean…');
+    let fresh;try{fresh=await waCandidates_()}catch(e){SIDET_WA_QUEUE=[];SIDET_WA_INDEX=0;waUpdateProgress_();waSetSyncIndicator_('error','ANTREAN DIBATALKAN','Tidak ada tanggal lengkap yang aman diproses.',e?.issues||[],e?.details||[]);waLogUI_('Antrean dibatalkan: '+(e?.message||e),false);if(prep)prep.disabled=false;return}
+    window.__sidetWaList=fresh;const bad=rangeIncomplete_();if(bad.length)waSetSyncIndicator_('incomplete','ANTREAN SIAP · SEBAGIAN TANGGAL DIKUNCI',waDescribeSnapshot_(),window.__sidetWaSnapshotIntegrity?.issues||[],window.__sidetWaSnapshotDetails||[]);else waSetSyncIndicator_('ok','ANTREAN SIAP DARI DATA SERVER TERBARU',waDescribeSnapshot_(),[]);
+    waApplyFilters_();const base=Array.isArray(SIDET_WA_FILTERED)?SIDET_WA_FILTERED:fresh;SIDET_WA_QUEUE=base.filter(x=>x.phone&&!x.duplicate).sort((a,b)=>String(a.date).localeCompare(String(b.date))||String(a.u?.name||'').localeCompare(String(b.u?.name||'')));SIDET_WA_INDEX=0;if(b)b.disabled=!SIDET_WA_QUEUE.length;if(prep)prep.disabled=false;waUpdateProgress_();waLogUI_(`Antrean siap: ${SIDET_WA_QUEUE.length} laporan dari ${new Set(SIDET_WA_QUEUE.map(x=>x.date)).size} tanggal.`);
+  };
+
+  window.waOpenLog_=async function(){
+    const start=rangeStart_()||window.__sidetWaServerToday||waClientDate_(),end=rangeEnd_()||start,rows=await waServerListRange_(start,end);$('modal').classList.remove('hidden');
+    $('modalBox').innerHTML=`<div class="hero"><div><h3>🧾 LOG_WA · ${esc_(start)}${start!==end?' s.d. '+esc_(end):''}</h3><div class="muted">Riwayat status WA untuk seluruh rentang yang dipilih.</div></div><button class="btn" onclick="closeModal()">Tutup</button></div><div class="tablewrap" style="margin-top:12px;max-width:100%;overflow:auto"><table style="min-width:2250px"><thead><tr><th>Tanggal</th><th>Waktu Kirim</th><th>NISN</th><th>Nama</th><th>Kelas</th><th>Jenis</th><th>Status Teknis</th><th>Status Pengiriman</th><th>Menunggu</th><th>Terkirim</th><th>Gagal</th><th>Waktu Perubahan</th><th>No. Tujuan</th><th>Nama Pengirim</th><th>No. Pengirim</th><th>Perangkat</th><th>Hasil</th></tr></thead><tbody>${rows.map(r=>`<tr><td><b>${esc_(r.tanggal||'-')}</b></td><td>${esc_(r.waktuKirim||r.waktuProses||r.timestamp||'-')}</td><td>${esc_(r.nisn||'-')}</td><td>${esc_(r.nama||'-')}</td><td>${esc_(r.kelas||'-')}</td><td>${esc_(r.jenis||'-')}</td><td>${esc_(r.status||'-')}</td><td><b>${esc_(r.statusPengiriman||'-')}</b></td><td>${esc_(r.statusMenunggu||'-')}</td><td>${esc_(r.statusTerkirim||'-')}</td><td>${esc_(r.statusGagal||'-')}</td><td>${esc_(r.waktuPerubahanStatus||'-')}</td><td>${esc_(r.nomorWa||'-')}</td><td>${esc_(r.namaPengirim||'Belum tercatat')}</td><td>${esc_(r.nomorPengirim||'Belum tercatat')}</td><td>${esc_(r.perangkat||r.device||'-')}</td><td>${esc_(r.hasil||'-')}</td></tr>`).join('')||'<tr><td colspan="17">Belum ada log pada rentang ini.</td></tr>'}</tbody></table></div>`;
+  };
+})();
+</script>
+
+
+<script id="sidet-v1045-wa-range-ui-lock">
+/* SiDEt V10.45 — paksa menu WA memakai renderer rentang tanggal terbaru. */
+(function(){
+  function openLatestWa_(){
+    if(typeof window.renderWaAdmin_==='function') return window.renderWaAdmin_();
+  }
+  window.sidetOpenWaRange_=openLatestWa_;
+  function repairLegacyWaUi_(){
+    try{
+      const old=document.getElementById('waDateFilter');
+      const start=document.getElementById('waDateStart');
+      const content=document.getElementById('adminContent');
+      if(old && !start && content && typeof window.renderWaAdmin_==='function'){
+        console.warn('SiDEt V10.45: UI WA satu tanggal lama terdeteksi; memuat renderer rentang terbaru.');
+        window.renderWaAdmin_();
+      }
+    }catch(e){console.warn('WA range UI lock:',e)}
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>setTimeout(repairLegacyWaUi_,250),{once:true});
+  else setTimeout(repairLegacyWaUi_,250);
+  setTimeout(repairLegacyWaUi_,1200);
+})();
+</script>
+
 </body></html>
+<!-- SiDEt V10.45 — WA DELIVERY STATUS: MENUNGGU / TERKIRIM / GAGAL + STATUS CHANGE TIME -->
+
+<!-- SiDEt V10.45 — WA RENTANG TANGGAL + UI LOCK + BATCH LOG + SAFE PARTIAL PROCESSING -->
