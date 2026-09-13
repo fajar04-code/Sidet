@@ -2194,8 +2194,8 @@ const initialSchoolData = {};
 const CLASS_ORDER=["X-A", "X-B", "X-C", "X-D", "XI-A", "XI-B", "XI-C", "XI-D", "XII-A", "XII-B", "XII-C", "XII-D"];
 const INITIAL_STUDENTS=Object.entries(initialSchoolData).flatMap(([kelas,arr])=>arr.map(x=>({...x,kelas,sekolah:'SMAN 2 Nunukan Selatan',active:true})));
 const SIDET_DEFAULT_API_URL='https://script.google.com/macros/s/AKfycbxfl79GgtRFPcDsojojvjiHzUpRV34FitJBRqqoCdtdfKl8tfhHJVDiK9dDujXlGRj1/exec';
-const SIDET_FRONTEND_VERSION='10.46';
-const SIDET_REQUIRED_SERVER_VERSION='10.46';
+const SIDET_FRONTEND_VERSION='10.47';
+const SIDET_REQUIRED_SERVER_VERSION='10.47';
 // V10.45: URL Web App bawaan file adalah satu-satunya sumber permanen.
 // Hapus nilai legacy agar HP tidak terus memakai deployment lama dari localStorage.
 try{localStorage.removeItem('sidet_api');}catch(e){}
@@ -2549,7 +2549,7 @@ function waIssueLabel_(code){
 function waProblemDetailsHtml_(details,truncated,total){
  const arr=Array.isArray(details)?details:[];
  const totalCount=Number(total||arr.length||0);
- if(!arr.length)return '<div class="wa-sync-detail-card"><div class="wa-sync-detail-head"><div><strong>Rincian teknis belum tersedia</strong><small>Sinkronkan kembali setelah backend V10.46 aktif. Jika masalah tetap muncul, periksa sheet SISWA dan PRESENSI.</small></div></div></div>';
+ if(!arr.length)return '<div class="wa-sync-detail-card"><div class="wa-sync-detail-head"><div><strong>Rincian teknis belum tersedia</strong><small>Sinkronkan kembali setelah backend V10.47 aktif. Jika masalah tetap muncul, periksa sheet SISWA dan PRESENSI.</small></div></div></div>';
  const rows=arr.map((x,i)=>{
    const place=(x.sheet||'—')+(x.row?` · baris ${x.row}`:'');
    const person=[x.nisn||'',x.name||'',x.kelas||''].filter(Boolean);
@@ -2759,7 +2759,7 @@ function v86PreserveUsernameText_(){
   // 0012345678 harus tetap menjadi string yang sama persis.
   el.value=String(el.value??'');
 }
-function v7ApiFrame_(action,payload={}){return new Promise((resolve,reject)=>{if(!apiReady())return reject(Error('URL Google Apps Script belum dikonfigurasi.'));const requestId='sidet_v7_'+Date.now()+'_'+Math.random().toString(36).slice(2);const frame=document.createElement('iframe');frame.name=frame.id=requestId;frame.style.display='none';document.body.appendChild(frame);const form=document.createElement('form');form.method='POST';form.action=state.api;form.target=requestId;form.style.display='none';const timeout=setTimeout(()=>{cleanup();reject(Error('Server tidak merespons dalam 45 detik. Periksa deployment Web App.'));},45000);function cleanup(){clearTimeout(timeout);window.removeEventListener('message',onMessage);frame.remove();form.remove();}function onMessage(ev){if(!/^https:\/\/(script\.google\.com|[a-z0-9-]+\.googleusercontent\.com)$/.test(ev.origin))return;const d=ev.data;if(!d||d.type!=='SIDET_API_RESULT'||d.requestId!==requestId)return;cleanup();try{sidetAssertServerVersion_(d);}catch(err){return reject(err);}d.ok?resolve(d):reject(Error(d.message||'Permintaan server gagal.'));}window.addEventListener('message',onMessage);const data={...payload,action,transport:'iframe_api',requestId,sessionToken:state.user?.sessionToken||'',frontendVersion:SIDET_FRONTEND_VERSION};Object.entries(data).forEach(([k,v])=>{const i=document.createElement('input');i.type='hidden';i.name=k;i.value=typeof v==='string'?v:JSON.stringify(v??'');form.appendChild(i);});document.body.appendChild(form);form.submit();});}
+function v7ApiFrame_(action,payload={}){return new Promise((resolve,reject)=>{if(!apiReady())return reject(Error('URL Google Apps Script belum dikonfigurasi.'));const requestId='sidet_v7_'+Date.now()+'_'+Math.random().toString(36).slice(2);const frame=document.createElement('iframe');frame.name=frame.id=requestId;frame.style.display='none';document.body.appendChild(frame);const form=document.createElement('form');form.method='POST';form.action=state.api;form.target=requestId;form.style.display='none';const timeoutMs=action==='syncAttendance'?120000:45000;const timeout=setTimeout(()=>{cleanup();reject(Error(action==='syncAttendance'? 'Upload foto masih diproses server. SiDEt akan memeriksa statusnya otomatis.': 'Server tidak merespons dalam 45 detik. Periksa deployment Web App.'));},timeoutMs);function cleanup(){clearTimeout(timeout);window.removeEventListener('message',onMessage);frame.remove();form.remove();}function onMessage(ev){if(!/^https:\/\/(script\.google\.com|[a-z0-9-]+\.googleusercontent\.com)$/.test(ev.origin))return;const d=ev.data;if(!d||d.type!=='SIDET_API_RESULT'||d.requestId!==requestId)return;cleanup();try{sidetAssertServerVersion_(d);}catch(err){return reject(err);}d.ok?resolve(d):reject(Error(d.message||'Permintaan server gagal.'));}window.addEventListener('message',onMessage);const data={...payload,action,transport:'iframe_api',requestId,sessionToken:state.user?.sessionToken||'',frontendVersion:SIDET_FRONTEND_VERSION};Object.entries(data).forEach(([k,v])=>{const i=document.createElement('input');i.type='hidden';i.name=k;i.value=typeof v==='string'?v:JSON.stringify(v??'');form.appendChild(i);});document.body.appendChild(form);form.submit();});}
 function v7LoginFrame_(username,password){return new Promise((resolve,reject)=>{if(!apiReady())return reject(Error('URL Google Apps Script belum dikonfigurasi.'));const requestId='sidet_login_'+Date.now()+'_'+Math.random().toString(36).slice(2);const frame=document.createElement('iframe');frame.name=frame.id=requestId;frame.style.display='none';document.body.appendChild(frame);const form=document.createElement('form');form.method='POST';form.action=state.api;form.target=requestId;form.style.display='none';const timeout=setTimeout(()=>{cleanup();reject(Error('Server login tidak merespons dalam 30 detik.'));},30000);function cleanup(){clearTimeout(timeout);window.removeEventListener('message',onMessage);frame.remove();form.remove();}function onMessage(ev){if(!/^https:\/\/(script\.google\.com|[a-z0-9-]+\.googleusercontent\.com)$/.test(ev.origin))return;const d=ev.data;if(!d||d.type!=='SIDET_LOGIN_RESULT'||d.requestId!==requestId)return;cleanup();try{sidetAssertServerVersion_(d);}catch(err){return reject(err);}d.ok&&d.user?resolve(d):reject(Error(d.message||'Username atau password salah.'));}window.addEventListener('message',onMessage);const data={transport:'iframe',requestId,role:'auto',username,password,frontendVersion:SIDET_FRONTEND_VERSION};Object.entries(data).forEach(([k,v])=>{const i=document.createElement('input');i.type='hidden';i.name=k;i.value=v;form.appendChild(i);});document.body.appendChild(form);form.submit();});}
 api=async function(action,payload={}){return v7ApiFrame_(action,payload);};
 login=async function(){v86PreserveUsernameText_();const u=String($('loginUser').value??'').trim(),p=String($('loginPass').value??'');if(!u||!p)return showLogin('Username dan password wajib diisi.',true);try{showLogin('Memeriksa akun…');const j=await v7LoginFrame_(u,p);state.user=j.user;state.role=j.user.role;v7SaveLogin_();await v7LoadSettings_();startApp();}catch(e){showLogin(e.message,true);}};
@@ -3853,16 +3853,41 @@ renderStudentProfile=function(){v85OldRenderProfile_(); const card=document.quer
 
   // Tidak ada lagi dua kali retry GPS / menunggu GPS terbaru.
   v88ReadGpsForSend_=async function(){
-    v7SetProgress_(34,'Menggunakan GPS terakhir yang tersedia…');
-    const g=await v85FreshGps_();
-    try{
-      const info=$('attInfo');
-      if(info){
-        info.textContent='GPS terakhir digunakan ('+ageText_(g)+'). Mengirim presensi…';
-        info.className='alert ok';
+    let last=null;
+    for(let attempt=1;attempt<=4;attempt++){
+      try{
+        v7SetProgress_(
+          30+attempt*3,
+          attempt===1
+            ? 'Memastikan lokasi terakhir…'
+            : 'Lokasi belum terbaca. SiDEt mencoba otomatis '+attempt+'/4…'
+        );
+        const g=await v85FreshGps_();
+        validateGPS_(g);
+        try{
+          const info=$('attInfo');
+          if(info){
+            info.textContent='Lokasi terbaca ('+ageText_(g)+'). Presensi dilanjutkan otomatis…';
+            info.className='alert ok';
+          }
+        }catch(e){}
+        return g;
+      }catch(e){
+        last=e;
+        // Bila watcher dashboard sudah memperoleh koordinat sesaat setelah percobaan gagal,
+        // gunakan state.gps tanpa meminta siswa menekan tombol lagi.
+        try{
+          if(state.gps){
+            validateGPS_(state.gps);
+            return state.gps;
+          }
+        }catch(_){}
+        if(attempt<4){
+          await new Promise(resolve=>setTimeout(resolve,1400));
+        }
       }
-    }catch(e){}
-    return g;
+    }
+    throw last||Error('GPS belum terbaca. Aktifkan lokasi perangkat dan coba kembali.');
   };
 
   // Pesan pending dibuat lebih sederhana.
@@ -3963,8 +3988,34 @@ renderStudentProfile=function(){v85OldRenderProfile_(); const card=document.quer
     return {dataUrl:dataUrl,sizeKB:Math.ceil(size/1024),bytes:size};
   };
 
+  async function v90ReadPhotoStatus_(job){
+    try{
+      const s=await api('attendanceSyncStatus',{attendanceId:job.attendanceId});
+      const d=s?.data||{};
+      const url=String(d.linkFotoDrive||d.photoUrl||'').trim();
+      if(url){
+        try{sessionStorage.removeItem(v7SyncKey_(job.attendanceId));}catch(e){}
+        return {ok:true,photoUrl:url,linkFotoDrive:url,status:d.status||'SELESAI',reconciled:true};
+      }
+      return {ok:false,status:d.status||'',message:d.message||''};
+    }catch(e){
+      return {ok:false,message:String(e?.message||e||'')};
+    }
+  }
+
+  async function v90WaitPhotoStatus_(job,seconds=24){
+    const loops=Math.max(1,Math.ceil(seconds/2));
+    for(let i=0;i<loops;i++){
+      v7SetProgress_(90, 'Memastikan foto sudah tersimpan di Drive…');
+      const checked=await v90ReadPhotoStatus_(job);
+      if(checked?.ok&&checked?.linkFotoDrive)return checked;
+      await new Promise(resolve=>setTimeout(resolve,2000));
+    }
+    return null;
+  }
+
   async function v90SyncPhotoConfirmed_(job){
-    // Simpan antrean dulu agar aman bila koneksi putus.
+    // Simpan antrean dulu agar aman bila koneksi putus atau respons server terlambat.
     try{
       sessionStorage.setItem(v7SyncKey_(job.attendanceId),JSON.stringify(job));
     }catch(e){}
@@ -3990,10 +4041,28 @@ renderStudentProfile=function(){v85OldRenderProfile_(); const card=document.quer
         return {...r,ok:true,photoUrl:url,linkFotoDrive:url};
       }catch(e){
         last=e;
-        if(attempt<3)await new Promise(resolve=>setTimeout(resolve,900*attempt));
+
+        // V10.47: jangan langsung meminta siswa menekan "Coba Lagi".
+        // Sangat mungkin request pertama timeout di browser tetapi upload di server masih berjalan.
+        // Periksa status server beberapa kali; bila Link Drive sudah ada, anggap proses sukses.
+        v7SetProgress_(90,'Respons upload terlambat. Memeriksa hasil di server otomatis…');
+        const reconciled=await v90WaitPhotoStatus_(job, attempt===1?24:12);
+        if(reconciled?.ok&&reconciled?.linkFotoDrive){
+          return reconciled;
+        }
+
+        if(attempt<3){
+          v7SetProgress_(88,'Foto belum terkonfirmasi. Mencoba kembali otomatis…');
+          await new Promise(resolve=>setTimeout(resolve,2500*attempt));
+        }
       }
     }
-    throw last||Error('Upload foto Drive gagal.');
+
+    // Pemeriksaan terakhir sebelum menampilkan tombol retry manual.
+    const finalCheck=await v90WaitPhotoStatus_(job,10);
+    if(finalCheck?.ok&&finalCheck?.linkFotoDrive)return finalCheck;
+
+    throw last||Error('Upload foto Drive belum terkonfirmasi.');
   }
 
   // Override FINAL captureAttendance.
@@ -4073,7 +4142,7 @@ renderStudentProfile=function(){v85OldRenderProfile_(); const card=document.quer
       }
 
       // PENTING: tunggu upload foto sampai server memberikan URL Drive.
-      v7SetProgress_(78,'Presensi tercatat. Mengunggah foto ke Drive…');
+      v7SetProgress_(78,'Presensi tercatat. Foto sedang dikirim otomatis—tidak perlu menekan tombol lagi.');
       const sync=await v90SyncPhotoConfirmed_(job);
 
       if(!sync?.linkFotoDrive){
@@ -4086,7 +4155,7 @@ renderStudentProfile=function(){v85OldRenderProfile_(); const card=document.quer
       SIDET_V7.sending=false;
       toast('Presensi berhasil. Foto sudah tersimpan di Drive.',true);
 
-      // V10.46: sukses harus selalu kembali ke Beranda siswa tanpa logout.
+      // V10.47: sukses harus selalu kembali ke Beranda siswa tanpa logout.
       // Pesan sukses tetap terlihat sebentar agar siswa mendapat konfirmasi visual.
       await new Promise(resolve=>setTimeout(resolve,650));
 
@@ -4155,7 +4224,7 @@ renderStudentProfile=function(){v85OldRenderProfile_(); const card=document.quer
               ? 'Presensi sudah tercatat, tetapi foto belum berhasil masuk Drive Email B. '
               : 'Foto selfie masih tersedia di halaman ini. ')+
             (e?.message||e||'Proses gagal.')+
-            (pending.attendanceId?' Tekan Kirim Foto Lagi.':' Tekan Coba Kirim Lagi.');
+            (pending.attendanceId?' SiDEt sudah mencoba dan memeriksa otomatis; tekan Kirim Foto Lagi hanya jika status tetap belum selesai.':' Tekan Coba Kirim Lagi.');
           $('attInfo').className='alert bad';
         }
       }else if($('attInfo')){
@@ -4372,7 +4441,7 @@ renderStudentProfile=function(){v85OldRenderProfile_(); const card=document.quer
     if(document.getElementById('sidetVersionBadge'))return;
     const el=document.createElement('div');
     el.id='sidetVersionBadge';
-    el.textContent='SiDEt V10.46 • Frontend/Backend Sinkron';
+    el.textContent='SiDEt V10.47 • Frontend/Backend Sinkron';
     el.style.cssText='position:fixed;right:8px;bottom:6px;z-index:9000;font:500 10px system-ui;color:#64748b;background:rgba(255,255,255,.88);padding:3px 7px;border-radius:999px;pointer-events:none';
     document.body.appendChild(el);
   }
@@ -4398,7 +4467,7 @@ renderStudentProfile=function(){v85OldRenderProfile_(); const card=document.quer
     if(version)version.textContent='v9.8';
 
     const oldBadge=document.getElementById('sidetVersionBadge');
-    if(oldBadge)oldBadge.textContent='SiDEt V10.46 • Frontend/Backend Sinkron';
+    if(oldBadge)oldBadge.textContent='SiDEt V10.47 • Frontend/Backend Sinkron';
   }
 
   let resizeTimer=null;
@@ -5181,7 +5250,7 @@ renderStudentProfile=function(){v85OldRenderProfile_(); const card=document.quer
   // Penanda versi yang mudah dilihat.
   function version_(){
     const badge=document.getElementById('sidetVersionBadge');
-    if(badge)badge.textContent='SiDEt V10.46 • Frontend/Backend Sinkron';
+    if(badge)badge.textContent='SiDEt V10.47 • Frontend/Backend Sinkron';
   }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',version_);
   else version_();
@@ -5294,7 +5363,7 @@ renderStudentProfile=function(){v85OldRenderProfile_(); const card=document.quer
     window.loadData=async function(){const r=await prev.apply(this,arguments);if(String(state.user?.role||'').toLowerCase()==='siswa')setTimeout(render_,0);return r;};
   }
 
-  function version_(){const b=document.getElementById('sidetVersionBadge');if(b)b.textContent='SiDEt V10.46 • Frontend/Backend Sinkron';}
+  function version_(){const b=document.getElementById('sidetVersionBadge');if(b)b.textContent='SiDEt V10.47 • Frontend/Backend Sinkron';}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>{setTimeout(render_,300);version_();});
   else{setTimeout(render_,300);version_();}
 })();
@@ -5511,7 +5580,7 @@ renderStudentProfile=function(){v85OldRenderProfile_(); const card=document.quer
 
   function version_(){
     const b=document.getElementById('sidetVersionBadge');
-    if(b)b.textContent='SiDEt V10.46 • Frontend/Backend Sinkron';
+    if(b)b.textContent='SiDEt V10.47 • Frontend/Backend Sinkron';
   }
 
   if(document.readyState==='loading'){
@@ -5529,7 +5598,7 @@ renderStudentProfile=function(){v85OldRenderProfile_(); const card=document.quer
 (function(){
   function mark_(){
     const badge=document.getElementById('sidetVersionBadge');
-    if(badge)badge.textContent='SiDEt V10.46 • Frontend/Backend Sinkron';
+    if(badge)badge.textContent='SiDEt V10.47 • Frontend/Backend Sinkron';
   }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',mark_);
   else mark_();
@@ -8475,7 +8544,7 @@ body.sidet-student-nav-active #sidetStudentNavV1017{display:grid;grid-template-c
 <script id="sidet-v1017-student-bottom-nav">
 (function(){
   'use strict';
-  const VERSION='10.46';
+  const VERSION='10.47';
   const esc_=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
   const role_=()=>String((typeof state!=='undefined'&&state.user&&state.user.role)||'').toLowerCase();
   const page_=()=>document.getElementById('siswaPage');
@@ -8894,7 +8963,7 @@ body.sidet-student-nav-active #sidetStudentNavV1017{
 <script id="sidet-v1020-camera-nav-runtime">
 (function(){
   'use strict';
-  const VERSION='10.46';
+  const VERSION='10.47';
   const role_=()=>String((typeof state!=='undefined'&&state.user&&state.user.role)||'').toLowerCase();
   const cameraSvg_='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 7h3l1.5-2h5L16 7h3a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2Z"/><circle cx="12" cy="13" r="3.5"/></svg>';
   const masukSvg_='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg>';
@@ -9049,7 +9118,7 @@ body.sidet-student-nav-active #sidetStudentNavV1017{
 <script id="sidet-v1021-student-individual-report-fix">
 (function(){
   'use strict';
-  const VERSION='10.46';
+  const VERSION='10.47';
   const prevOpenIndividual_=window.openIndividualReport_;
   const esc_=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
   const role_=()=>{try{return String(state?.user?.role||'').toLowerCase()}catch(e){return String(window.state?.user?.role||'').toLowerCase()}};
@@ -9154,7 +9223,7 @@ body.sidet-student-nav-active #sidetStudentNavV1017{
 <script id="sidet-v1022-student-export-runtime">
 (function(){
   'use strict';
-  const VERSION='10.46';
+  const VERSION='10.47';
   const prevPDF_=window.v99ExportPDF;
   const prevExcel_=window.v99ExportExcel;
   const SCHOOL={
@@ -9392,7 +9461,7 @@ body.sidet-v1024-role-nav #nav button svg{width:17px;height:17px;stroke:currentC
 <script id="sidet-v1024-lazy-nav-runtime">
 (function(){
 'use strict';
-const VERSION='10.46';
+const VERSION='10.47';
 const ALL_CLASSES=['X-A','X-B','X-C','X-D','XI-A','XI-B','XI-C','XI-D','XII-A','XII-B','XII-C','XII-D'];
 const CACHE=new Map();
 const SEQ={};
@@ -9700,7 +9769,7 @@ body[data-sidet-role="admin"] #adminPage>div.card{display:none!important}
 <script id="sidet-v1025-aesthetic-dashboard-runtime">
 (function(){
   'use strict';
-  const VERSION='10.46';
+  const VERSION='10.47';
   const esc=s=>String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   function role_(){try{return String((typeof state!=='undefined'&&state.user&&state.user.role)||window.state?.user?.role||'').toLowerCase()}catch(e){return ''}}
   const icons={
@@ -9866,7 +9935,7 @@ select option[data-sidet-class-option="1"]{font-variant-numeric:tabular-nums;fon
       normalizeVisibleText_(document.body);
       removeDuplicateButtons_();
       cleanLegacyCopy_();
-      const v=document.querySelector('.brand .muted');if(v&&/^v\d/i.test(v.textContent||''))v.textContent='v10.46';
+      const v=document.querySelector('.brand .muted');if(v&&/^v\d/i.test(v.textContent||''))v.textContent='v10.47';
     }finally{running=false;}
   }
 
@@ -10229,7 +10298,7 @@ body.sidet-v1031-student #sidetStudentNavV1017 .sidet-camera-nav-v1020{backgroun
 <script id="sidet-v1031-student-redesign-runtime">
 (function(){
 'use strict';
-const VERSION='10.46';
+const VERSION='10.47';
 const role_=()=>String((typeof state!=='undefined'&&state.user&&state.user.role)||window.state?.user?.role||'').toLowerCase();
 const user_=()=>((typeof state!=='undefined'&&state.user)||window.state?.user||{});
 const data_=()=>((typeof state!=='undefined'&&state.data)||window.state?.data||{});
@@ -10536,7 +10605,7 @@ select[data-sidet-v1034-class-select="1"]{min-height:50px!important;pointer-even
 <script id="sidet-v1035-recap-runtime">
 (function(){
   'use strict';
-  const VERSION='10.46';
+  const VERSION='10.47';
   const KEYS=['XA','XB','XC','XD','XIA','XIB','XIC','XID','XIIA','XIIB','XIIC','XIID'];
   const LABELS={XA:'Kelas XA',XB:'Kelas XB',XC:'Kelas XC',XD:'Kelas XD',XIA:'Kelas XIA',XIB:'Kelas XIB',XIC:'Kelas XIC',XID:'Kelas XID',XIIA:'Kelas XIIA',XIIB:'Kelas XIIB',XIIC:'Kelas XIIC',XIID:'Kelas XIID'};
   function clean_(v){return String(v==null?'':v).replace(/\u00a0/g,' ').replace(/\s+/g,' ').trim()}
@@ -10667,7 +10736,7 @@ select[data-sidet-v1034-class-select="1"]{min-height:50px!important;pointer-even
 <script id="sidet-v1037-version-lock">
 (function(){
  'use strict';
- const V='10.46';
+ const V='10.47';
  function lockVersion_(){
    document.querySelectorAll('.brand .muted').forEach(el=>{if(/^v?\d/i.test(String(el.textContent||'').trim()))el.textContent='v'+V;});
    const badge=document.getElementById('sidetVersionBadge');
@@ -10886,7 +10955,7 @@ window.SIDET_WA_DATA_MODE='SERVER_LIVE_TODAY';
 
 
 
-<!-- SiDEt V10.46 — CIRCULAR ATTENDANCE PROGRESS + SUCCESS HOME RETURN -->
+<!-- SiDEt V10.47 — CIRCULAR ATTENDANCE PROGRESS + SUCCESS HOME RETURN -->
 <style id="sidet-v1046-attendance-circle-style">
 #sidetAttendanceProgressV1046{margin:14px 0 4px;padding:16px 14px;border:1px solid #d9e7f5;border-radius:22px;background:linear-gradient(145deg,#f7fbff,#eef8f5);box-shadow:0 10px 30px rgba(30,82,125,.08);text-align:center;animation:sidetV1046Fade .24s ease-out both}
 #sidetAttendanceProgressV1046 .sidet-v1046-ring{width:118px;height:118px;margin:0 auto 10px;border-radius:50%;display:grid;place-items:center;position:relative;background:conic-gradient(#168cff 0deg,#dfe8f1 0deg);box-shadow:0 10px 25px rgba(25,112,180,.13);transition:filter .2s ease,transform .2s ease}
