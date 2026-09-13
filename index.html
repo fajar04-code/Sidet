@@ -2194,9 +2194,9 @@ const initialSchoolData = {};
 const CLASS_ORDER=["X-A", "X-B", "X-C", "X-D", "XI-A", "XI-B", "XI-C", "XI-D", "XII-A", "XII-B", "XII-C", "XII-D"];
 const INITIAL_STUDENTS=Object.entries(initialSchoolData).flatMap(([kelas,arr])=>arr.map(x=>({...x,kelas,sekolah:'SMAN 2 Nunukan Selatan',active:true})));
 const SIDET_DEFAULT_API_URL='https://script.google.com/macros/s/AKfycbxfl79GgtRFPcDsojojvjiHzUpRV34FitJBRqqoCdtdfKl8tfhHJVDiK9dDujXlGRj1/exec';
-const SIDET_FRONTEND_VERSION='10.45';
-const SIDET_REQUIRED_SERVER_VERSION='10.45';
-// V10.45: URL Web App bawaan file adalah satu-satunya sumber permanen.
+const SIDET_FRONTEND_VERSION='10.46';
+const SIDET_REQUIRED_SERVER_VERSION='10.46';
+// V10.46: URL Web App bawaan file adalah satu-satunya sumber permanen.
 // Hapus nilai legacy agar HP tidak terus memakai deployment lama dari localStorage.
 try{localStorage.removeItem('sidet_api');}catch(e){}
 const state={role:'auto',user:null,api:SIDET_DEFAULT_API_URL,data:{attendance:[],users:INITIAL_STUDENTS,leave:[],settings:{}}};
@@ -2549,7 +2549,7 @@ function waIssueLabel_(code){
 function waProblemDetailsHtml_(details,truncated,total){
  const arr=Array.isArray(details)?details:[];
  const totalCount=Number(total||arr.length||0);
- if(!arr.length)return '<div class="wa-sync-detail-card"><div class="wa-sync-detail-head"><div><strong>Rincian teknis belum tersedia</strong><small>Sinkronkan kembali setelah backend V10.45 aktif. Jika masalah tetap muncul, periksa sheet SISWA dan PRESENSI.</small></div></div></div>';
+ if(!arr.length)return '<div class="wa-sync-detail-card"><div class="wa-sync-detail-head"><div><strong>Rincian teknis belum tersedia</strong><small>Sinkronkan kembali setelah backend V10.46 aktif. Jika masalah tetap muncul, periksa sheet SISWA dan PRESENSI.</small></div></div></div>';
  const rows=arr.map((x,i)=>{
    const place=(x.sheet||'—')+(x.row?` · baris ${x.row}`:'');
    const person=[x.nisn||'',x.name||'',x.kelas||''].filter(Boolean);
@@ -4336,7 +4336,7 @@ renderStudentProfile=function(){v85OldRenderProfile_(); const card=document.quer
     if(document.getElementById('sidetVersionBadge'))return;
     const el=document.createElement('div');
     el.id='sidetVersionBadge';
-    el.textContent='SiDEt V10.45 • Frontend/Backend Sinkron';
+    el.textContent='SiDEt V10.46 • Frontend/Backend Sinkron';
     el.style.cssText='position:fixed;right:8px;bottom:6px;z-index:9000;font:500 10px system-ui;color:#64748b;background:rgba(255,255,255,.88);padding:3px 7px;border-radius:999px;pointer-events:none';
     document.body.appendChild(el);
   }
@@ -4362,7 +4362,7 @@ renderStudentProfile=function(){v85OldRenderProfile_(); const card=document.quer
     if(version)version.textContent='v9.8';
 
     const oldBadge=document.getElementById('sidetVersionBadge');
-    if(oldBadge)oldBadge.textContent='SiDEt V10.45 • Frontend/Backend Sinkron';
+    if(oldBadge)oldBadge.textContent='SiDEt V10.46 • Frontend/Backend Sinkron';
   }
 
   let resizeTimer=null;
@@ -5145,7 +5145,7 @@ renderStudentProfile=function(){v85OldRenderProfile_(); const card=document.quer
   // Penanda versi yang mudah dilihat.
   function version_(){
     const badge=document.getElementById('sidetVersionBadge');
-    if(badge)badge.textContent='SiDEt V10.45 • Frontend/Backend Sinkron';
+    if(badge)badge.textContent='SiDEt V10.46 • Frontend/Backend Sinkron';
   }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',version_);
   else version_();
@@ -5258,7 +5258,7 @@ renderStudentProfile=function(){v85OldRenderProfile_(); const card=document.quer
     window.loadData=async function(){const r=await prev.apply(this,arguments);if(String(state.user?.role||'').toLowerCase()==='siswa')setTimeout(render_,0);return r;};
   }
 
-  function version_(){const b=document.getElementById('sidetVersionBadge');if(b)b.textContent='SiDEt V10.45 • Frontend/Backend Sinkron';}
+  function version_(){const b=document.getElementById('sidetVersionBadge');if(b)b.textContent='SiDEt V10.46 • Frontend/Backend Sinkron';}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>{setTimeout(render_,300);version_();});
   else{setTimeout(render_,300);version_();}
 })();
@@ -5475,7 +5475,7 @@ renderStudentProfile=function(){v85OldRenderProfile_(); const card=document.quer
 
   function version_(){
     const b=document.getElementById('sidetVersionBadge');
-    if(b)b.textContent='SiDEt V10.45 • Frontend/Backend Sinkron';
+    if(b)b.textContent='SiDEt V10.46 • Frontend/Backend Sinkron';
   }
 
   if(document.readyState==='loading'){
@@ -5493,7 +5493,7 @@ renderStudentProfile=function(){v85OldRenderProfile_(); const card=document.quer
 (function(){
   function mark_(){
     const badge=document.getElementById('sidetVersionBadge');
-    if(badge)badge.textContent='SiDEt V10.45 • Frontend/Backend Sinkron';
+    if(badge)badge.textContent='SiDEt V10.46 • Frontend/Backend Sinkron';
   }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',mark_);
   else mark_();
@@ -8439,7 +8439,7 @@ body.sidet-student-nav-active #sidetStudentNavV1017{display:grid;grid-template-c
 <script id="sidet-v1017-student-bottom-nav">
 (function(){
   'use strict';
-  const VERSION='10.45';
+  const VERSION='10.46';
   const esc_=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
   const role_=()=>String((typeof state!=='undefined'&&state.user&&state.user.role)||'').toLowerCase();
   const page_=()=>document.getElementById('siswaPage');
@@ -8858,7 +8858,7 @@ body.sidet-student-nav-active #sidetStudentNavV1017{
 <script id="sidet-v1020-camera-nav-runtime">
 (function(){
   'use strict';
-  const VERSION='10.45';
+  const VERSION='10.46';
   const role_=()=>String((typeof state!=='undefined'&&state.user&&state.user.role)||'').toLowerCase();
   const cameraSvg_='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 7h3l1.5-2h5L16 7h3a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2Z"/><circle cx="12" cy="13" r="3.5"/></svg>';
   const masukSvg_='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg>';
@@ -9013,7 +9013,7 @@ body.sidet-student-nav-active #sidetStudentNavV1017{
 <script id="sidet-v1021-student-individual-report-fix">
 (function(){
   'use strict';
-  const VERSION='10.45';
+  const VERSION='10.46';
   const prevOpenIndividual_=window.openIndividualReport_;
   const esc_=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
   const role_=()=>{try{return String(state?.user?.role||'').toLowerCase()}catch(e){return String(window.state?.user?.role||'').toLowerCase()}};
@@ -9118,7 +9118,7 @@ body.sidet-student-nav-active #sidetStudentNavV1017{
 <script id="sidet-v1022-student-export-runtime">
 (function(){
   'use strict';
-  const VERSION='10.45';
+  const VERSION='10.46';
   const prevPDF_=window.v99ExportPDF;
   const prevExcel_=window.v99ExportExcel;
   const SCHOOL={
@@ -9356,7 +9356,7 @@ body.sidet-v1024-role-nav #nav button svg{width:17px;height:17px;stroke:currentC
 <script id="sidet-v1024-lazy-nav-runtime">
 (function(){
 'use strict';
-const VERSION='10.45';
+const VERSION='10.46';
 const ALL_CLASSES=['X-A','X-B','X-C','X-D','XI-A','XI-B','XI-C','XI-D','XII-A','XII-B','XII-C','XII-D'];
 const CACHE=new Map();
 const SEQ={};
@@ -9664,7 +9664,7 @@ body[data-sidet-role="admin"] #adminPage>div.card{display:none!important}
 <script id="sidet-v1025-aesthetic-dashboard-runtime">
 (function(){
   'use strict';
-  const VERSION='10.45';
+  const VERSION='10.46';
   const esc=s=>String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   function role_(){try{return String((typeof state!=='undefined'&&state.user&&state.user.role)||window.state?.user?.role||'').toLowerCase()}catch(e){return ''}}
   const icons={
@@ -9830,7 +9830,7 @@ select option[data-sidet-class-option="1"]{font-variant-numeric:tabular-nums;fon
       normalizeVisibleText_(document.body);
       removeDuplicateButtons_();
       cleanLegacyCopy_();
-      const v=document.querySelector('.brand .muted');if(v&&/^v\d/i.test(v.textContent||''))v.textContent='v10.45';
+      const v=document.querySelector('.brand .muted');if(v&&/^v\d/i.test(v.textContent||''))v.textContent='v10.46';
     }finally{running=false;}
   }
 
@@ -10193,7 +10193,7 @@ body.sidet-v1031-student #sidetStudentNavV1017 .sidet-camera-nav-v1020{backgroun
 <script id="sidet-v1031-student-redesign-runtime">
 (function(){
 'use strict';
-const VERSION='10.45';
+const VERSION='10.46';
 const role_=()=>String((typeof state!=='undefined'&&state.user&&state.user.role)||window.state?.user?.role||'').toLowerCase();
 const user_=()=>((typeof state!=='undefined'&&state.user)||window.state?.user||{});
 const data_=()=>((typeof state!=='undefined'&&state.data)||window.state?.data||{});
@@ -10500,7 +10500,7 @@ select[data-sidet-v1034-class-select="1"]{min-height:50px!important;pointer-even
 <script id="sidet-v1035-recap-runtime">
 (function(){
   'use strict';
-  const VERSION='10.45';
+  const VERSION='10.46';
   const KEYS=['XA','XB','XC','XD','XIA','XIB','XIC','XID','XIIA','XIIB','XIIC','XIID'];
   const LABELS={XA:'Kelas XA',XB:'Kelas XB',XC:'Kelas XC',XD:'Kelas XD',XIA:'Kelas XIA',XIB:'Kelas XIB',XIC:'Kelas XIC',XID:'Kelas XID',XIIA:'Kelas XIIA',XIIB:'Kelas XIIB',XIIC:'Kelas XIIC',XIID:'Kelas XIID'};
   function clean_(v){return String(v==null?'':v).replace(/\u00a0/g,' ').replace(/\s+/g,' ').trim()}
@@ -10626,12 +10626,12 @@ select[data-sidet-v1034-class-select="1"]{min-height:50px!important;pointer-even
 </script>
 
 
-<!-- SiDEt V10.45 — EDIT SISWA ENDPOINT + WA ORANG TUA PERSISTENT STORAGE -->
+<!-- SiDEt V10.46 — EDIT SISWA ENDPOINT + WA ORANG TUA PERSISTENT STORAGE -->
 
 <script id="sidet-v1037-version-lock">
 (function(){
  'use strict';
- const V='10.45';
+ const V='10.46';
  function lockVersion_(){
    document.querySelectorAll('.brand .muted').forEach(el=>{if(/^v?\d/i.test(String(el.textContent||'').trim()))el.textContent='v'+V;});
    const badge=document.getElementById('sidetVersionBadge');
@@ -10643,14 +10643,14 @@ select[data-sidet-v1034-class-select="1"]{min-height:50px!important;pointer-even
 })();
 </script>
 
-<!-- SiDEt V10.45 — WA SERVER-FIRST + DETAIL DIAGNOSTIC + SENDER AUDIT -->
+<!-- SiDEt V10.46 — WA SERVER-FIRST + DETAIL DIAGNOSTIC + SENDER AUDIT -->
 <script id="sidet-v1038-wa-server-first-marker">
 window.SIDET_WA_DATA_MODE='SERVER_LIVE_TODAY';
 </script>
 
 
 <script id="sidet-v1044-wa-date-range-upgrade">
-/* SiDEt V10.45 — WA RENTANG TANGGAL / HISTORICAL PENDING PROCESSOR */
+/* SiDEt V10.46 — WA RENTANG TANGGAL / HISTORICAL PENDING PROCESSOR */
 (function(){
   function esc_(v){return typeof waEsc_==='function'?waEsc_(v):String(v??'')}
   function rangeStart_(){return String(window.__sidetWaRangeStart||window.__sidetWaSelectedDate||'').trim()}
@@ -10825,7 +10825,7 @@ window.SIDET_WA_DATA_MODE='SERVER_LIVE_TODAY';
 
 
 <script id="sidet-v1045-wa-range-ui-lock">
-/* SiDEt V10.45 — paksa menu WA memakai renderer rentang tanggal terbaru. */
+/* SiDEt V10.46 — paksa menu WA memakai renderer rentang tanggal terbaru. */
 (function(){
   function openLatestWa_(){
     if(typeof window.renderWaAdmin_==='function') return window.renderWaAdmin_();
@@ -10837,7 +10837,7 @@ window.SIDET_WA_DATA_MODE='SERVER_LIVE_TODAY';
       const start=document.getElementById('waDateStart');
       const content=document.getElementById('adminContent');
       if(old && !start && content && typeof window.renderWaAdmin_==='function'){
-        console.warn('SiDEt V10.45: UI WA satu tanggal lama terdeteksi; memuat renderer rentang terbaru.');
+        console.warn('SiDEt V10.46: UI WA satu tanggal lama terdeteksi; memuat renderer rentang terbaru.');
         window.renderWaAdmin_();
       }
     }catch(e){console.warn('WA range UI lock:',e)}
@@ -10848,7 +10848,179 @@ window.SIDET_WA_DATA_MODE='SERVER_LIVE_TODAY';
 })();
 </script>
 
-</body></html>
-<!-- SiDEt V10.45 — WA DELIVERY STATUS: MENUNGGU / TERKIRIM / GAGAL + STATUS CHANGE TIME -->
 
-<!-- SiDEt V10.45 — WA RENTANG TANGGAL + UI LOCK + BATCH LOG + SAFE PARTIAL PROCESSING -->
+<style id="sidet-v1046-guru-wa-style">
+.sidet-v1046-teacher-wa-note{
+  margin:10px 0 12px;padding:12px 14px;border:1px solid #b9e3d7;border-radius:14px;
+  background:linear-gradient(135deg,#f2fbf8,#eef7ff);font-size:13px;line-height:1.55
+}
+.sidet-v1046-teacher-wa-note strong{display:block;color:#0b6b55;margin-bottom:3px}
+#nav button[data-v1046-guru-wa].active{box-shadow:inset 0 0 0 2px rgba(31,111,235,.22)}
+</style>
+<script id="sidet-v1046-guru-wa">
+/* SiDEt V10.46 — Guru dapat memakai WA Orang Tua tanpa registrasi nomor pengirim. */
+(function(){
+  'use strict';
+
+  function role_1046(){
+    try{return String(state?.user?.role||'').toLowerCase()}catch(e){return ''}
+  }
+  function isGuru_(){return role_1046()==='guru'}
+  function esc1046_(v){return typeof waEsc_==='function'?waEsc_(v):String(v??'')}
+  function rangeStart1046_(){return String(window.__sidetWaRangeStart||window.__sidetWaSelectedDate||'').trim()}
+  function rangeEnd1046_(){return String(window.__sidetWaRangeEnd||window.__sidetWaSelectedDate||'').trim()}
+  function rangeLabel1046_(){const a=rangeStart1046_(),b=rangeEnd1046_();if(!a&&!b)return 'hari ini';if(!b||a===b)return a||b;return a+' s.d. '+b}
+  function ready1046_(){return Array.isArray(window.__sidetWaRangeReady)?window.__sidetWaRangeReady:[]}
+  function bad1046_(){return Array.isArray(window.__sidetWaRangeIncomplete)?window.__sidetWaRangeIncomplete:[]}
+  function itemDate1046_(item){return String(item?.date||window.__sidetWaServerDate||waToday_())}
+
+  // Guru selalu lolos syarat identitas pengirim. Admin tetap mengikuti aturan lama.
+  const oldSenderReady=window.waSenderReady_;
+  const oldLoadSender=window.waLoadSenderConfig_;
+  const oldRenderSender=window.waRenderSenderPanel_;
+  window.waSenderReady_=function(){
+    if(isGuru_())return true;
+    return typeof oldSenderReady==='function'?oldSenderReady():false;
+  };
+  window.waLoadSenderConfig_=async function(){
+    if(isGuru_()){
+      SIDET_WA_SENDER={number:'',name:String(state?.user?.name||'Guru'),configured:true,teacherMode:true};
+      return SIDET_WA_SENDER;
+    }
+    return typeof oldLoadSender==='function'?oldLoadSender():SIDET_WA_SENDER;
+  };
+  window.waRenderSenderPanel_=function(){
+    const el=document.getElementById('waSenderPanel');
+    if(isGuru_()){
+      if(el)el.innerHTML=`<div class="sidet-v1046-teacher-wa-note"><strong>✓ Mode Guru · nomor pengirim tidak diwajibkan</strong>Pesan akan dibuka melalui akun WhatsApp yang sedang aktif pada perangkat guru. LOG_WA mencatat nama guru dari akun SiDEt, perangkat, waktu proses, dan pada kolom nomor pengirim tertulis <b>TIDAK DIWAJIBKAN</b>.</div>`;
+      return;
+    }
+    if(typeof oldRenderSender==='function')return oldRenderSender();
+  };
+
+  // Pengiriman guru memakai akun WhatsApp perangkat tanpa meminta konfigurasi nomor pengirim.
+  const oldSendOne=window.waSendOne_;
+  window.waSendOne_=async function(item){
+    if(!isGuru_())return typeof oldSendOne==='function'?oldSendOne(item):false;
+    const {u,type,phone}=item,date=itemDate1046_(item);
+    if(!phone){waLogUI_(`${u.name}: nomor WA orang tua belum tersedia.`,false);await waServerSave_(u,type,'GAGAL','Nomor WA orang tua belum tersedia.',date);return false}
+    const check=await waServerCheck_(u,type,date);
+    if(check.blocking){waLogUI_(`${date} · ${u.name}: dilewati, ${type} sudah diproses.`,false);return false}
+    const waitingLog=await waServerSave_(u,type,'MENUNGGU','Menunggu WhatsApp dibuka dan pesan dikirim oleh Guru.',date);
+    if(waitingLog?.ok===false){waLogUI_(`${date} · ${u.name}: LOG_WA gagal mencatat MENUNGGU.`,false);toast('LOG_WA gagal disimpan. Pesan tidak dibuka.');return false}
+    const w=window.open(`https://wa.me/${phone}?text=${encodeURIComponent(waMessage_(u,type,date))}`,'_blank');
+    if(!w){await waServerSave_(u,type,'GAGAL','Popup WhatsApp diblokir browser.',date);waLogUI_(`${date} · ${u.name}: popup diblokir.`,false);return false}
+    await waServerSave_(u,type,'DIBUKA','WhatsApp dibuka oleh Guru; status tetap MENUNGGU sampai dikonfirmasi terkirim.',date);
+    waLogUI_(`${date} · ${u.name} · ${type} · WhatsApp dibuka oleh Guru.`);return true;
+  };
+
+  async function renderTeacherWa_(){
+    const c=document.getElementById('v7TeacherHost');
+    if(!c)return;
+    const a=rangeStart1046_(),b=rangeEnd1046_();
+    c.innerHTML=`<div class="card"><div class="hero"><div><h3>📲 WA Orang Tua · Guru</h3><div class="muted">Server-first · proses satu tanggal atau rentang sampai 31 hari. Tidak perlu mendaftarkan nomor WA pengirim.</div></div><button class="btn" onclick="renderWaTeacher_()">↻ Sinkronkan Server</button></div><div class="wa-date-range-v1044"><div class="field"><label>Tanggal Awal</label><input id="waDateStart" type="date" value="${esc1046_(a)}" ${window.__sidetWaServerToday?`max="${esc1046_(window.__sidetWaServerToday)}"`:''}></div><div class="field"><label>Tanggal Akhir</label><input id="waDateEnd" type="date" value="${esc1046_(b)}" ${window.__sidetWaServerToday?`max="${esc1046_(window.__sidetWaServerToday)}"`:''}></div><button class="btn primary" onclick="waApplyDateRange_()">Tampilkan Rentang</button><button class="btn" onclick="waUseServerToday_()">Hari Ini</button><div class="wa-date-note">Maksimal 31 hari. Tanggal bermasalah dikeluarkan dari antrean; tanggal lain yang lengkap tetap dapat diproses.</div></div><div id="waSenderPanel"></div><div id="waSyncIndicator" class="wa-sync-indicator syncing"><div class="wa-sync-icon">↻</div><div><strong>Menyinkronkan rentang tanggal…</strong><small>SiDEt membaca presensi dan LOG_WA langsung dari server.</small></div></div><div class="alert">Mode gratis/semi otomatis: SiDEt membuka WhatsApp dengan pesan siap kirim. Setelah Guru benar-benar menekan <b>Kirim</b> di WhatsApp, tekan <b>Konfirmasi Terkirim</b> pada SiDEt.</div><div id="waLoading" class="alert warn">Memvalidasi data setiap tanggal dalam rentang…</div><div id="waArea"></div></div>`;
+    window.__sidetWaList=[];SIDET_WA_QUEUE=[];SIDET_WA_INDEX=0;
+    await waLoadSenderConfig_();waRenderSenderPanel_();
+
+    let list;
+    try{list=await waCandidates_()}catch(e){
+      const issues=e?.issues||window.__sidetWaSnapshotIntegrity?.issues||[],details=e?.details||window.__sidetWaSnapshotDetails||[];
+      if(typeof waSetSyncIndicator_==='function')waSetSyncIndicator_('error','RENTANG BELUM DAPAT DIPROSES',typeof waDescribeSnapshot_==='function'?waDescribeSnapshot_():(e?.message||''),issues,details);
+      const loading=document.getElementById('waLoading');if(loading){loading.className='alert bad';loading.textContent='Tidak ada tanggal lengkap yang aman dipakai untuk menentukan penerima WA.'}
+      const area=document.getElementById('waArea');if(area)area.innerHTML=typeof waSyncLockHtml_==='function'?waSyncLockHtml_('Perbaiki tanggal/baris yang bermasalah lalu sinkronkan kembali.'):`<div class="alert bad">${esc1046_(e?.message||e)}</div>`;
+      return;
+    }
+
+    window.__sidetWaList=list;
+    const ready=ready1046_(),bad=bad1046_(),summary=window.__sidetWaRangeSummary||{};
+    const classes=[...new Set(list.map(x=>x.u?.kelas).filter(Boolean))].sort();
+    const dates=[...new Set(list.map(x=>x.date).filter(Boolean))].sort();
+    if(typeof waSetSyncIndicator_==='function'){
+      if(bad.length)waSetSyncIndicator_('incomplete','SEBAGIAN TANGGAL DIKUNCI · TANGGAL LAIN SIAP',(typeof waDescribeSnapshot_==='function'?waDescribeSnapshot_():'')+' Guru dapat memproses tanggal yang lolos pemeriksaan server.',window.__sidetWaSnapshotIntegrity?.issues||[],window.__sidetWaSnapshotDetails||[]);
+      else waSetSyncIndicator_('ok','SEMUA TANGGAL SIAP DIPROSES',(typeof waDescribeSnapshot_==='function'?waDescribeSnapshot_():'')+' Seluruh calon penerima dihitung dari snapshot server.',[]);
+    }
+    const loading=document.getElementById('waLoading');
+    if(loading){loading.className=bad.length?'alert warn':'alert ok';loading.innerHTML=`Rentang aktif: <b>${esc1046_(rangeLabel1046_())}</b> · ${ready.length} tanggal siap · ${bad.length} tanggal dikunci · ${list.length} kejadian membutuhkan evaluasi WA.`}
+    const partial=bad.length?`<div class="wa-range-partial-v1044"><b>⚠ ${bad.length} tanggal tidak dimasukkan ke antrean</b>${bad.map(s=>esc1046_(s.date)).join(', ')}.</div>`:'';
+    const area=document.getElementById('waArea');
+    if(area)area.innerHTML=`<div class="wa-range-summary-v1044"><div><small>Hari dipindai</small><b>${Number(summary.days||0)}</b></div><div><small>Tanggal lengkap</small><b>${ready.length}</b></div><div><small>Tanggal bermasalah</small><b>${bad.length}</b></div><div><small>Calon notifikasi</small><b>${list.length}</b></div></div>${partial}<div class="wa-filter-grid"><div class="field"><label>Cari Nama / NISN</label><input id="waSearch" placeholder="Cari siswa…" oninput="waApplyFilters_()"></div><div class="field"><label>Tanggal</label><select id="waItemDate" onchange="waApplyFilters_()"><option value="">Semua Tanggal</option>${dates.map(x=>`<option value="${esc1046_(x)}">${esc1046_(x)}</option>`).join('')}</select></div><div class="field"><label>Kelas</label><select id="waClass" onchange="waApplyFilters_()"><option value="">Semua Kelas</option>${classes.map(x=>`<option>${esc1046_(x)}</option>`).join('')}</select></div><div class="field"><label>Jenis Notifikasi</label><select id="waType" onchange="waApplyFilters_()"><option value="">Semua Status</option>${['TERLAMBAT','BELUM_MASUK','IZIN','SAKIT','ALPA','BOLOS','BELUM_PULANG'].map(x=>`<option>${x}</option>`).join('')}</select></div><div class="field"><label>Status WA</label><select id="waLogFilter" onchange="waApplyFilters_()"><option value="">Semua</option><option value="READY">Siap</option><option value="WAITING">Menunggu</option><option value="DONE">Terkirim</option><option value="FAILED">Gagal/Retry</option><option value="NOPHONE">No. WA Kosong</option></select></div></div><div id="waKpi"></div><div class="wa-toolbar"><button class="btn primary" id="waPrepareBtn" onclick="waPrepareQueue_()">📲 Siapkan Antrean Terfilter</button><button class="btn ok" id="waNextBtn" onclick="waSendNext_()" disabled>▶ Kirim Berikutnya</button><button class="btn" onclick="waOpenLog_()">🧾 Lihat LOG_WA Rentang</button><button class="btn danger" onclick="waResetQueue_()">⏹ Hentikan Antrean</button></div><div class="wa-progress"><div id="waProgressBar"></div></div><div id="waProgressText" class="muted" style="margin:8px 0">Antrean belum dimulai.</div><div id="waTable"></div><div id="waLogBox" class="wa-logbox" style="margin-top:12px"><div class="muted">Aktivitas proses akan tampil di sini.</div></div>${bad.length&&typeof waProblemDetailsHtml_==='function'?waProblemDetailsHtml_(window.__sidetWaSnapshotDetails||[],window.__sidetWaSnapshotDetailsTruncated,window.__sidetWaSnapshotDetailCount):''}`;
+    waApplyFilters_();
+  }
+  window.renderWaTeacher_=renderTeacherWa_;
+
+  // Range buttons refresh the correct dashboard according to the logged-in role.
+  const oldApplyRange=window.waApplyDateRange_;
+  window.waApplyDateRange_=async function(){
+    if(!isGuru_())return typeof oldApplyRange==='function'?oldApplyRange():undefined;
+    const a=String(document.getElementById('waDateStart')?.value||'').trim(),b=String(document.getElementById('waDateEnd')?.value||'').trim();
+    if(!a||!b)return toast('Pilih tanggal awal dan tanggal akhir.');
+    if(b<a)return toast('Tanggal akhir harus sama atau setelah tanggal awal.');
+    const da=new Date(a+'T00:00:00Z'),db=new Date(b+'T00:00:00Z'),days=Math.floor((db-da)/86400000)+1;
+    if(days>31)return toast('Rentang WA maksimal 31 hari sekali proses.');
+    const today=String(window.__sidetWaServerToday||'');if(today&&b>today)return toast('Tanggal masa depan tidak dapat diproses.');
+    window.__sidetWaRangeStart=a;window.__sidetWaRangeEnd=b;window.__sidetWaSelectedDate=a;window.__sidetWaServerDate='';
+    SIDET_WA_QUEUE=[];SIDET_WA_INDEX=0;SIDET_WA_FILTERED=[];await renderTeacherWa_();
+  };
+  window.waApplyDateFilter_=window.waApplyDateRange_;
+
+  const oldToday=window.waUseServerToday_;
+  window.waUseServerToday_=async function(){
+    if(!isGuru_())return typeof oldToday==='function'?oldToday():undefined;
+    window.__sidetWaRangeStart='';window.__sidetWaRangeEnd='';window.__sidetWaSelectedDate='';window.__sidetWaServerDate='';
+    SIDET_WA_QUEUE=[];SIDET_WA_INDEX=0;SIDET_WA_FILTERED=[];await renderTeacherWa_();
+  };
+
+  const oldSendOneByIndex=window.waSendOneByIndex_;
+  window.waSendOneByIndex_=async function(i){
+    if(!isGuru_())return typeof oldSendOneByIndex==='function'?oldSendOneByIndex(i):undefined;
+    const item=(window.__sidetWaList||[])[i];if(!item)return;await waSendOne_(item);await renderTeacherWa_();
+  };
+  const oldConfirm=window.waConfirmByIndex_;
+  window.waConfirmByIndex_=async function(i){
+    if(!isGuru_())return typeof oldConfirm==='function'?oldConfirm(i):undefined;
+    const item=(window.__sidetWaList||[])[i];if(!item)return;
+    await waServerSave_(item.u,item.type,'DIKONFIRMASI','Guru mengonfirmasi pesan telah dikirim melalui WhatsApp.',itemDate1046_(item));
+    toast('Status WA dikonfirmasi terkirim',true);await renderTeacherWa_();
+  };
+
+  window.sidetV1046OpenTeacherWa_=async function(){
+    if(!isGuru_())return;
+    try{if(typeof window.sidetV1024Go_==='function')await window.sidetV1024Go_('guru-home')}catch(e){}
+    const host=document.getElementById('v7TeacherHost');if(!host)return;
+    window.__sidetV1024Module='guru-wa';
+    document.querySelectorAll('#nav button').forEach(b=>b.classList.remove('active'));
+    document.querySelector('#nav button[data-v1046-guru-wa]')?.classList.add('active');
+    await renderTeacherWa_();
+  };
+
+  function ensureTeacherWaButtons_(){
+    if(!isGuru_())return;
+    const nav=document.getElementById('nav');
+    if(nav&&!nav.querySelector('button[data-v1046-guru-wa]')){
+      const b=document.createElement('button');b.type='button';b.setAttribute('data-v1046-guru-wa','1');
+      b.setAttribute('onclick','sidetV1046OpenTeacherWa_()');
+      b.innerHTML='<span aria-hidden="true" style="font-size:20px;line-height:1">📲</span><span>WA Orang Tua</span>';
+      const akun=[...nav.querySelectorAll('button')].find(x=>/Akun/i.test(x.textContent||''));
+      nav.insertBefore(b,akun||null);
+    }
+    const quick=document.querySelector('#teacherDashboard .sidet-v1024-quick');
+    if(quick&&!quick.querySelector('[data-v1046-quick-wa]')){
+      const b=document.createElement('button');b.type='button';b.setAttribute('data-v1046-quick-wa','1');
+      b.setAttribute('onclick','sidetV1046OpenTeacherWa_()');
+      b.innerHTML='<b>WA Orang Tua</b><span>Kirim notifikasi presensi ke orang tua tanpa registrasi nomor pengirim guru.</span>';
+      quick.appendChild(b);
+    }
+  }
+  const obs=new MutationObserver(()=>requestAnimationFrame(ensureTeacherWaButtons_));
+  obs.observe(document.documentElement,{childList:true,subtree:true});
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>setTimeout(ensureTeacherWaButtons_,150),{once:true});
+  else setTimeout(ensureTeacherWaButtons_,150);
+  setTimeout(ensureTeacherWaButtons_,1000);
+})();
+</script>
+<!-- SiDEt V10.46 — GURU WA ORANG TUA TANPA SYARAT NOMOR PENGIRIM -->
+
+</body></html>
+<!-- SiDEt V10.46 — WA DELIVERY STATUS: MENUNGGU / TERKIRIM / GAGAL + STATUS CHANGE TIME -->
+
+<!-- SiDEt V10.46 — WA RENTANG TANGGAL + UI LOCK + BATCH LOG + SAFE PARTIAL PROCESSING -->
