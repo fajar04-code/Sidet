@@ -4125,6 +4125,7 @@ renderStudentProfile=function(){v85OldRenderProfile_(); const card=document.quer
 
     const button=$('captureBtn');
     if(button){
+      try{button.parentElement?.classList.remove('sidet-retry-center');}catch(_){}
       button.disabled=true;
       button.classList.add('v85-pulse');
       button.textContent='Mengirim otomatis…';
@@ -4216,47 +4217,60 @@ renderStudentProfile=function(){v85OldRenderProfile_(); const card=document.quer
       SIDET_V7.sending=false;
       toast('Presensi berhasil. Foto sudah tersimpan di Drive.',true);
 
-      // V10.48: sukses harus selalu kembali ke Beranda siswa tanpa logout.
-      // Pesan sukses tetap terlihat sebentar agar siswa mendapat konfirmasi visual.
-      await new Promise(resolve=>setTimeout(resolve,650));
+      // V10.48.1: setelah sukses, jangan menunggu refresh data untuk menutup modal.
+      // Kembali ke Beranda siswa secepat mungkin; refresh berjalan di latar belakang.
+      await new Promise(resolve=>setTimeout(resolve,420));
 
-      try{ closeModal(); }catch(e){ console.warn('Modal presensi gagal ditutup:',e); }
+      const forceStudentHome_=function(){
+        try{
+          if(state.stream){
+            state.stream.getTracks().forEach(track=>track.stop());
+            state.stream=null;
+          }
+        }catch(_){}
 
-      try{
-        if(typeof window.showPage==='function') window.showPage('siswaPage');
-        try{ sessionStorage.setItem('sidet_student_tab_v1017','home'); }catch(_){}
+        try{
+          const modal=document.getElementById('modal');
+          if(modal)modal.classList.add('hidden');
+        }catch(_){}
 
-        if(typeof window.sidetStudentTabV1017==='function'){
-          window.sidetStudentTabV1017('home');
-        }else{
+        try{
+          if(typeof window.showPage==='function')window.showPage('siswaPage');
           const page=document.getElementById('siswaPage');
           if(page){
             page.classList.remove('hidden');
             page.dataset.sidetTab='home';
           }
+          try{sessionStorage.setItem('sidet_student_tab_v1017','home');}catch(_){}
+          if(typeof window.sidetStudentTabV1017==='function')window.sidetStudentTabV1017('home');
           document.querySelectorAll('#sidetStudentNavV1017 button[data-tab]').forEach(btn=>{
-            btn.classList.toggle('active',btn.dataset.tab==='home');
+            const active=btn.dataset.tab==='home';
+            btn.classList.toggle('active',active);
+            if(active)btn.setAttribute('aria-current','page');else btn.removeAttribute('aria-current');
           });
+          window.scrollTo({top:0,behavior:'smooth'});
+        }catch(e){
+          console.warn('Navigasi kembali ke Beranda siswa gagal:',e);
         }
+      };
 
-        window.scrollTo({top:0,behavior:'smooth'});
-      }catch(e){
-        console.warn('Navigasi kembali ke Beranda siswa gagal:',e);
-      }
+      // Tutup modal dan tampilkan halaman utama SEKARANG.
+      forceStudentHome_();
 
-      // Refresh data dilakukan setelah dashboard sudah kembali tampil.
-      // Jika refresh gagal, presensi tetap tidak dikirim ulang karena server/Drive sudah sukses.
-      try{
-        await loadData();
-      }catch(e){
-        console.warn('Presensi sudah tersimpan, tetapi refresh dashboard gagal:',e);
-        toast('Presensi berhasil tersimpan. Tarik layar untuk memperbarui data.',true);
-      }
+      // Muat ulang status presensi tanpa menahan siswa di halaman kamera.
+      Promise.resolve()
+        .then(()=>typeof loadData==='function'?loadData():null)
+        .catch(e=>{
+          console.warn('Presensi sudah tersimpan, tetapi refresh dashboard gagal:',e);
+          try{toast('Presensi berhasil tersimpan. Data dashboard akan diperbarui saat dimuat ulang.',true);}catch(_){}
+        })
+        .finally(()=>{
+          // Renderer lain dapat mengubah tab; paksa Beranda sekali lagi setelah refresh.
+          setTimeout(forceStudentHome_,0);
+          setTimeout(forceStudentHome_,250);
+        });
 
-      // Pastikan tab Beranda tetap aktif sesudah render ulang data.
-      try{
-        if(typeof window.sidetStudentTabV1017==='function') window.sidetStudentTabV1017('home');
-      }catch(_){}
+      return;
 
     }catch(e){
       SIDET_V7.sending=false;
@@ -4266,6 +4280,10 @@ renderStudentProfile=function(){v85OldRenderProfile_(); const card=document.quer
         button.disabled=false;
         button.classList.remove('v85-pulse');
         button.textContent=pending?.attendanceId?'Kirim Foto Lagi':(pending?.photo?'Coba Kirim Lagi':'Ambil Selfie & Kirim');
+        try{
+          if(pending?.photo)button.parentElement?.classList.add('sidet-retry-center');
+          else button.parentElement?.classList.remove('sidet-retry-center');
+        }catch(_){}
       }
 
       if(pending?.photo){
@@ -4277,6 +4295,7 @@ renderStudentProfile=function(){v85OldRenderProfile_(); const card=document.quer
         if(button){
           button.disabled=false;
           button.textContent=pending.attendanceId?'Kirim Foto Lagi':'Coba Kirim Lagi';
+          try{button.parentElement?.classList.add('sidet-retry-center');}catch(_){}
         }
 
         if($('attInfo')){
@@ -4476,6 +4495,7 @@ renderStudentProfile=function(){v85OldRenderProfile_(); const card=document.quer
       if(b){
         b.disabled=false;
         b.textContent='Coba Kirim Lagi';
+        try{b.parentElement?.classList.add('sidet-retry-center');}catch(_){}
       }
       return;
     }
@@ -11015,6 +11035,14 @@ window.SIDET_WA_DATA_MODE='SERVER_LIVE_TODAY';
 </script>
 
 
+
+<!-- SiDEt V10.48.1 — RETRY BUTTON CENTER + FORCE STUDENT HOME -->
+<style id="sidet-v10481-retry-center-style">
+#modalBox .actions.sidet-retry-center{display:flex!important;justify-content:center!important;align-items:center!important;width:100%!important;gap:0!important;margin-top:14px!important}
+#modalBox .actions.sidet-retry-center>button:not(#captureBtn){display:none!important}
+#modalBox .actions.sidet-retry-center #captureBtn{display:inline-flex!important;align-items:center!important;justify-content:center!important;margin:0 auto!important;min-width:210px!important;max-width:min(88vw,320px)!important;min-height:50px!important;padding:12px 22px!important;text-align:center!important}
+@media(max-width:480px){#modalBox .actions.sidet-retry-center #captureBtn{width:min(88%,300px)!important;min-width:0!important}}
+</style>
 
 <!-- SiDEt V10.48 — CIRCULAR ATTENDANCE PROGRESS + SUCCESS HOME RETURN -->
 <style id="sidet-v1046-attendance-circle-style">
