@@ -11037,11 +11037,33 @@ window.SIDET_WA_DATA_MODE='SERVER_LIVE_TODAY';
 
 
 <!-- SiDEt V10.48.1 — RETRY BUTTON CENTER + FORCE STUDENT HOME -->
-<style id="sidet-v10481-retry-center-style">
-#modalBox .actions.sidet-retry-center{display:flex!important;justify-content:center!important;align-items:center!important;width:100%!important;gap:0!important;margin-top:14px!important}
+<style id="sidet-v10482-retry-nav-safe-style">
+/* V10.48.2 — modal harus selalu berada di atas bottom navigation. */
+#modal.modal{z-index:12050!important}
+#modalBox.modalbox{position:relative!important;z-index:12051!important}
+#modalBox .actions.sidet-retry-center{
+  position:relative!important;z-index:12060!important;display:flex!important;
+  justify-content:center!important;align-items:center!important;width:100%!important;
+  gap:0!important;margin:14px auto calc(26px + env(safe-area-inset-bottom))!important;
+  padding:4px 0 10px!important;pointer-events:auto!important
+}
 #modalBox .actions.sidet-retry-center>button:not(#captureBtn){display:none!important}
-#modalBox .actions.sidet-retry-center #captureBtn{display:inline-flex!important;align-items:center!important;justify-content:center!important;margin:0 auto!important;min-width:210px!important;max-width:min(88vw,320px)!important;min-height:50px!important;padding:12px 22px!important;text-align:center!important}
-@media(max-width:480px){#modalBox .actions.sidet-retry-center #captureBtn{width:min(88%,300px)!important;min-width:0!important}}
+#modalBox .actions.sidet-retry-center #captureBtn{
+  position:relative!important;z-index:12061!important;display:inline-flex!important;
+  align-items:center!important;justify-content:center!important;margin:0 auto!important;
+  min-width:210px!important;max-width:min(88vw,320px)!important;min-height:54px!important;
+  padding:14px 24px!important;text-align:center!important;pointer-events:auto!important;
+  touch-action:manipulation!important;-webkit-tap-highlight-color:transparent!important
+}
+/* Ruang aman tambahan ketika tombol retry sedang tampil. */
+body.sidet-student-nav-active #modalBox:has(.actions.sidet-retry-center){
+  padding-bottom:calc(28px + env(safe-area-inset-bottom))!important
+}
+@media(max-width:480px){
+  #modal.modal{padding:10px!important}
+  #modalBox.modalbox{max-height:94dvh!important}
+  #modalBox .actions.sidet-retry-center #captureBtn{width:min(88%,300px)!important;min-width:0!important}
+}
 </style>
 
 <!-- SiDEt V10.48 — CIRCULAR ATTENDANCE PROGRESS + SUCCESS HOME RETURN -->
