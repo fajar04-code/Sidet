@@ -2373,8 +2373,13 @@ function editUserForm_(i){
 }
 async function saveEditedUser_(i){
  const old=(state.data.users||[])[i];if(!old)return;
- const u={...old,nisn:$('eNisn').value.trim(),nip:$('eNisn').value.trim(),name:$('eName').value.trim(),kelas:$('eKelas').value.trim(),waOrtu:$('eWa').value.trim(),active:$('eActive').value==='true'};
- try{if(apiReady())await api('userSave',u);state.data.users[i]=u;closeModal();toast('Data siswa diperbarui',true);await loadData();adminTab('users')}catch(e){toast(e.message)}
+ const u={...old,id:old.id,nisn:$('eNisn').value.trim(),nip:$('eNisn').value.trim(),name:$('eName').value.trim(),kelas:$('eKelas').value.trim(),waOrtu:$('eWa').value.trim(),active:$('eActive').value==='true'};
+ try{
+  if(apiReady()) await api('userUpdate',u);
+  state.data.users[i]=u;
+  closeModal();toast('Data siswa diperbarui',true);
+  await loadData();adminTab('users');
+ }catch(e){toast(e.message)}
 }
 function waBulkPhoneModal_(){
  $('modal').classList.remove('hidden');
@@ -2382,7 +2387,17 @@ function waBulkPhoneModal_(){
 }
 async function waBulkApply_(){
  const rows=$('waBulkText').value.split(/\r?\n/).map(x=>x.trim()).filter(Boolean);let ok=0,fail=0,missing=[];
- for(const line of rows){const p=line.split(/[\t,;]+/).map(x=>x.trim());const nisn=p[0],wa=p[1];if(!nisn||!wa){fail++;continue}const idx=(state.data.users||[]).findIndex(u=>String(u.nisn||u.id)===String(nisn));if(idx<0){fail++;missing.push(nisn);continue}const u={...state.data.users[idx],waOrtu:wa};try{if(apiReady())await api('userSave',u);state.data.users[idx]=u;ok++}catch(e){fail++}}
+ for(const line of rows){
+  const p=line.split(/[\t,;]+/).map(x=>x.trim()),nisn=p[0],wa=p[1];
+  if(!nisn||!wa){fail++;continue}
+  const idx=(state.data.users||[]).findIndex(u=>String(u.nisn||u.id)===String(nisn));
+  if(idx<0){fail++;missing.push(nisn);continue}
+  const u=state.data.users[idx];
+  try{
+   if(apiReady()) await api('userWaUpdate',{id:u.id,nisn:u.nisn||nisn,waOrtu:wa});
+   state.data.users[idx]={...u,waOrtu:wa};ok++;
+  }catch(e){fail++}
+ }
  $('waBulkResult').innerHTML=`✅ ${ok} diperbarui · ❌ ${fail} gagal${missing.length?` · NISN tidak ditemukan: ${waEsc_(missing.slice(0,8).join(', '))}`:''}`;if(ok){toast(`${ok} nomor WA diperbarui`,true);setTimeout(()=>{closeModal();loadData().then(()=>adminTab('users'))},700)}
 }
 
@@ -9468,6 +9483,8 @@ select option[data-sidet-class-option="1"]{font-variant-numeric:tabular-nums;fon
 
   function normalizeSelect_(sel){
     if(!sel || sel.tagName!=='SELECT')return;
+    // Jangan sentuh native select ketika sedang dibuka/difokuskan di Android.
+    if(document.activeElement===sel)return;
     const opts=[...sel.options];
     const classOpts=opts.filter(o=>isClass_(o.value)||isClass_(o.textContent));
     if(!classOpts.length)return;
@@ -9478,6 +9495,7 @@ select option[data-sidet-class-option="1"]{font-variant-numeric:tabular-nums;fon
       const rawText=String(o.textContent||'').trim();
       const k=classKey_(rawValue)||classKey_(rawText);
       if(k){
+        // VALUE asli dipertahankan agar payload/API tetap sama dengan versi data yang sudah bekerja.
         const raw=rawValue||rawText;
         if(!byKey.has(k))byKey.set(k,raw);
         else byKey.set(k,preferRaw_(byKey.get(k),raw));
@@ -9487,11 +9505,18 @@ select option[data-sidet-class-option="1"]{font-variant-numeric:tabular-nums;fon
       }
     });
     if(!byKey.size)return;
-    const frag=document.createDocumentFragment();
-    specials.forEach(x=>{const o=document.createElement('option');o.value=x.value;o.textContent=x.text;frag.appendChild(o);});
-    [...byKey.keys()].sort((a,b)=>KEYS.indexOf(a)-KEYS.indexOf(b)).forEach(k=>{
-      const o=document.createElement('option');o.value=byKey.get(k)||LABELS[k];o.textContent=LABELS[k];o.dataset.sidetClassOption='1';frag.appendChild(o);
+    const ordered=[...byKey.keys()].sort((a,b)=>KEYS.indexOf(a)-KEYS.indexOf(b));
+    const desired=[...specials.map(x=>({value:x.value,text:x.text,key:''})),...ordered.map(k=>({value:byKey.get(k)||LABELS[k],text:LABELS[k],key:k}))];
+    const stable=sel.options.length===desired.length && desired.every((x,i)=>{
+      const o=sel.options[i];
+      return String(o.value||'')===String(x.value||'') && String(o.textContent||'').trim()===String(x.text||'').trim();
     });
+    if(stable){
+      if(currentKey){const hit=[...sel.options].find(o=>classKey_(o.value)===currentKey||classKey_(o.textContent)===currentKey);if(hit&&sel.value!==hit.value)sel.value=hit.value;}
+      return;
+    }
+    const frag=document.createDocumentFragment();
+    desired.forEach(x=>{const o=document.createElement('option');o.value=x.value;o.textContent=x.text;if(x.key)o.dataset.sidetClassOption='1';frag.appendChild(o);});
     sel.replaceChildren(frag);
     if(currentKey){const hit=[...sel.options].find(o=>classKey_(o.value)===currentKey||classKey_(o.textContent)===currentKey);if(hit)sel.value=hit.value;}
   }
@@ -9596,6 +9621,8 @@ select option[data-sidet-class-option="1"]{font-variant-numeric:tabular-nums;fon
   // Ubah hanya teks yang terlihat. VALUE option tidak diubah agar request API tetap cocok dengan data Sheet/server.
   function fixSelect_(sel){
     if(!sel||sel.tagName!=='SELECT')return;
+    // Native popup Android harus dibiarkan stabil selama user memilih.
+    if(document.activeElement===sel)return;
     const current=sel.value;
     const seen=new Set();
     [...sel.options].forEach(o=>{
@@ -9603,13 +9630,13 @@ select option[data-sidet-class-option="1"]{font-variant-numeric:tabular-nums;fon
       if(!k)return;
       if(seen.has(k)){o.remove();return;}
       seen.add(k);
-      o.textContent=LABELS[k];
+      if(String(o.textContent||'').trim()!==LABELS[k])o.textContent=LABELS[k];
       o.dataset.sidetV1029Class='1';
     });
     if(current){
       const curKey=key_(current);
       const hit=[...sel.options].find(o=>key_(o.value)===curKey||key_(o.textContent)===curKey);
-      if(hit)sel.value=hit.value;
+      if(hit&&sel.value!==hit.value)sel.value=hit.value;
     }
   }
 
@@ -10015,4 +10042,339 @@ document.addEventListener('DOMContentLoaded',()=>setTimeout(()=>{installHooks_()
 })();
 </script>
 
+
+
+<!-- SiDEt V10.33 — DATA RECOVERY + SAFE ANDROID CLASS SELECT (UI ONLY) -->
+<style id="sidet-v1033-safe-select-style">
+#v7TClass,#v80AClass,#v7WClass,#v106GClass,#v106AClass,#v106KClass,#v7LeadClass,
+select[id*="Class"],select[id*="Kelas" i]{min-height:48px!important;pointer-events:auto!important;touch-action:manipulation!important}
+</style>
+<script id="sidet-v1033-safe-select-runtime">
+(function(){
+  'use strict';
+  // Patch ini sengaja TIDAK mengubah state.data, endpoint API, loadData, attendance, users, atau payload server.
+  // Tujuannya hanya menjaga dropdown native Android tetap dapat dipilih.
+  document.addEventListener('pointerdown',function(e){
+    const s=e.target&&e.target.closest?e.target.closest('select'):null;
+    if(s)s.style.pointerEvents='auto';
+  },true);
+  document.addEventListener('focusin',function(e){
+    const s=e.target;
+    if(s&&s.tagName==='SELECT')s.dataset.sidetNativeOpen='1';
+  },true);
+  document.addEventListener('focusout',function(e){
+    const s=e.target;
+    if(s&&s.tagName==='SELECT'){
+      delete s.dataset.sidetNativeOpen;
+      setTimeout(function(){try{window.sidetV1029FixAttendanceClasses_?.();}catch(_){}},80);
+    }
+  },true);
+  setTimeout(function(){
+    const v=document.querySelector('.brand .muted');
+    if(v&&/^v\d/i.test(v.textContent||''))v.textContent='v10.33';
+  },180);
+})();
+</script>
+
+
+
+<!-- SiDEt V10.34 — DEDUP KELAS ANDROID + SERVER-RAW SAFE -->
+<style id="sidet-v1034-class-dedup-style">
+select[data-sidet-v1034-class-select="1"]{min-height:50px!important;pointer-events:auto!important;touch-action:manipulation!important}
+</style>
+<script id="sidet-v1034-class-dedup-runtime">
+(function(){
+  'use strict';
+  const KEYS=['XA','XB','XC','XD','XIA','XIB','XIC','XID','XIIA','XIIB','XIIC','XIID'];
+  const LABELS={XA:'Kelas XA',XB:'Kelas XB',XC:'Kelas XC',XD:'Kelas XD',XIA:'Kelas XIA',XIB:'Kelas XIB',XIC:'Kelas XIC',XID:'Kelas XID',XIIA:'Kelas XIIA',XIIB:'Kelas XIIB',XIIC:'Kelas XIIC',XIID:'Kelas XIID'};
+
+  function key_(value){
+    let v=String(value==null?'':value).trim().toUpperCase()
+      .replace(/\u00A0/g,' ').replace(/[–—−]/g,'-')
+      .replace(/^KELAS\s+/,'').replace(/\s+/g,'').replace(/-/g,'');
+    const m=v.match(/^(XII|XI|X)([A-D])$/);
+    return m?(m[1]+m[2]):'';
+  }
+  function label_(value){const k=key_(value);return LABELS[k]||String(value==null?'':value).trim();}
+
+  // Ambil nilai kelas ASLI yang paling sering muncul pada data user dari server.
+  // Ini hanya dibaca, tidak pernah menulis/mengubah state.data.
+  function serverRawMap_(){
+    const counts=new Map();
+    try{
+      const users=Array.isArray(window.state?.data?.users)?window.state.data.users:[];
+      users.forEach(u=>{
+        const raw=String(u?.kelas??'').trim(), k=key_(raw);
+        if(!k||!raw)return;
+        if(!counts.has(k))counts.set(k,new Map());
+        const m=counts.get(k);m.set(raw,(m.get(raw)||0)+1);
+      });
+      const me=window.state?.user;
+      if(me){
+        const raw=String(me.kelas??'').trim(), k=key_(raw);
+        if(k&&raw){if(!counts.has(k))counts.set(k,new Map());const m=counts.get(k);m.set(raw,(m.get(raw)||0)+1000);}
+      }
+    }catch(_){ }
+    const out={};
+    counts.forEach((m,k)=>{
+      let best='',score=-1;
+      m.forEach((n,raw)=>{if(n>score){score=n;best=raw;}});
+      if(best)out[k]=best;
+    });
+    return out;
+  }
+
+  function looksLikeClassSelect_(sel){
+    if(!sel||sel.tagName!=='SELECT')return false;
+    let hits=0;
+    for(const o of sel.options){if(key_(o.value)||key_(o.textContent)){hits++;if(hits>=2)return true;}}
+    return false;
+  }
+
+  function chooseExistingRaw_(rows,k){
+    // Utamakan value yang memang sudah dipakai oleh option, jangan mengarang value baru.
+    const exact=rows.find(x=>key_(x.value)===k && x.value);
+    if(exact)return exact.value;
+    const fromText=rows.find(x=>key_(x.text)===k && x.text);
+    return fromText?fromText.text:LABELS[k];
+  }
+
+  function normalizeOne_(sel,force){
+    if(!looksLikeClassSelect_(sel))return;
+    if(!force && document.activeElement===sel)return; // jangan ubah ketika popup native sudah terbuka
+
+    sel.dataset.sidetV1034ClassSelect='1';
+    const options=[...sel.options].map(o=>({value:String(o.value??'').trim(),text:String(o.textContent??'').trim(),disabled:!!o.disabled}));
+    const currentValue=String(sel.value??'').trim();
+    const currentKey=key_(currentValue)||key_(sel.options[sel.selectedIndex]?.textContent||'');
+    const rawMap=serverRawMap_();
+
+    const specials=[];
+    const rowsByKey=new Map();
+    for(const x of options){
+      const k=key_(x.value)||key_(x.text);
+      if(k){
+        if(!rowsByKey.has(k))rowsByKey.set(k,[]);
+        rowsByKey.get(k).push(x);
+      }else if(x.value==='' || /semua\s*kelas|pilih\s*kelas/i.test(x.text||x.value)){
+        const sig=(x.value+'|'+x.text).toLowerCase();
+        if(!specials.some(s=>s.sig===sig))specials.push({...x,sig});
+      }
+    }
+    if(rowsByKey.size<2)return;
+
+    const desired=[];
+    specials.forEach(x=>desired.push({value:x.value,text:x.text,disabled:x.disabled,key:''}));
+    KEYS.forEach(k=>{
+      const rows=rowsByKey.get(k);
+      if(!rows||!rows.length)return;
+      // Jika kelas ini sedang terpilih, pertahankan currentValue. Selain itu gunakan nilai asli server bila tersedia.
+      let raw=(currentKey===k && key_(currentValue)===k && currentValue) || rawMap[k] || chooseExistingRaw_(rows,k);
+      desired.push({value:raw,text:LABELS[k],disabled:false,key:k});
+    });
+
+    const stable=sel.options.length===desired.length && desired.every((x,i)=>{
+      const o=sel.options[i];
+      return String(o.value??'').trim()===x.value && String(o.textContent??'').trim()===x.text;
+    });
+    if(stable)return;
+
+    const frag=document.createDocumentFragment();
+    desired.forEach(x=>{
+      const o=document.createElement('option');
+      o.value=x.value;o.textContent=x.text;o.disabled=x.disabled;
+      if(x.key)o.dataset.sidetV1034Class='1';
+      frag.appendChild(o);
+    });
+    sel.replaceChildren(frag);
+    if(currentKey){
+      const hit=[...sel.options].find(o=>key_(o.value)===currentKey||key_(o.textContent)===currentKey);
+      if(hit)sel.value=hit.value;
+    }
+  }
+
+  function normalizeAll_(){
+    document.querySelectorAll('select').forEach(s=>normalizeOne_(s,false));
+  }
+
+  // KRITIS UNTUK ANDROID: rapikan tepat SEBELUM popup native dibuka.
+  // Tidak preventDefault, jadi dropdown tetap terbuka normal.
+  document.addEventListener('pointerdown',function(e){
+    const s=e.target&&e.target.closest?e.target.closest('select'):null;
+    if(s)normalizeOne_(s,true);
+  },true);
+  document.addEventListener('touchstart',function(e){
+    const s=e.target&&e.target.closest?e.target.closest('select'):null;
+    if(s)normalizeOne_(s,true);
+  },{capture:true,passive:true});
+
+  document.addEventListener('change',function(e){
+    const s=e.target;
+    if(s&&s.tagName==='SELECT'&&looksLikeClassSelect_(s)){
+      // Jangan ganti value hasil pilihan; hanya rapikan sesudah popup selesai.
+      setTimeout(()=>normalizeOne_(s,false),120);
+    }
+  },true);
+
+  let timer=0;
+  const mo=new MutationObserver(function(){
+    clearTimeout(timer);timer=setTimeout(normalizeAll_,90);
+  });
+  function start_(){
+    normalizeAll_();
+    mo.observe(document.body,{childList:true,subtree:true});
+    setTimeout(normalizeAll_,250);setTimeout(normalizeAll_,900);
+    const v=document.querySelector('.brand .muted');if(v&&/^v\d/i.test(v.textContent||''))v.textContent='v10.34';
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start_,{once:true});else start_();
+
+  window.sidetV1034NormalizeClassSelects_=normalizeAll_;
+})();
+</script>
+
+
+
+<!-- SiDEt V10.35 — REKAP KELAS DATA RECOVERY + AUTOFIT EXPORT -->
+<style id="sidet-v1035-recap-autofit-style">
+@media print{
+  @page sidetV1035Recap{size:A4 portrait;margin:4mm}
+  body.sidet-v1035-recap-printing{page:sidetV1035Recap!important;background:#fff!important;margin:0!important;padding:0!important}
+  body.sidet-v1035-recap-printing *{visibility:hidden!important}
+  body.sidet-v1035-recap-printing #sidetV1035PrintSheet,
+  body.sidet-v1035-recap-printing #sidetV1035PrintSheet *{visibility:visible!important}
+  body.sidet-v1035-recap-printing #sidetV1035PrintSheet{position:absolute!important;left:0!important;top:0!important;width:100%!important;margin:0!important;padding:0!important;background:#fff!important}
+  body.sidet-v1035-recap-printing #sidetV1035PrintSheet table{width:100%!important;table-layout:fixed!important;border-collapse:collapse!important}
+  body.sidet-v1035-recap-printing #sidetV1035PrintSheet tr{break-inside:avoid!important;page-break-inside:avoid!important}
+}
+</style>
+<script id="sidet-v1035-recap-runtime">
+(function(){
+  'use strict';
+  const VERSION='10.35';
+  const KEYS=['XA','XB','XC','XD','XIA','XIB','XIC','XID','XIIA','XIIB','XIIC','XIID'];
+  const LABELS={XA:'Kelas XA',XB:'Kelas XB',XC:'Kelas XC',XD:'Kelas XD',XIA:'Kelas XIA',XIB:'Kelas XIB',XIC:'Kelas XIC',XID:'Kelas XID',XIIA:'Kelas XIIA',XIIB:'Kelas XIIB',XIIC:'Kelas XIIC',XIID:'Kelas XIID'};
+  function clean_(v){return String(v==null?'':v).replace(/\u00a0/g,' ').replace(/\s+/g,' ').trim()}
+  function esc_(v){return clean_(v).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
+  function key_(value){
+    let v=clean_(value).toUpperCase().replace(/[–—−]/g,'-').replace(/^KELAS\s+/,'').replace(/\s+/g,'').replace(/-/g,'');
+    const m=v.match(/^(XII|XI|X)([A-D])$/);return m?(m[1]+m[2]):'';
+  }
+  function parts_(k){const m=String(k||'').match(/^(XII|XI|X)([A-D])$/);return m?{r:m[1],l:m[2]}:null}
+  function classVariants_(value){
+    const out=[],seen=new Set(),add=v=>{v=clean_(v);if(v&&!seen.has(v)){seen.add(v);out.push(v)}};
+    add(value);
+    const k=key_(value);if(!k)return out;
+    try{
+      const users=Array.isArray(window.state?.data?.users)?window.state.data.users:[];
+      users.forEach(u=>{if(key_(u?.kelas)===k)add(u.kelas)});
+      const lead=window.state?.data?.leadership;
+      const cls=Array.isArray(lead?.kelas)?lead.kelas:[];
+      cls.forEach(x=>{const raw=x?.kelas??x;if(key_(raw)===k)add(raw)});
+    }catch(_){ }
+    const p=parts_(k);if(p){add(p.r+'-'+p.l);add(p.r+p.l);add('Kelas '+p.r+p.l);add('Kelas '+p.r+'-'+p.l)}
+    return out;
+  }
+
+  /* Semua pemanggilan classMonthly menjadi toleran terhadap format lama X-A dan format UI Kelas XA.
+     Tidak mengubah state.data; hanya mencoba alias kelas bila server lama mengembalikan 0 siswa. */
+  const baseApi_=window.api;
+  if(typeof baseApi_==='function'&&!baseApi_.__sidetV1035Wrapped){
+    const wrapped=async function(action,payload){
+      if(String(action)!=='classMonthly'||!payload||payload.userId)return baseApi_.apply(this,arguments);
+      const variants=classVariants_(payload.kelas);
+      let first=null;
+      for(let i=0;i<variants.length;i++){
+        const p=Object.assign({},payload,{kelas:variants[i]});
+        const j=await baseApi_.call(this,action,p);
+        if(first===null)first=j;
+        const users=j?.data?.users;
+        if(Array.isArray(users)&&users.length){
+          j.data.requestedClass=payload.kelas;
+          j.data.resolvedClass=variants[i];
+          return j;
+        }
+      }
+      return first!==null?first:baseApi_.call(this,action,payload);
+    };
+    wrapped.__sidetV1035Wrapped=true;wrapped.__sidetV1035Base=baseApi_;window.api=wrapped;
+  }
+
+  function visible_(el){if(!el)return false;const s=getComputedStyle(el);return s.display!=='none'&&s.visibility!=='hidden'&&Number(s.opacity||1)!==0}
+  function activeRecap_(){return [...document.querySelectorAll('.sidet-v106-recap-card')].find(visible_)||null}
+  function field_(card,label){const f=[...card.querySelectorAll('.field')].find(x=>clean_(x.querySelector('label')?.textContent).toLowerCase()===label.toLowerCase());if(!f)return '';const i=f.querySelector('input,select,textarea');if(!i)return '';return i.tagName==='SELECT'?clean_(i.options[i.selectedIndex]?.text||i.value):clean_(i.value)}
+  function monthName_(ym){try{return new Intl.DateTimeFormat('id-ID',{month:'long',year:'numeric',timeZone:'UTC'}).format(new Date(ym+'-01T00:00:00Z')).toUpperCase()}catch(_){return clean_(ym).toUpperCase()}}
+  function classTitle_(s){const k=key_(s);if(k)return k;return clean_(s).replace(/^Kelas\s+/i,'').toUpperCase()||'—'}
+  function table_(card){return [...card.querySelectorAll('.sidet-v106-table,table')].find(t=>visible_(t)&&t.querySelector('tbody tr'))||null}
+  function tableAOA_(tbl){return [...tbl.querySelectorAll('tr')].map(tr=>[...tr.children].map(c=>clean_(c.innerText||c.textContent)))}
+  function logoConst_(kind){
+    const html=document.documentElement.innerHTML,key=kind==='prov'?'PROV_LOGO':'SCHOOL_LOGO';
+    const m=html.match(new RegExp("const\\s+"+key+"\\s*=\\s*('(?:[^'\\\\]|\\\\.)*'|\\\"(?:[^\\\"\\\\]|\\\\.)*\\\")"));
+    if(!m)return '';try{return Function('return '+m[1])()}catch(_){return ''}
+  }
+  function download_(blob,name){const u=URL.createObjectURL(blob),a=document.createElement('a');a.href=u;a.download=name;a.style.display='none';document.body.appendChild(a);try{a.click()}catch(_){window.open(u,'_blank','noopener')}setTimeout(()=>{URL.revokeObjectURL(u);a.remove()},2500)}
+  function safe_(s){return clean_(s).replace(/[\\/:*?"<>|]+/g,' ').replace(/\s+/g,'_').slice(0,110)||'Rekap_Kelas'}
+
+  function buildRecapPdf_(card){
+    const JsPDF=window.jspdf?.jsPDF;if(!JsPDF)throw Error('Modul PDF belum termuat. Periksa koneksi internet.');
+    const tbl=table_(card);if(!tbl)throw Error('Tampilkan rekap kelas terlebih dahulu.');
+    const aoa=tableAOA_(tbl),head=aoa[0]||[],body=aoa.slice(1),kelas=field_(card,'Kelas'),month=field_(card,'Bulan'),bulan=monthName_(month);
+    if(!body.length)throw Error('Data rekap kelas belum tersedia.');
+    const prov=logoConst_('prov'),school=logoConst_('school');
+    const attempts=body.length>=46?[4.6,4.3]:body.length>=40?[5.0,4.7]:body.length>=34?[5.5,5.1]:body.length>=28?[6.0,5.5]:[6.6,6.0];
+    let best=null;
+    for(const fontSize of attempts){
+      const doc=new JsPDF({orientation:'portrait',unit:'mm',format:'a4',compress:true}),w=doc.internal.pageSize.getWidth();
+      try{if(prov)doc.addImage(prov,'PNG',8,3.8,14.5,14.5,undefined,'FAST')}catch(_){ }
+      try{if(school)doc.addImage(school,'PNG',w-22.5,3.8,14.5,14.5,undefined,'FAST')}catch(_){ }
+      doc.setTextColor(0,0,0);doc.setFont('helvetica','bold');doc.setFontSize(8.1);doc.text('PEMERINTAH PROVINSI KALIMANTAN UTARA',w/2,7,{align:'center'});
+      doc.setFontSize(12.1);doc.text('SMA NEGERI 2 NUNUKAN SELATAN',w/2,11.7,{align:'center'});
+      doc.setFont('helvetica','normal');doc.setFontSize(5.4);doc.text("Jalan H. Mare' Uddani No. 01 RT 07 Kel. Mansapa Kec. Nunukan Selatan Kab. Nunukan Prov. Kaltara",w/2,15.2,{align:'center',maxWidth:160});
+      doc.setFontSize(5.8);doc.text('Pos-el sman2nusa@gmail.com · NPSN 70006382',w/2,18.2,{align:'center'});doc.setLineWidth(.45);doc.line(7,20.6,w-7,20.6);doc.setLineWidth(.15);doc.line(7,21.4,w-7,21.4);
+      doc.setFont('helvetica','bold');doc.setFontSize(10.2);doc.text('REKAP KEHADIRAN KELAS '+classTitle_(kelas),w/2,26,{align:'center'});doc.setFontSize(8.5);doc.text('BULAN '+bulan,w/2,30,{align:'center'});
+      const widths={0:{cellWidth:10},1:{cellWidth:83,halign:'left'},2:{cellWidth:16.5},3:{cellWidth:16.5},4:{cellWidth:16.5},5:{cellWidth:16.5},6:{cellWidth:16.5},7:{cellWidth:16.5}};
+      doc.autoTable({head:[head],body,startY:33,margin:{left:7,right:7,top:33,bottom:10},theme:'grid',styles:{font:'helvetica',fontSize,cellPadding:body.length>=40?.45:.62,minCellHeight:0,overflow:'ellipsize',valign:'middle',halign:'center',lineWidth:.08,lineColor:[170,190,205],textColor:[20,45,65]},headStyles:{fillColor:[236,245,251],textColor:[30,65,90],fontStyle:'bold',halign:'center',fontSize:Math.max(fontSize,5.3)},alternateRowStyles:{fillColor:[250,252,254]},columnStyles:widths,rowPageBreak:'avoid',showHead:'firstPage'});
+      best=doc;if(doc.getNumberOfPages()===1)break;
+    }
+    const doc=best,w=doc.internal.pageSize.getWidth(),h=doc.internal.pageSize.getHeight(),y=doc.lastAutoTable?.finalY||260;
+    if(doc.getNumberOfPages()===1&&y<h-8){doc.setFont('helvetica','normal');doc.setFontSize(5.3);doc.setTextColor(45,60,70);doc.text('H = Hadir tepat waktu · T = Terlambat · B = Bolos/Tidak Presensi Pulang · A = ALPA · I = Izin · S = Sakit.',7,Math.min(h-5,y+3));}
+    return {doc,kelas,month};
+  }
+
+  async function exportRecapPdf_(){
+    const card=activeRecap_();if(!card)return false;
+    try{const x=buildRecapPdf_(card);download_(x.doc.output('blob'),safe_('SiDEt_Rekap_Kehadiran_Kelas_'+classTitle_(x.kelas)+'_'+x.month)+'.pdf');if(typeof toast==='function')toast('PDF rekap kelas berhasil dibuat dan disesuaikan ke halaman.',true)}catch(e){console.error(e);if(typeof toast==='function')toast(e?.message||'Gagal membuat PDF rekap kelas.')}return true;
+  }
+  async function exportRecapExcel_(){
+    const card=activeRecap_();if(!card)return false;
+    try{
+      if(!window.XLSX)throw Error('Modul Excel belum termuat. Periksa koneksi internet.');const tbl=table_(card);if(!tbl)throw Error('Tampilkan rekap kelas terlebih dahulu.');
+      const data=tableAOA_(tbl),kelas=field_(card,'Kelas'),month=field_(card,'Bulan'),bulan=monthName_(month),cols=Math.max(8,data[0]?.length||8);
+      const aoa=[['SMA NEGERI 2 NUNUKAN SELATAN'],['REKAP KEHADIRAN KELAS '+classTitle_(kelas)],['BULAN '+bulan],[],...data];
+      const ws=XLSX.utils.aoa_to_sheet(aoa),last=XLSX.utils.encode_col(cols-1);ws['!merges']=[{s:{r:0,c:0},e:{r:0,c:cols-1}},{s:{r:1,c:0},e:{r:1,c:cols-1}},{s:{r:2,c:0},e:{r:2,c:cols-1}}];
+      ws['!cols']=Array.from({length:cols},(_,i)=>({wch:i===0?6:i===1?38:9}));if(data.length>1)ws['!autofilter']={ref:'A5:'+last+(4+data.length)};
+      const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'Rekap Kelas');const arr=XLSX.write(wb,{bookType:'xlsx',type:'array',compression:true});download_(new Blob([arr],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}),safe_('SiDEt_Rekap_Kelas_'+classTitle_(kelas)+'_'+month)+'.xlsx');if(typeof toast==='function')toast('Excel rekap kelas berhasil dibuat dengan lebar kolom otomatis.',true);
+    }catch(e){console.error(e);if(typeof toast==='function')toast(e?.message||'Gagal membuat Excel rekap kelas.')}return true;
+  }
+
+  const prevPdf_=window.v99ExportPDF,prevExcel_=window.v99ExportExcel;
+  window.v99ExportPDF=function(){if(activeRecap_()&&table_(activeRecap_()))return exportRecapPdf_();return typeof prevPdf_==='function'?prevPdf_.apply(this,arguments):undefined};
+  window.v99ExportExcel=function(){if(activeRecap_()&&table_(activeRecap_()))return exportRecapExcel_();return typeof prevExcel_==='function'?prevExcel_.apply(this,arguments):undefined};
+  if(window.exportExcel===prevExcel_)window.exportExcel=window.v99ExportExcel;
+
+  function printRecap_(){
+    const card=activeRecap_(),tbl=card&&table_(card);if(!card||!tbl){if(typeof toast==='function')toast('Tampilkan rekap kelas terlebih dahulu.');return}
+    const kelas=field_(card,'Kelas'),bulan=monthName_(field_(card,'Bulan')),rows=tbl.querySelectorAll('tbody tr').length,clone=tbl.cloneNode(true);clone.removeAttribute('class');clone.style.cssText='width:100%;table-layout:fixed;border-collapse:collapse;font-size:'+(rows>=40?'5.6pt':rows>=34?'6.1pt':rows>=28?'6.6pt':'7.2pt')+';line-height:1.02';
+    const widths=['6%','46%','8%','8%','8%','8%','8%','8%'];[...clone.querySelectorAll('tr')].forEach(tr=>[...tr.children].forEach((c,i)=>{c.style.cssText+=';border:.45px solid #a9bdcb;padding:'+(rows>=36?'1px 1.5px':'1.4px 2px')+';text-align:'+(i===1?'left':'center')+';vertical-align:middle;overflow:hidden'}));[...clone.querySelectorAll('thead th')].forEach((th,i)=>{th.style.background='#edf5fb';th.style.fontWeight='700';if(widths[i])th.style.width=widths[i]});
+    const prov=logoConst_('prov'),school=logoConst_('school');let sheet=document.getElementById('sidetV1035PrintSheet');if(sheet)sheet.remove();sheet=document.createElement('div');sheet.id='sidetV1035PrintSheet';sheet.innerHTML='<div style="display:grid;grid-template-columns:50px 1fr 50px;align-items:center;border-bottom:3px double #111;padding-bottom:2px"><img src="'+prov+'" style="width:44px;height:44px;object-fit:contain"><div style="text-align:center;line-height:1.05"><b style="font-size:8pt">PEMERINTAH PROVINSI KALIMANTAN UTARA</b><div style="font-size:13pt;font-weight:900">SMA NEGERI 2 NUNUKAN SELATAN</div><div style="font-size:5.5pt">Jalan H. Mare\' Uddani No. 01 RT 07 Kel. Mansapa Kec. Nunukan Selatan Kab. Nunukan Prov. Kaltara</div><div style="font-size:5.8pt">Pos-el sman2nusa@gmail.com · NPSN 70006382</div></div><img src="'+school+'" style="width:44px;height:44px;object-fit:contain"></div><div style="text-align:center;font-weight:900;margin:2.5mm 0 2mm"><div style="font-size:11pt">REKAP KEHADIRAN KELAS '+esc_(classTitle_(kelas))+'</div><div style="font-size:9pt">BULAN '+esc_(bulan)+'</div></div>'+clone.outerHTML+'<div style="font-size:5.5pt;margin-top:2mm">H = Hadir tepat waktu · T = Terlambat · B = Bolos/Tidak Presensi Pulang · A = ALPA · I = Izin · S = Sakit.</div>';document.body.appendChild(sheet);document.body.classList.add('sidet-v1035-recap-printing');const cleanup=()=>{document.body.classList.remove('sidet-v1035-recap-printing');setTimeout(()=>sheet?.remove(),250)};window.addEventListener('afterprint',cleanup,{once:true});setTimeout(()=>window.print(),70);setTimeout(cleanup,4500);
+  }
+  window.sidetV106PrintRecap_=printRecap_;
+
+  function mark_(){const v=document.querySelector('.brand .muted');if(v&&/^v\d/i.test(v.textContent||''))v.textContent='v'+VERSION}
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>setTimeout(mark_,180),{once:true});else setTimeout(mark_,180);
+  setTimeout(mark_,900);
+})();
+</script>
+
+
+<!-- SiDEt V10.36 — EDIT SISWA ENDPOINT + WA ORANG TUA PERSISTENT STORAGE -->
 </body></html>
