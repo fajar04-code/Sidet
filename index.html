@@ -2194,8 +2194,8 @@ const initialSchoolData = {};
 const CLASS_ORDER=["X-A", "X-B", "X-C", "X-D", "XI-A", "XI-B", "XI-C", "XI-D", "XII-A", "XII-B", "XII-C", "XII-D"];
 const INITIAL_STUDENTS=Object.entries(initialSchoolData).flatMap(([kelas,arr])=>arr.map(x=>({...x,kelas,sekolah:'SMAN 2 Nunukan Selatan',active:true})));
 const SIDET_DEFAULT_API_URL='https://script.google.com/macros/s/AKfycbx6ybeZVLEYJg52qccyYjmbKY5WkhMd6-yeNdu2PUOcKCzG1hmf5ofePOMuNCKkUEiB/exec';
-const SIDET_FRONTEND_VERSION='11.0';
-const SIDET_REQUIRED_SERVER_VERSION='11.0';
+const SIDET_FRONTEND_VERSION='11.1';
+const SIDET_REQUIRED_SERVER_VERSION='11.1';
 // V10.45: URL Web App bawaan file adalah satu-satunya sumber permanen.
 // Hapus nilai legacy agar HP tidak terus memakai deployment lama dari localStorage.
 try{localStorage.removeItem('sidet_api');}catch(e){}
@@ -11158,7 +11158,7 @@ body.sidet-student-nav-active #modalBox:has(.actions.sidet-retry-center){
 <!-- SiDEt V10.45 — WA RENTANG TANGGAL + UI LOCK + BATCH LOG + SAFE PARTIAL PROCESSING -->
 
 
-<!-- SiDEt V11.0 — FAST PRESENCE CORE: RECORD FIRST, PHOTO BACKGROUND -->
+<!-- SiDEt V11.1 — FAST PRESENCE CORE: RECORD FIRST, PHOTO BACKGROUND + PARALLEL SERVER PHOTO LEASE -->
 <style id="sidet-v11-fast-presence-style">
 #sidetV11PhotoSync{margin-top:10px;padding:10px 12px;border:1px solid #d8e6f2;border-radius:12px;background:#f7fbff;font-size:11px;line-height:1.5;color:#526a80;display:none}
 #sidetV11PhotoSync.show{display:flex;gap:9px;align-items:center;justify-content:space-between}
@@ -11379,7 +11379,23 @@ body.sidet-student-nav-active #modalBox:has(.actions.sidet-retry-center){
   }
   window.addEventListener('online',()=>setTimeout(()=>window.sidetV11ResumePhotoQueue_(),500));
 
-  function markVersion_(){const b=document.getElementById('sidetVersionBadge');if(b)b.textContent='SiDEt V11.0 • Presensi Cepat + Foto Background';}
+  // V11.1: jangan hanya mengandalkan startApp/online. Jika siswa sempat menutup modal,
+  // pindah tab, mengunci layar, atau browser kembali dari background, antrean foto dicek lagi.
+  window.addEventListener('pageshow',()=>setTimeout(()=>window.sidetV11ResumePhotoQueue_(),650));
+  document.addEventListener('visibilitychange',()=>{
+    if(document.visibilityState==='visible' && navigator.onLine!==false){
+      setTimeout(()=>window.sidetV11ResumePhotoQueue_(),650);
+    }
+  });
+  setInterval(()=>{
+    try{
+      if(navigator.onLine!==false && String(state?.user?.role||'').toLowerCase()==='siswa'){
+        window.sidetV11ResumePhotoQueue_();
+      }
+    }catch(_){}
+  },30000);
+
+  function markVersion_(){const b=document.getElementById('sidetVersionBadge');if(b)b.textContent='SiDEt V11.1 • Foto Paralel + Auto Sync';}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',markVersion_);else markVersion_();
   setTimeout(markVersion_,500);
 })();
