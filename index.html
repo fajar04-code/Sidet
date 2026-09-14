@@ -2194,8 +2194,8 @@ const initialSchoolData = {};
 const CLASS_ORDER=["X-A", "X-B", "X-C", "X-D", "XI-A", "XI-B", "XI-C", "XI-D", "XII-A", "XII-B", "XII-C", "XII-D"];
 const INITIAL_STUDENTS=Object.entries(initialSchoolData).flatMap(([kelas,arr])=>arr.map(x=>({...x,kelas,sekolah:'SMAN 2 Nunukan Selatan',active:true})));
 const SIDET_DEFAULT_API_URL='https://script.google.com/macros/s/AKfycbxfl79GgtRFPcDsojojvjiHzUpRV34FitJBRqqoCdtdfKl8tfhHJVDiK9dDujXlGRj1/exec';
-const SIDET_FRONTEND_VERSION='10.48';
-const SIDET_REQUIRED_SERVER_VERSION='10.48';
+const SIDET_FRONTEND_VERSION='11.0';
+const SIDET_REQUIRED_SERVER_VERSION='11.0';
 // V10.45: URL Web App bawaan file adalah satu-satunya sumber permanen.
 // Hapus nilai legacy agar HP tidak terus memakai deployment lama dari localStorage.
 try{localStorage.removeItem('sidet_api');}catch(e){}
@@ -11152,7 +11152,236 @@ body.sidet-student-nav-active #modalBox:has(.actions.sidet-retry-center){
 
 
 <!-- SiDEt V10.48 — PHOTO BACKGROUND RETRY 5X + SERVER RECONCILIATION -->
-</body></html>
+
 <!-- SiDEt V10.45 — WA DELIVERY STATUS: MENUNGGU / TERKIRIM / GAGAL + STATUS CHANGE TIME -->
 
 <!-- SiDEt V10.45 — WA RENTANG TANGGAL + UI LOCK + BATCH LOG + SAFE PARTIAL PROCESSING -->
+
+
+<!-- SiDEt V11.0 — FAST PRESENCE CORE: RECORD FIRST, PHOTO BACKGROUND -->
+<style id="sidet-v11-fast-presence-style">
+#sidetV11PhotoSync{margin-top:10px;padding:10px 12px;border:1px solid #d8e6f2;border-radius:12px;background:#f7fbff;font-size:11px;line-height:1.5;color:#526a80;display:none}
+#sidetV11PhotoSync.show{display:flex;gap:9px;align-items:center;justify-content:space-between}
+#sidetV11PhotoSync.ok{background:#effaf5;border-color:#ccebdc;color:#217452}
+#sidetV11PhotoSync.warn{background:#fff9ed;border-color:#eeddb9;color:#8a6619}
+#sidetV11PhotoSync .sidet-v11-sync-text{min-width:0;flex:1}
+#sidetV11PhotoSync button{min-height:34px;padding:7px 10px;border-radius:9px;white-space:nowrap}
+</style>
+<script id="sidet-v11-fast-presence-runtime">
+(function(){
+  'use strict';
+  const V11_QUEUE_PREFIX='sidet_v7_sync_';
+  const V11_IDB='sidet_v11_presence_queue';
+  const V11_STORE='photo_jobs';
+  const V11_EXPIRY=2*60*60*1000;
+  const V11_RETRY=[0,2000,5000,10000,20000];
+  const syncing=new Set();
+
+  function v11RequestId_(){
+    let rnd='';
+    try{rnd=(crypto&&typeof crypto.randomUUID==='function')?crypto.randomUUID():'';}catch(_){}
+    if(!rnd)rnd=Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,12);
+    const d=(typeof v7LocalDate_==='function'?v7LocalDate_():new Date().toISOString().slice(0,10)).replace(/-/g,'');
+    return 'PRS-'+d+'-'+rnd.replace(/[^a-zA-Z0-9]/g,'').slice(0,20).toUpperCase();
+  }
+  function sleep_(ms){return new Promise(r=>setTimeout(r,ms));}
+  function queueKey_(id){return (typeof v7SyncKey_==='function'?v7SyncKey_(id):V11_QUEUE_PREFIX+String(id||''));}
+
+  function openDb_(){
+    return new Promise((resolve,reject)=>{
+      if(!('indexedDB' in window))return resolve(null);
+      const req=indexedDB.open(V11_IDB,1);
+      req.onupgradeneeded=()=>{const db=req.result;if(!db.objectStoreNames.contains(V11_STORE))db.createObjectStore(V11_STORE,{keyPath:'attendanceId'});};
+      req.onsuccess=()=>resolve(req.result);
+      req.onerror=()=>reject(req.error||Error('IndexedDB tidak tersedia.'));
+    });
+  }
+  async function idbPut_(job){
+    try{const db=await openDb_();if(!db)return;await new Promise((res,rej)=>{const tx=db.transaction(V11_STORE,'readwrite');tx.objectStore(V11_STORE).put(job);tx.oncomplete=()=>res();tx.onerror=()=>rej(tx.error);});db.close();}catch(e){console.warn('V11 IDB put:',e);}
+  }
+  async function idbDelete_(id){
+    try{const db=await openDb_();if(!db)return;await new Promise((res,rej)=>{const tx=db.transaction(V11_STORE,'readwrite');tx.objectStore(V11_STORE).delete(String(id));tx.oncomplete=()=>res();tx.onerror=()=>rej(tx.error);});db.close();}catch(e){console.warn('V11 IDB delete:',e);}
+  }
+  async function idbAll_(){
+    try{const db=await openDb_();if(!db)return[];const rows=await new Promise((res,rej)=>{const tx=db.transaction(V11_STORE,'readonly');const rq=tx.objectStore(V11_STORE).getAll();rq.onsuccess=()=>res(rq.result||[]);rq.onerror=()=>rej(rq.error);});db.close();return rows;}catch(e){console.warn('V11 IDB read:',e);return[];}
+  }
+
+  function saveQueue_(job){
+    job={...job,queuedAt:Number(job.queuedAt||Date.now()),expiresAt:Number(job.expiresAt||Date.now()+V11_EXPIRY)};
+    try{sessionStorage.setItem(queueKey_(job.attendanceId),JSON.stringify(job));}catch(e){console.warn('V11 session queue:',e);}
+    idbPut_(job);
+    syncBadge_('warn','Foto presensi sedang disinkronkan otomatis…',false);
+    return job;
+  }
+  function clearQueue_(id){
+    try{sessionStorage.removeItem(queueKey_(id));}catch(_){}
+    idbDelete_(id);
+  }
+  function queuedSession_(){
+    const rows=[];
+    try{for(let i=0;i<sessionStorage.length;i++){const k=sessionStorage.key(i);if(!k||!k.startsWith(V11_QUEUE_PREFIX))continue;try{const j=JSON.parse(sessionStorage.getItem(k)||'{}');if(j.attendanceId&&j.photo)rows.push(j);}catch(_){}}}catch(_){}
+    return rows;
+  }
+
+  function syncBadge_(kind,text,manual){
+    try{
+      const page=document.getElementById('siswaPage');if(!page)return;
+      let box=document.getElementById('sidetV11PhotoSync');
+      if(!box){box=document.createElement('div');box.id='sidetV11PhotoSync';const target=document.getElementById('empNotice')||page.querySelector('.notice-info')||page.firstElementChild;if(target)target.insertAdjacentElement('afterend',box);else page.prepend(box);}
+      box.className='show '+(kind||'warn');
+      box.innerHTML='<div class="sidet-v11-sync-text">'+String(text||'')+'</div>'+(manual?'<button class="btn" type="button" onclick="sidetV11ResumePhotoQueue_()">Coba sinkron foto</button>':'');
+    }catch(_){}
+  }
+  function hideBadgeLater_(){setTimeout(()=>{const b=document.getElementById('sidetV11PhotoSync');if(b)b.className='';},2500);}
+
+  async function readPhotoStatus_(job){
+    try{
+      const r=await api('attendanceSyncStatus',{attendanceId:job.attendanceId});
+      const d=r?.data||{};const url=String(d.linkFotoDrive||d.photoUrl||'').trim();
+      return {ok:!!url,url};
+    }catch(_){return {ok:false,url:''};}
+  }
+
+  async function syncOne_(raw){
+    const job={...raw};
+    const id=String(job.attendanceId||'');
+    if(!id||!job.photo||syncing.has(id))return false;
+    if(job.expiresAt&&Date.now()>Number(job.expiresAt)){clearQueue_(id);return false;}
+    syncing.add(id);
+    try{
+      for(let i=0;i<V11_RETRY.length;i++){
+        if(i)await sleep_(V11_RETRY[i]);
+        const known=await readPhotoStatus_(job);
+        if(known.ok){clearQueue_(id);syncBadge_('ok','Foto presensi sudah tersimpan di Drive.',false);hideBadgeLater_();return true;}
+        try{
+          const r=await api('syncAttendance',{attendanceId:id,userId:job.userId,nisn:job.nisn,name:job.name,kelas:job.kelas,type:job.type,photo:job.photo});
+          const url=String(r?.linkFotoDrive||r?.photoUrl||'').trim();
+          if(r?.ok&&url){clearQueue_(id);syncBadge_('ok','Foto presensi berhasil disinkronkan ke Drive.',false);hideBadgeLater_();return true;}
+        }catch(e){console.warn('V11 background photo attempt '+(i+1)+' gagal:',e);}
+      }
+      const finalCheck=await readPhotoStatus_(job);
+      if(finalCheck.ok){clearQueue_(id);syncBadge_('ok','Foto presensi sudah tersimpan di Drive.',false);hideBadgeLater_();return true;}
+      syncBadge_('warn','Presensi sudah tercatat. Foto masih menunggu sinkronisasi dan tidak akan membuat presensi ganda.',true);
+      return false;
+    }finally{syncing.delete(id);}
+  }
+
+  window.sidetV11ResumePhotoQueue_=async function(){
+    const all=[...queuedSession_(),...(await idbAll_())];
+    const seen=new Set();
+    for(const job of all){
+      const id=String(job?.attendanceId||'');if(!id||seen.has(id))continue;seen.add(id);
+      if(job.expiresAt&&Date.now()>Number(job.expiresAt)){clearQueue_(id);continue;}
+      syncOne_(job);
+    }
+    if(!seen.size){const b=document.getElementById('sidetV11PhotoSync');if(b)b.className='';}
+  };
+
+  function forceStudentHome_(){
+    try{
+      if(state.stream){state.stream.getTracks().forEach(t=>t.stop());state.stream=null;}
+      const modal=document.getElementById('modal');if(modal)modal.classList.add('hidden');
+      if(typeof window.showPage==='function')window.showPage('siswaPage');
+      const page=document.getElementById('siswaPage');if(page){page.classList.remove('hidden');page.dataset.sidetTab='home';}
+      try{sessionStorage.setItem('sidet_student_tab_v1017','home');}catch(_){}
+      if(typeof window.sidetStudentTabV1017==='function')window.sidetStudentTabV1017('home');
+      document.querySelectorAll('#sidetStudentNavV1017 button[data-tab]').forEach(btn=>{const active=btn.dataset.tab==='home';btn.classList.toggle('active',active);if(active)btn.setAttribute('aria-current','page');else btn.removeAttribute('aria-current');});
+      window.scrollTo({top:0,behavior:'smooth'});
+    }catch(e){console.warn('V11 home:',e);}
+  }
+
+  async function gpsForSend_(){
+    try{
+      const g=state.gps;
+      if(g&&Number.isFinite(Number(g.latitude))&&Number.isFinite(Number(g.longitude))){
+        const age=Date.now()-Number(g.gpsTimestamp||0);
+        if(age>=0&&age<=60000){validateGPS_(g);return g;}
+      }
+    }catch(_){}
+    if(typeof v88ReadGpsForSend_==='function')return v88ReadGpsForSend_();
+    if(typeof v85FreshGps_==='function')return v85FreshGps_();
+    return v7FreshGPS_();
+  }
+
+  // FINAL OVERRIDE: core attendance ends before photo upload.
+  window.captureAttendance=async function(type){
+    if(SIDET_V7.sending)return;
+    type=String(type||'MASUK').toUpperCase();
+    if(!navigator.onLine){toast('Presensi memerlukan koneksi internet. Aktifkan jaringan lalu coba kembali.');return;}
+    SIDET_V7.sending=true;
+    const button=document.getElementById('captureBtn');
+    try{
+      if(button){button.disabled=true;button.textContent='Memproses…';button.classList.add('v85-pulse');}
+      let job=v88GetPending_(type);
+
+      if(!job){
+        const video=document.getElementById('cam');
+        if(!video?.videoWidth)throw Error('Kamera belum siap. Tunggu sebentar lalu coba lagi.');
+        v7SetProgress_(10,'Mengompres foto maksimal 95 KB…');
+        const photo=await v7Compress100_(video);
+        job={type,photo:photo.dataUrl,photoSizeKB:photo.sizeKB,userId:String(state.user?.id||''),nisn:String(state.user?.nisn||''),name:String(state.user?.name||''),kelas:String(state.user?.kelas||''),createdAt:Date.now(),attendanceId:'',attendanceRequestId:v11RequestId_()};
+        v88SavePending_(job);
+        const preview=document.getElementById('v7Preview');if(preview){preview.src=job.photo;preview.classList.remove('hidden');}
+        if(video)video.classList.add('hidden');
+        if(state.stream){state.stream.getTracks().forEach(t=>t.stop());state.stream=null;}
+      }else if(!job.attendanceRequestId){
+        job.attendanceRequestId=v11RequestId_();v88SavePending_(job);
+      }
+
+      if(!job.attendanceId){
+        v7SetProgress_(30,'Membaca lokasi…');
+        const gps=await gpsForSend_();
+        const check=validateGPS_(gps);
+        state.gps={...gps,distance:check.distance,inside:check.inside,nearestPoint:check.nearestPoint};
+        v7SetProgress_(58,'Mencatat presensi ke server…');
+        const result=await api('attendanceQuick',{userId:job.userId,nisn:job.nisn,name:job.name,kelas:job.kelas,type:job.type,lat:gps.latitude,lng:gps.longitude,accuracy:gps.accuracy,gpsTimestamp:gps.gpsTimestamp,attendanceRequestId:job.attendanceRequestId,queueId:job.attendanceRequestId});
+        if(!result?.record?.id)throw Error('Server belum mengembalikan ID presensi.');
+        job.attendanceId=String(result.record.id);
+        job.serverTime=String(result.record.time||'');
+        job.serverPhotoUrl=String(result.record.photoUrl||'').trim();
+        job.locationInside=String(result.record.locationClass||'')!=='JAUH_DARI_SEKOLAH'&&check.inside!==false;
+        job.serverRecordedAt=Date.now();
+        v88SavePending_(job); // penting jika langkah setelah server terputus
+      }
+
+      const alreadyHasPhoto=!!String(job.serverPhotoUrl||'').trim();
+      v7SetProgress_(100,alreadyHasPhoto?'Presensi sudah tercatat dan foto sebelumnya tetap digunakan.':'Presensi berhasil dicatat. Foto disinkronkan di latar belakang.');
+      const photoJob=alreadyHasPhoto?null:saveQueue_({attendanceId:job.attendanceId,attendanceRequestId:job.attendanceRequestId,userId:job.userId,nisn:job.nisn,name:job.name,kelas:job.kelas,type:job.type,photo:job.photo,queuedAt:Date.now(),expiresAt:Date.now()+V11_EXPIRY});
+      v88ClearPending_(type);
+      SIDET_V7.sending=false;
+      if(button){button.disabled=true;button.classList.remove('v85-pulse');button.textContent='Berhasil ✓';}
+
+      // UI selesai sekarang; photo sync tidak di-await.
+      forceStudentHome_();
+      const clock=job.serverTime?(' · '+job.serverTime):'';
+      toast((type==='PULANG'?'Presensi pulang':'Presensi masuk')+' berhasil'+clock+(alreadyHasPhoto?'. Foto sebelumnya tetap aman.':'. Foto disinkronkan otomatis.'),true);
+      if(photoJob)setTimeout(()=>syncOne_(photoJob),120);
+
+      Promise.resolve().then(()=>typeof loadData==='function'?loadData():null).catch(e=>console.warn('V11 refresh dashboard:',e)).finally(()=>{setTimeout(forceStudentHome_,0);setTimeout(forceStudentHome_,250);});
+      return;
+
+    }catch(e){
+      SIDET_V7.sending=false;
+      const pending=v88GetPending_(type);
+      if(button){button.disabled=false;button.classList.remove('v85-pulse');button.textContent=pending?.photo?'Coba Kirim Lagi':'Ambil Selfie & Kirim';try{if(pending?.photo)button.parentElement?.classList.add('sidet-retry-center');}catch(_){}}
+      if(pending?.photo){
+        if(typeof v88ShowPendingPreview_==='function')v88ShowPendingPreview_(pending);
+        const info=document.getElementById('attInfo');if(info){info.textContent='Foto tetap tersimpan. '+String(e?.message||e||'Data belum terkirim.')+' Tekan Coba Kirim Lagi; foto tidak perlu diambil ulang.';info.className='alert bad';}
+      }else{const info=document.getElementById('attInfo');if(info){info.textContent='Data belum dikirim: '+String(e?.message||e);info.className='alert bad';}}
+    }
+  };
+
+  // Resume queue whenever app starts or network returns.
+  const oldStart=window.startApp;
+  if(typeof oldStart==='function'&&!oldStart.__sidetV11Wrapped){
+    const wrapped=function(){const r=oldStart.apply(this,arguments);setTimeout(()=>window.sidetV11ResumePhotoQueue_(),900);return r;};
+    wrapped.__sidetV11Wrapped=true;window.startApp=wrapped;
+  }
+  window.addEventListener('online',()=>setTimeout(()=>window.sidetV11ResumePhotoQueue_(),500));
+
+  function markVersion_(){const b=document.getElementById('sidetVersionBadge');if(b)b.textContent='SiDEt V11.0 • Presensi Cepat + Foto Background';}
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',markVersion_);else markVersion_();
+  setTimeout(markVersion_,500);
+})();
+</script>
+</body></html>
