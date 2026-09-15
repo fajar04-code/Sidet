@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>SiDEt V12.2.2 Barcode Semua Kelas — SMAN 2 Nunukan Selatan</title>
+<title>SiDEt V12.2.5 Scanner FIFO — SMAN 2 Nunukan Selatan</title>
 <style>
 :root{--bg:#f4f7fb;--card:#fff;--ink:#182230;--muted:#6b7788;--primary:#1769e0;--primary2:#0d47a1;--ok:#16834b;--bad:#c62828;--warn:#b56a00;--line:#e4e9f0;--shadow:0 10px 30px #1d355715}
 *{box-sizing:border-box}body{margin:0;font-family:Inter,system-ui,-apple-system,Segoe UI,Arial,sans-serif;background:var(--bg);color:var(--ink)}
@@ -2602,6 +2602,15 @@ function waMessage_(u,type,date=waToday_()){
  const body={TERLAMBAT:`🕐 Presensi Masuk: *${jam}*\n⚠️ Status: *TERLAMBAT*\n\nBatas waktu presensi masuk pukul *07.30*. Mohon Bapak/Ibu mengingatkan putra/putrinya agar hadir tepat waktu.`,BELUM_MASUK:`⚠️ Status: *BELUM PRESENSI MASUK*\n\nSampai waktu pengecekan, SiDEt belum mencatat presensi masuk. Status ini belum berarti ALPA/Bolos karena masih menunggu verifikasi pihak sekolah.`,IZIN:`🟡 Status: *IZIN*\n\nData izin telah tercatat pada sistem SiDEt.`,SAKIT:`🤒 Status: *SAKIT*\n\nData sakit telah tercatat pada sistem SiDEt. Semoga segera diberikan kesehatan.`,ALPA:`❌ Status: *ALPA*\n\nSetelah verifikasi, siswa tercatat tidak hadir tanpa keterangan. Mohon konfirmasi ke sekolah bila ada informasi yang belum tercatat.`,BOLOS:`🚨 Status: *BOLOS / PERLU PERHATIAN*\n\nBerdasarkan verifikasi sekolah terdapat ketidaksesuaian kehadiran. Mohon segera berkomunikasi dengan pihak sekolah.`,BELUM_PULANG:`✅ Presensi Masuk: *${jam}*\n⚠️ Presensi Pulang: *BELUM TERCATAT*\n\nSetelah batas waktu pulang hari ini, SiDEt belum menerima presensi pulang. Mohon Bapak/Ibu memastikan kepulangan putra/putrinya. Pesan ini hanya berdasarkan data presensi.`}[type]||`Status: *${type}*`;
  return head+body+`\n\nTerima kasih atas perhatian dan kerja sama Bapak/Ibu.\n\n*SiDEt — Sistem Informasi Presensi Digital*\n*SMA Negeri 2 Nunukan Selatan*`
 }
+function waOpenComposer_(phone,message){
+ try{
+  if(window.AndroidDownloads&&typeof window.AndroidDownloads.openWhatsApp==='function'){
+   window.AndroidDownloads.openWhatsApp(String(phone||''),String(message||''));
+   return true;
+  }
+ }catch(e){console.warn('Jembatan WhatsApp Android tidak tersedia:',e)}
+ return !!window.open(`https://wa.me/${String(phone||'').replace(/\D/g,'')}?text=${encodeURIComponent(String(message||''))}`,'_blank');
+}
 async function waServerCheck_(u,type,date){
  if(!apiReady()){const x=waLocalGet_(u,type,date);return {ok:true,exists:!!x,blocking:!!x&&waIsBlockingStatus_(x.status),data:x,local:true}}
  try{const r=await api('waLogCheck',{tanggal:date,nisn:waNisn_(u),jenis:type});return {...r,blocking:!!r.exists&&waIsBlockingStatus_(r.data?.status)}}catch(e){const x=waLocalGet_(u,type,date);return {ok:true,exists:!!x,blocking:!!x&&waIsBlockingStatus_(x.status),data:x,local:true,warning:e.message}}
@@ -2698,8 +2707,8 @@ async function waSendOne_(item){
  // Status MENUNGGU dibuat sebelum WhatsApp dibuka. Jika proses gagal, baris yang sama berubah menjadi GAGAL.
  const waitingLog=await waServerSave_(u,type,'MENUNGGU','Menunggu WhatsApp dibuka dan pesan dikirim oleh Admin.',date);
  if(waitingLog?.ok===false){waLogUI_(`${u.name}: LOG_WA gagal mencatat status MENUNGGU. Pengiriman dibatalkan demi keamanan audit.`,false);toast('LOG_WA gagal disimpan. Pesan tidak dibuka.');return false}
- const w=window.open(`https://wa.me/${phone}?text=${encodeURIComponent(waMessage_(u,type,date))}`,'_blank');
- if(!w){await waServerSave_(u,type,'GAGAL','Popup WhatsApp diblokir browser.',date);waLogUI_(`${u.name}: popup diblokir.`,false);return false}
+ const opened=waOpenComposer_(phone,waMessage_(u,type,date));
+ if(!opened){await waServerSave_(u,type,'GAGAL','Popup WhatsApp diblokir browser.',date);waLogUI_(`${u.name}: popup diblokir.`,false);return false}
  await waServerSave_(u,type,'DIBUKA','WhatsApp dibuka; status tetap MENUNGGU sampai Admin mengonfirmasi pesan benar-benar terkirim.',date);
  waLogUI_(`${u.name} · ${type} · WhatsApp dibuka · MENUNGGU konfirmasi.`);return true
 }
@@ -10560,7 +10569,7 @@ window.SIDET_WA_DATA_MODE='SERVER_LIVE_TODAY';
     if(!phone){waLogUI_(`${u.name}: nomor WA belum tersedia.`,false);await waServerSave_(u,type,'GAGAL','Nomor WA orang tua belum tersedia.',date);return false}
     const check=await waServerCheck_(u,type,date);if(check.blocking){waLogUI_(`${date} · ${u.name}: dilewati, ${type} sudah diproses.`,false);return false}
     const waitingLog=await waServerSave_(u,type,'MENUNGGU','Menunggu WhatsApp dibuka dan pesan dikirim oleh '+operator+'.',date);if(waitingLog?.ok===false){waLogUI_(`${date} · ${u.name}: gagal mencatat MENUNGGU.`,false);return false}
-    const w=window.open(`https://wa.me/${phone}?text=${encodeURIComponent(waMessage_(u,type,date))}`,'_blank');if(!w){await waServerSave_(u,type,'GAGAL','Popup WhatsApp diblokir browser.',date);waLogUI_(`${date} · ${u.name}: popup diblokir.`,false);return false}
+    const opened=waOpenComposer_(phone,waMessage_(u,type,date));if(!opened){await waServerSave_(u,type,'GAGAL','Popup WhatsApp diblokir browser.',date);waLogUI_(`${date} · ${u.name}: popup diblokir.`,false);return false}
     await waServerSave_(u,type,'DIBUKA','WhatsApp dibuka; status tetap MENUNGGU sampai Admin mengonfirmasi pesan benar-benar terkirim.',date);waLogUI_(`${date} · ${u.name} · ${type} · WhatsApp dibuka.`);return true;
   };
   window.waConfirmByIndex_=async function(i){const item=(window.__sidetWaList||[])[i];if(!item)return;const operator=String(state?.user?.role||'').toLowerCase()==='guru'?'Guru':'Admin';await waServerSave_(item.u,item.type,'DIKONFIRMASI',operator+' mengonfirmasi pesan telah dikirim melalui WhatsApp.',itemDate_(item));toast('Status WA dikonfirmasi terkirim',true);await renderWaAdmin_()};
@@ -11123,7 +11132,7 @@ body.sidet-student-nav-active #modalBox:has(.actions.sidet-retry-center){
   document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&navigator.onLine!==false)setTimeout(drain_,jitter_(1000))});
   setTimeout(()=>{ensureAdmin_();drain_()},1200);
 
-  function mark_(){const b=document.getElementById('sidetVersionBadge');if(b)b.textContent='SiDEt V12.2.2 • Barcode Semua Kelas';document.documentElement.dataset.sidetVersion='12.2.2'}
+  function mark_(){const b=document.getElementById('sidetVersionBadge');if(b)b.textContent='SiDEt V12.2.5 • Scanner FIFO';document.documentElement.dataset.sidetVersion='12.2.5'}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',mark_,{once:true});else mark_();
   setTimeout(mark_,700);
 })();
@@ -11346,7 +11355,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
  };
  const classes_=()=>[...new Set([...(typeof CLASS_ORDER!=='undefined'?CLASS_ORDER:[]),...(window.__v7Classes||[]),(window.state?.user?.kelas||'')].filter(Boolean).map(classLabel_))];
  const logo_=()=>document.querySelector('.login-logo-school')?.src||'';
- let scanner_={stream:null,running:false,busy:false,raf:0,lastAt:0,detector:null,canvas:null,ctx:null,recent:[],ok:0,duplicate:0,fail:0,audio:null,seen:new Map()};
+ let scanner_={stream:null,running:false,busy:false,raf:0,lastAt:0,detector:null,canvas:null,ctx:null,recent:[],ok:0,duplicate:0,fail:0,audio:null,seen:new Map(),deviceId:'',queueTimer:0,queueProcessing:false,queueEnabled:false,sequence:0};
+ const QUEUE_DB_='sidet-barcode-fifo-v1',QUEUE_STORE_='items';let queueDbPromise_=null;
 
  function loadVendor_(id,globalName){
    if(window[globalName])return true;
@@ -11415,7 +11425,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
  };
 
  function installRoleScanNav_(){
-   const r=role_();if(!['guru','admin'].includes(r))return;const nav=document.getElementById('nav');if(!nav||nav.querySelector('.sidet-v122-nav-scan'))return;
+   const r=role_();if(!['guru','admin'].includes(r))return;startQueueWorker_();const nav=document.getElementById('nav');if(!nav||nav.querySelector('.sidet-v122-nav-scan'))return;
    const b=document.createElement('button');b.type='button';b.className='sidet-v122-nav-scan';b.onclick=()=>window.sidetV1024Go_?.(r+'-barcode');
    b.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8V4h4M16 4h4v4M20 16v4h-4M8 20H4v-4M8 8h3v3H8zM13 8h3v3h-3zM8 13h3v3H8zM14 14h2v2h-2z"/></svg><span>Scan QR</span>';nav.appendChild(b);
  }
@@ -11425,18 +11435,95 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
    else window.showPage?.('adminPage');
    const host=scannerHost_();if(!host)return;
    host.innerHTML='<div class="card"><div class="hero"><div><h3>▦ Scan QR Presensi Siswa</h3><div class="muted">Pilih Semua Kelas atau satu kelas tertentu, lalu kamera akan memindai kartu secara berurutan.</div></div><span class="badge info">Opsi B</span></div><div class="grid two" style="margin-top:12px"><div class="field"><label>Cakupan Kelas</label><select id="sidetV122ScanClass"><option value="">Semua Kelas</option>'+classes_().map(k=>'<option value="'+esc_(k)+'">'+esc_(k)+'</option>').join('')+'</select></div><div class="field"><label>Jenis Presensi</label><select id="sidetV122ScanType"><option value="MASUK">MASUK</option><option value="PULANG">PULANG</option></select></div></div><div class="sidet-v122-scanner-grid"><div><div class="sidet-v122-camera"><video id="sidetV122Video" playsinline muted></video><div id="sidetV122CameraHint">Kamera belum aktif</div><div class="sidet-v122-frame" hidden></div></div><div class="actions" style="margin-top:12px"><button id="sidetV122Start" class="btn primary" onclick="sidetV122StartScanner_()">📷 Mulai Kamera</button><button class="btn" onclick="sidetV122StopScanner_()">■ Hentikan</button></div><div id="sidetV122ScanStatus" class="sidet-v122-scan-status">Siap memindai Semua Kelas. Tekan Mulai Kamera.</div></div><div><div class="sidet-v122-stats"><div class="sidet-v122-stat"><b id="sidetV122Ok">0</b><small>BERHASIL</small></div><div class="sidet-v122-stat"><b id="sidetV122Dup">0</b><small>SUDAH ADA</small></div><div class="sidet-v122-stat"><b id="sidetV122Fail">0</b><small>GAGAL</small></div></div><h4 style="margin:13px 0 8px">Pemindaian terbaru</h4><div id="sidetV122Recent" class="sidet-v122-recent"><div class="muted">Belum ada siswa dipindai.</div></div></div></div><div class="alert" style="margin-top:14px">Presensi QR dicatat sebagai <b>BARCODE_GURU</b>. Pilihan Semua Kelas menerima kartu dari seluruh kelas; pilihan kelas tertentu tetap menolak kartu dari kelas lain. GPS dan foto siswa tidak diperlukan, sedangkan jadwal, keterlambatan, dan data ganda tetap diperiksa server.</div></div>';
-   scanner_={...scanner_,recent:[],ok:0,duplicate:0,fail:0};updateStats_();
+   const settingsGrid=host.querySelector('.grid.two');
+   if(settingsGrid){
+     const field=document.createElement('div');field.className='field';
+     field.innerHTML='<label>Sumber Kamera</label><div class="actions" style="gap:7px"><select id="sidetV122CameraDevice" style="min-width:0;flex:1" onchange="sidetV122ChangeCamera_()"><option value="">Otomatis / Kamera Belakang</option></select><button type="button" class="btn" onclick="sidetV122LoadCameras_()" title="Deteksi ulang kamera">↻</button></div>';
+     settingsGrid.appendChild(field);
+   }
+   const scanGrid=host.querySelector('.sidet-v122-scanner-grid');
+   if(scanGrid)scanGrid.insertAdjacentHTML('afterend','<div class="card" style="margin-top:14px"><div class="hero"><div><h4 style="margin:0">Antrean Pengiriman QR</h4><div class="muted">Pemindaian tetap berjalan; server menerima data satu per satu sesuai urutan.</div></div><span id="sidetV122QueueNet" class="badge">Memeriksa…</span></div><div class="sidet-v122-stats" style="margin-top:12px"><div class="sidet-v122-stat"><b id="sidetV122Captured">0</b><small>TERTANGKAP</small></div><div class="sidet-v122-stat"><b id="sidetV122Waiting">0</b><small>MENUNGGU</small></div><div class="sidet-v122-stat"><b id="sidetV122Sending">0</b><small>MENGIRIM</small></div><div class="sidet-v122-stat"><b id="sidetV122QueueDone">0</b><small>TERKIRIM</small></div><div class="sidet-v122-stat"><b id="sidetV122QueueFailed">0</b><small>GAGAL</small></div></div><div class="actions" style="margin-top:12px"><button class="btn" onclick="sidetV122ShowQueue_()">☷ Lihat Antrean</button><button class="btn danger" onclick="sidetV122ShowFailed_()">! Rekap Gagal</button><button class="btn primary" onclick="sidetV122RetryFailed_()">↻ Kirim Ulang Semua Gagal</button></div></div>');
+   scanner_={...scanner_,recent:[],ok:0,duplicate:0,fail:0};updateStats_();setTimeout(()=>{loadCameras_();startQueueWorker_();renderQueueStats_()},0);
  }
+ async function loadCameras_(preferred){
+   const select=document.getElementById('sidetV122CameraDevice');if(!select||!navigator.mediaDevices?.enumerateDevices)return;
+   try{
+     const old=preferred||select.value||scanner_.deviceId||'',devices=(await navigator.mediaDevices.enumerateDevices()).filter(x=>x.kind==='videoinput');
+     select.innerHTML='<option value="">Otomatis / Kamera Belakang</option>'+devices.map((d,i)=>'<option value="'+esc_(d.deviceId)+'">'+esc_(d.label||('Kamera '+(i+1)))+'</option>').join('');
+     if(old&&devices.some(d=>d.deviceId===old))select.value=old;
+     const hint=document.getElementById('sidetV122CameraHint');if(hint&&!scanner_.running)hint.textContent=devices.length?devices.length+' kamera terdeteksi':'Kamera belum terdeteksi';
+   }catch(e){status_('Daftar kamera belum dapat dibaca. Izinkan kamera, lalu tekan tombol ↻.','bad')}
+ }
+ window.sidetV122LoadCameras_=()=>loadCameras_();
+ window.sidetV122ChangeCamera_=function(){const select=document.getElementById('sidetV122CameraDevice');scanner_.deviceId=select?.value||'';if(scanner_.running)window.sidetV122StartScanner_()};
+
+ function queueOwner_(){const u=user_();return role_()+':'+String(u.id||u.nisn||u.username||'')}
+ function queueDb_(){
+   if(queueDbPromise_)return queueDbPromise_;
+   queueDbPromise_=new Promise((resolve,reject)=>{const request=indexedDB.open(QUEUE_DB_,1);request.onupgradeneeded=()=>{const db=request.result;if(!db.objectStoreNames.contains(QUEUE_STORE_)){const store=db.createObjectStore(QUEUE_STORE_,{keyPath:'queueId'});store.createIndex('sequence','sequence',{unique:false});store.createIndex('status','status',{unique:false});store.createIndex('owner','owner',{unique:false})}};request.onsuccess=()=>resolve(request.result);request.onerror=()=>reject(request.error||Error('IndexedDB tidak tersedia.'))});
+   return queueDbPromise_;
+ }
+ async function queueAll_(){const db=await queueDb_();return new Promise((resolve,reject)=>{const request=db.transaction(QUEUE_STORE_,'readonly').objectStore(QUEUE_STORE_).getAll();request.onsuccess=()=>resolve(request.result||[]);request.onerror=()=>reject(request.error)})}
+ async function queuePut_(item){const db=await queueDb_();return new Promise((resolve,reject)=>{const tx=db.transaction(QUEUE_STORE_,'readwrite'),request=tx.objectStore(QUEUE_STORE_).put(item);request.onsuccess=()=>resolve(item);request.onerror=()=>reject(request.error)})}
+ async function queueDelete_(id){const db=await queueDb_();return new Promise((resolve,reject)=>{const request=db.transaction(QUEUE_STORE_,'readwrite').objectStore(QUEUE_STORE_).delete(id);request.onsuccess=()=>resolve(true);request.onerror=()=>reject(request.error)})}
+ function witaDate_(date=new Date()){const p=new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Makassar',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(date).reduce((o,x)=>(o[x.type]=x.value,o),{});return p.year+'-'+p.month+'-'+p.day}
+ function queueId_(){const bytes=new Uint32Array(2);try{crypto.getRandomValues(bytes)}catch(e){bytes[0]=Math.random()*0xffffffff;bytes[1]=Math.random()*0xffffffff}return 'QRQ-'+Date.now().toString(36)+'-'+bytes[0].toString(36)+bytes[1].toString(36)}
+ function queueStudent_(token){try{const body=String(token).split('.')[1].replace(/-/g,'+').replace(/_/g,'/'),json=decodeURIComponent(Array.from(atob(body),c=>'%'+c.charCodeAt(0).toString(16).padStart(2,'0')).join('')),p=JSON.parse(json),users=window.state?.data?.users||[],x=users.find(u=>String(u.id||u.ID)===String(p.id)||String(u.nisn||u.NISN).replace(/\D/g,'')===String(p.n||'').replace(/\D/g,''));return x?{id:String(x.id||x.ID||p.id),nisn:String(x.nisn||x.NISN||p.n),name:String(x.name||x.Nama||('QR '+p.n)),kelas:String(x.kelas||x.Kelas||'')}:{id:String(p.id||''),nisn:String(p.n||''),name:'QR '+String(p.n||''),kelas:''}}catch(e){return {name:'QR diterima',kelas:''}}}
+ function queueTransient_(message){const s=String(message||'').toLowerCase();return !/(bukan kartu|tanda tangan|tidak ditemukan|tidak aktif|bukan kelas|pulang dapat|sabtu|minggu|lebih dari 48 jam|waktu perangkat)/.test(s)}
+ function queueBackoff_(attempt){return [2000,5000,10000,30000,60000][Math.max(0,Math.min(4,attempt-1))]}
+ function queueActive_(all){const owner=queueOwner_();return all.filter(x=>x.owner===owner).sort((a,b)=>Number(a.sequence)-Number(b.sequence)||String(a.queueId).localeCompare(String(b.queueId)))}
+ async function cleanupQueue_(){const cutoff=Date.now()-2*24*60*60*1000,all=queueActive_(await queueAll_());for(const x of all)if(x.status==='SUCCESS'&&Number(x.finishedAt||0)<cutoff)await queueDelete_(x.queueId)}
+ async function renderQueueStats_(){
+   try{const all=queueActive_(await queueAll_()),set=(id,n)=>{const e=document.getElementById(id);if(e)e.textContent=n},waiting=all.filter(x=>x.status==='WAITING'||x.status==='RETRY').length,sending=all.filter(x=>x.status==='SENDING').length,done=all.filter(x=>x.status==='SUCCESS').length,failed=all.filter(x=>x.status==='FAILED').length;set('sidetV122Captured',all.length);set('sidetV122Waiting',waiting);set('sidetV122Sending',sending);set('sidetV122QueueDone',done);set('sidetV122QueueFailed',failed);const net=document.getElementById('sidetV122QueueNet');if(net){net.textContent=navigator.onLine?'ONLINE':'OFFLINE';net.className='badge '+(navigator.onLine?'ok':'warn')}}catch(e){}
+ }
+ async function enqueueScan_(token){
+   try{
+     const captured=new Date(),type=document.getElementById('sidetV122ScanType')?.value||'MASUK',kelas=document.getElementById('sidetV122ScanClass')?.value||'',owner=queueOwner_(),dedupeKey=owner+'|'+witaDate_(captured)+'|'+type+'|'+token,all=await queueAll_(),prior=all.find(x=>x.dedupeKey===dedupeKey);
+     if(prior){scanner_.duplicate++;updateStats_();status_('QR ini sudah berada pada antrean atau sudah dikirim.','good');return}
+     const id=queueId_(),sequence=Date.now()*1000+(++scanner_.sequence%1000),student=queueStudent_(token),item={queueId:id,scanId:id,owner,dedupeKey,sequence,token,kelas,type,capturedAt:captured.toISOString(),capturedLabel:captured.toLocaleTimeString('id-ID',{hour12:false}),student,status:'WAITING',attempts:0,nextAttemptAt:0,lastError:'',createdAt:Date.now()};
+     await queuePut_(item);audio_(true);addRecent_(student,'Masuk antrean',item.capturedLabel,true);status_('<b>'+esc_(student.name||'QR siswa')+'</b><br>Masuk antrean. Silakan pindai kartu berikutnya.','good',true);await renderQueueStats_();scheduleQueue_(10);
+   }catch(e){scanner_.fail++;updateStats_();audio_(false);status_('QR gagal masuk antrean: '+(e?.message||e),'bad')}
+ }
+ function scheduleQueue_(delay=100){if(!scanner_.queueEnabled)return;if(scanner_.queueTimer)clearTimeout(scanner_.queueTimer);scanner_.queueTimer=setTimeout(processQueue_,delay)}
+ function startQueueWorker_(){if(!['guru','admin'].includes(role_())||scanner_.queueEnabled)return;scanner_.queueEnabled=true;cleanupQueue_().catch(()=>{});scheduleQueue_(20)}
+ async function processQueue_(){
+   if(!scanner_.queueEnabled||scanner_.queueProcessing)return;if(!navigator.onLine){renderQueueStats_();scheduleQueue_(2500);return}scanner_.queueProcessing=true;let nextDelay=60;
+   try{
+     const now=Date.now(),all=queueActive_(await queueAll_());
+     for(const stale of all.filter(x=>x.status==='SENDING'&&now-Number(x.lastAttemptAt||0)>60000)){stale.status='RETRY';stale.nextAttemptAt=now;stale.lastError='Pengiriman sebelumnya terhenti.';await queuePut_(stale)}
+     const fresh=queueActive_(await queueAll_()),item=fresh.find(x=>(x.status==='WAITING'||x.status==='RETRY')&&Number(x.nextAttemptAt||0)<=now);
+     if(!item){nextDelay=1200;await renderQueueStats_();return}
+     item.status='SENDING';item.attempts=Number(item.attempts||0)+1;item.lastAttemptAt=Date.now();await queuePut_(item);await renderQueueStats_();
+     try{
+       const j=await window.api('barcodeAttendance',{token:item.token,kelas:item.kelas,type:item.type,scanId:item.scanId,capturedAt:item.capturedAt}),d=j?.data||{},s=d.student||item.student||{};
+       item.status='SUCCESS';item.finishedAt=Date.now();item.serverData=d;item.lastError='';await queuePut_(item);if(d.existing)scanner_.duplicate++;else scanner_.ok++;updateStats_();addRecent_(s,d.existing?'Sudah ada':'Terkirim',d.time||item.capturedLabel,true);status_('<b>'+esc_(s.name||item.student?.name||'Siswa')+'</b> · '+esc_(s.kelas||'')+'<br>'+(d.existing?'Sudah tercatat':'Berhasil dikirim')+' '+esc_(item.type)+' pukul '+esc_(d.time||item.capturedLabel||'—'),'good',true);
+     }catch(e){
+       const message=String(e?.message||e),permanent=!queueTransient_(message),exhausted=item.attempts>=5;item.lastError=message;item.lastAttemptAt=Date.now();item.status=(permanent||exhausted)?'FAILED':'RETRY';item.nextAttemptAt=item.status==='RETRY'?Date.now()+queueBackoff_(item.attempts):0;if(item.status==='FAILED'){item.failedAt=Date.now();scanner_.fail++;updateStats_();audio_(false);addRecent_(item.student||{name:'QR ditolak',kelas:item.kelas},'Gagal: '+message,'',false)}await queuePut_(item);
+     }
+     await renderQueueStats_();
+   }catch(e){console.warn('Pekerja antrean QR:',e);nextDelay=1500}finally{scanner_.queueProcessing=false;scheduleQueue_(nextDelay)}
+ }
+ async function queueModal_(failedOnly){
+   const all=queueActive_(await queueAll_()).filter(x=>failedOnly?x.status==='FAILED':x.status!=='SUCCESS'),modal=document.getElementById('modal'),box=document.getElementById('modalBox');if(!modal||!box)return;modal.classList.remove('hidden');box.innerHTML='<h3>'+(failedOnly?'Rekap Pengiriman QR Gagal':'Antrean Pengiriman QR')+'</h3><div class="muted">Urutan paling atas diproses lebih dahulu. Item gagal tidak mengunci antrean berikutnya.</div><div class="tablewrap" style="margin-top:12px"><table><thead><tr><th>Waktu</th><th>Siswa</th><th>Jenis</th><th>Status</th><th>Percobaan</th><th>Keterangan</th></tr></thead><tbody>'+all.map(x=>'<tr><td>'+esc_(new Date(x.capturedAt).toLocaleString('id-ID'))+'</td><td><b>'+esc_(x.student?.name||'QR siswa')+'</b><br>'+esc_(x.student?.kelas||x.kelas||'')+'</td><td>'+esc_(x.type)+'</td><td>'+esc_(x.status)+'</td><td>'+Number(x.attempts||0)+'</td><td>'+esc_(x.lastError||'Menunggu giliran')+'</td></tr>').join('')+(all.length?'':'<tr><td colspan="6">Tidak ada data.</td></tr>')+'</tbody></table></div><div class="actions" style="margin-top:12px">'+(failedOnly&&all.length?'<button class="btn primary" onclick="sidetV122RetryFailed_();closeModal()">↻ Kirim Ulang Semua</button>':'')+'<button class="btn" onclick="closeModal()">Tutup</button></div>';
+ }
+ window.sidetV122ShowQueue_=()=>queueModal_(false);window.sidetV122ShowFailed_=()=>queueModal_(true);
+ window.sidetV122RetryFailed_=async function(){const all=queueActive_(await queueAll_()),failed=all.filter(x=>x.status==='FAILED');for(const x of failed){x.status='WAITING';x.nextAttemptAt=0;x.lastError='Menunggu pengiriman ulang manual.';await queuePut_(x)}await renderQueueStats_();scheduleQueue_(10);window.toast?.(failed.length?failed.length+' data gagal dimasukkan kembali sesuai urutan awal.':'Tidak ada data gagal.',!!failed.length)};
+ window.addEventListener('online',()=>{renderQueueStats_();scheduleQueue_(10)});window.addEventListener('offline',renderQueueStats_);
  async function audio_(good){
-   try{scanner_.audio=scanner_.audio||new (window.AudioContext||window.webkitAudioContext)();await scanner_.audio.resume();const o=scanner_.audio.createOscillator(),g=scanner_.audio.createGain();o.frequency.value=good?880:220;g.gain.setValueAtTime(.13,scanner_.audio.currentTime);g.gain.exponentialRampToValueAtTime(.001,scanner_.audio.currentTime+.16);o.connect(g).connect(scanner_.audio.destination);o.start();o.stop(scanner_.audio.currentTime+.17)}catch(e){}
-   try{navigator.vibrate?.(good?90:[90,50,90])}catch(e){}
+   try{
+     scanner_.audio=scanner_.audio||new (window.AudioContext||window.webkitAudioContext)();await scanner_.audio.resume();const a=scanner_.audio,n=a.currentTime,g=a.createGain(),o=a.createOscillator();
+     o.type=good?'square':'sawtooth';o.frequency.setValueAtTime(good?980:230,n);o.frequency.setValueAtTime(good?1320:180,n+.11);g.gain.setValueAtTime(good?.48:.34,n);g.gain.exponentialRampToValueAtTime(.001,n+(good?.30:.38));o.connect(g).connect(a.destination);o.start(n);o.stop(n+(good?.31:.39));
+   }catch(e){}
+   try{navigator.vibrate?.(good?[120,35,120]:[140,60,140])}catch(e){}
  }
  window.sidetV122StartScanner_=async function(){
    const kelas=document.getElementById('sidetV122ScanClass')?.value||'';
    stopScanner_();try{
      scanner_.audio=scanner_.audio||new (window.AudioContext||window.webkitAudioContext)();
-     scanner_.stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'},width:{ideal:1280},height:{ideal:720}},audio:false});
+     const selected=document.getElementById('sidetV122CameraDevice')?.value||scanner_.deviceId||'',videoRules=selected?{deviceId:{exact:selected},width:{ideal:1280},height:{ideal:720}}:{facingMode:{ideal:'environment'},width:{ideal:1280},height:{ideal:720}};
+     scanner_.stream=await navigator.mediaDevices.getUserMedia({video:videoRules,audio:false});
      const v=document.getElementById('sidetV122Video');if(!v)throw Error('Panel kamera tidak ditemukan.');v.srcObject=scanner_.stream;await v.play();scanner_.running=true;scanner_.busy=false;
+     const activeId=scanner_.stream.getVideoTracks?.()[0]?.getSettings?.().deviceId||selected;scanner_.deviceId=activeId||'';loadCameras_(activeId);
      document.querySelector('.sidet-v122-frame')?.removeAttribute('hidden');const hint=document.getElementById('sidetV122CameraHint');if(hint)hint.hidden=true;status_('Kamera aktif untuk '+(kelas||'Semua Kelas')+'. Arahkan QR siswa ke kotak.', '');
      if('BarcodeDetector'in window){try{scanner_.detector=new BarcodeDetector({formats:['qr_code']})}catch(e){scanner_.detector=null}}
      if(!scanner_.detector)loadVendor_('sidet-v122-jsqr-vendor','jsQR');scanner_.raf=requestAnimationFrame(scanLoop_);
@@ -11445,15 +11532,15 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
  function stopScanner_(){scanner_.running=false;scanner_.busy=false;if(scanner_.raf)cancelAnimationFrame(scanner_.raf);scanner_.raf=0;(scanner_.stream?.getTracks?.()||[]).forEach(t=>t.stop());scanner_.stream=null;const v=document.getElementById('sidetV122Video');if(v)v.srcObject=null}
  window.sidetV122StopScanner_=stopScanner_;
  async function scanLoop_(now){
-   if(!scanner_.running)return;scanner_.raf=requestAnimationFrame(scanLoop_);if(scanner_.busy||now-scanner_.lastAt<125)return;scanner_.lastAt=now;
+   if(!scanner_.running)return;scanner_.raf=requestAnimationFrame(scanLoop_);if(scanner_.busy||now-scanner_.lastAt<80)return;scanner_.lastAt=now;
    const video=document.getElementById('sidetV122Video');if(!video||video.readyState<2)return;let token='';
    try{
      if(scanner_.detector){const found=await scanner_.detector.detect(video);token=found?.[0]?.rawValue||''}
-     else{const w=Math.min(900,video.videoWidth||640),h=Math.round(w*(video.videoHeight||480)/(video.videoWidth||640));scanner_.canvas=scanner_.canvas||document.createElement('canvas');scanner_.canvas.width=w;scanner_.canvas.height=h;scanner_.ctx=scanner_.canvas.getContext('2d',{willReadFrequently:true});scanner_.ctx.drawImage(video,0,0,w,h);const im=scanner_.ctx.getImageData(0,0,w,h);token=window.jsQR(im.data,w,h,{inversionAttempts:'dontInvert'})?.data||''}
+     else{const w=Math.min(720,video.videoWidth||640),h=Math.round(w*(video.videoHeight||480)/(video.videoWidth||640));scanner_.canvas=scanner_.canvas||document.createElement('canvas');scanner_.canvas.width=w;scanner_.canvas.height=h;scanner_.ctx=scanner_.canvas.getContext('2d',{willReadFrequently:true});scanner_.ctx.drawImage(video,0,0,w,h);const im=scanner_.ctx.getImageData(0,0,w,h);token=window.jsQR(im.data,w,h,{inversionAttempts:'dontInvert'})?.data||''}
    }catch(e){}
    if(token&&String(token).startsWith('SIDETQR1.')){
      const key=String(token),last=scanner_.seen.get(key)||0;
-     if(Date.now()-last>3000){scanner_.seen.set(key,Date.now());submitScan_(key)}
+     if(Date.now()-last>1800){scanner_.seen.set(key,Date.now());enqueueScan_(key)}
    }
  }
  async function submitScan_(token){
@@ -11463,7 +11550,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
      const j=await window.api('barcodeAttendance',{token,kelas,type,scanId:Date.now()+'-'+Math.random().toString(36).slice(2)}),d=j?.data||{},s=d.student||{};
      if(d.existing)scanner_.duplicate++;else scanner_.ok++;audio_(true);status_('<b>'+esc_(s.name||'Siswa')+'</b> · '+esc_(s.kelas||'')+'<br>'+(d.existing?'Sudah tercatat':'Berhasil dicatat')+' '+esc_(type)+' pukul '+esc_(d.time||'—'), 'good',true);addRecent_(s,d.existing?'Sudah ada':'Berhasil',d.time,true);updateStats_();
    }catch(e){scanner_.fail++;audio_(false);status_(e?.message||String(e),'bad');addRecent_({name:'QR ditolak',kelas},e?.message||'Gagal','',false);updateStats_()}
-   setTimeout(()=>{scanner_.busy=false;if(scanner_.running)status_('Siap memindai siswa berikutnya…','')},1100);
+   setTimeout(()=>{scanner_.busy=false;if(scanner_.running)status_('Siap memindai siswa berikutnya…','')},350);
  }
  function status_(message,kind,html){const el=document.getElementById('sidetV122ScanStatus');if(!el)return;el.className='sidet-v122-scan-status'+(kind?' '+kind:'');if(html)el.innerHTML=message;else el.textContent=message}
  function addRecent_(student,result,time,good){scanner_.recent.unshift({student,result,time,good});scanner_.recent=scanner_.recent.slice(0,20);const el=document.getElementById('sidetV122Recent');if(el)el.innerHTML=scanner_.recent.map(x=>'<div class="sidet-v122-recent-item"><span><b>'+esc_(x.student?.name||'Siswa')+'</b>'+esc_(x.student?.kelas||'')+'</span><span style="color:'+(x.good?'#047857':'#be123c')+';text-align:right">'+esc_(x.result)+'<br>'+esc_(x.time||'')+'</span></div>').join('')}
@@ -11476,7 +11563,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
    }
    stopScanner_();document.querySelector('.sidet-v122-nav-scan')?.classList.remove('active');return baseGo_.apply(this,arguments);
  };
- const baseLogout_=window.logout;if(typeof baseLogout_==='function')window.logout=function(){stopScanner_();return baseLogout_.apply(this,arguments)};
+ const baseLogout_=window.logout;if(typeof baseLogout_==='function')window.logout=function(){stopScanner_();scanner_.queueEnabled=false;if(scanner_.queueTimer)clearTimeout(scanner_.queueTimer);scanner_.queueTimer=0;return baseLogout_.apply(this,arguments)};
  document.addEventListener('visibilitychange',()=>{if(document.hidden)stopScanner_()});
  let queued_=false;const observer=new MutationObserver(()=>{if(queued_)return;queued_=true;requestAnimationFrame(()=>{queued_=false;ensureStudentUi_();installRoleScanNav_()})});observer.observe(document.documentElement,{childList:true,subtree:true});
  document.addEventListener('DOMContentLoaded',()=>setTimeout(()=>{ensureStudentUi_();installRoleScanNav_()},160),{once:true});setTimeout(()=>{ensureStudentUi_();installRoleScanNav_()},800);
