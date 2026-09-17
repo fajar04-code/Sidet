@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>SiDEt V12.2.5 Scanner FIFO — SMAN 2 Nunukan Selatan</title>
+<title>SiDEt V12.3 Direct Photo — SMAN 2 Nunukan Selatan</title>
 <style>
 :root{--bg:#f4f7fb;--card:#fff;--ink:#182230;--muted:#6b7788;--primary:#1769e0;--primary2:#0d47a1;--ok:#16834b;--bad:#c62828;--warn:#b56a00;--line:#e4e9f0;--shadow:0 10px 30px #1d355715}
 *{box-sizing:border-box}body{margin:0;font-family:Inter,system-ui,-apple-system,Segoe UI,Arial,sans-serif;background:var(--bg);color:var(--ink)}
@@ -2191,8 +2191,8 @@ const initialSchoolData = {};
 const CLASS_ORDER=["X-A", "X-B", "X-C", "X-D", "XI-A", "XI-B", "XI-C", "XI-D", "XII-A", "XII-B", "XII-C", "XII-D"];
 const INITIAL_STUDENTS=Object.entries(initialSchoolData).flatMap(([kelas,arr])=>arr.map(x=>({...x,kelas,sekolah:'SMAN 2 Nunukan Selatan',active:true})));
 const SIDET_DEFAULT_API_URL='https://script.google.com/macros/s/AKfycbx6ybeZVLEYJg52qccyYjmbKY5WkhMd6-yeNdu2PUOcKCzG1hmf5ofePOMuNCKkUEiB/exec';
-const SIDET_FRONTEND_VERSION='12.2';
-const SIDET_REQUIRED_SERVER_VERSION='12.2';
+const SIDET_FRONTEND_VERSION='12.3';
+const SIDET_REQUIRED_SERVER_VERSION='12.3';
 // V10.45: URL Web App bawaan file adalah satu-satunya sumber permanen.
 // Hapus nilai legacy agar HP tidak terus memakai deployment lama dari localStorage.
 try{localStorage.removeItem('sidet_api');}catch(e){}
@@ -2799,9 +2799,11 @@ async function v7RunPhotoSync_(payload){
         }
       }catch(_){ }
 
-      const r=await api('syncAttendance',{attendanceId:payload.attendanceId,photo:payload.photo});
-      const url=String(r?.linkFotoDrive||r?.photoUrl||'').trim();
-      if(!r?.ok||!url)throw Error(r?.message||'Sinkronisasi foto gagal.');
+      if(typeof window.sidetV12ResumePhotoQueue_!=='function')throw Error('Modul upload langsung belum siap.');
+      await window.sidetV12ResumePhotoQueue_();
+      const done=await api('attendanceSyncStatus',{attendanceId:payload.attendanceId});
+      const url=String(done?.data?.linkFotoDrive||done?.data?.photoUrl||'').trim();
+      if(!url)throw Error('Foto masih berada dalam antrean upload langsung.');
       try{sessionStorage.removeItem(v7SyncKey_(payload.attendanceId));}catch(e){}
       if(state.user?.role==='siswa')toast('Foto presensi sudah tersinkronisasi.',true);
       return true;
@@ -3700,11 +3702,8 @@ captureAttendance=async function(type){
 };
 
 v7RunPhotoSync_=async function(payload){
-  try{
-    const r=await api('syncAttendance',{attendanceId:payload.attendanceId,userId:payload.userId||state.user?.id,photo:payload.photo});
-    if(!r?.ok)throw Error(r?.message||'Sinkronisasi foto gagal.');
-    try{sessionStorage.removeItem(v7SyncKey_(payload.attendanceId));}catch(e){}
-  }catch(e){console.warn('Foto masih menunggu sinkronisasi:',e);}
+  try{return await window.sidetV12ResumePhotoQueue_?.()}
+  catch(e){console.warn('Foto masih menunggu sinkronisasi langsung:',e);return false}
 };
 
 const v85OldRenderProfile_=renderStudentProfile;
@@ -10873,6 +10872,29 @@ body.sidet-student-nav-active #modalBox:has(.actions.sidet-retry-center){
       return {done:!!url,url,status:d.status||'',message:d.message||''};
     }catch(e){return {done:false,url:'',error:String(e?.message||e)}}
   }
+
+  // Upload lintas akun langsung ke Web App Email B. Foto tidak melewati Email A.
+  function directPhotoUpload_(uploadUrl,payload){
+    return new Promise((resolve,reject)=>{
+      if(!/^https:\/\/script\.google\.com\/macros\/s\//i.test(String(uploadUrl||'')))
+        return reject(Error('Alamat Photo Server Email B tidak valid.'));
+      const requestId='sidet_photo_'+Date.now()+'_'+Math.random().toString(36).slice(2);
+      const frame=document.createElement('iframe');frame.name=frame.id=requestId;frame.style.display='none';
+      const form=document.createElement('form');form.method='POST';form.action=uploadUrl;form.target=requestId;form.style.display='none';
+      const timeout=setTimeout(()=>{cleanup();reject(Error('Photo Server Email B belum merespons. Foto tetap aman di antrean.'));},90000);
+      function cleanup(){clearTimeout(timeout);window.removeEventListener('message',onMessage);frame.remove();form.remove()}
+      function onMessage(ev){
+        if(!/^https:\/\/(script\.google\.com|[a-z0-9-]+\.googleusercontent\.com)$/i.test(ev.origin))return;
+        const d=ev.data;if(!d||d.type!=='SIDET_PHOTO_UPLOAD_RESULT'||d.requestId!==requestId)return;
+        cleanup();d.ok?resolve(d):reject(Error(d.message||'Upload langsung ke Email B gagal.'));
+      }
+      window.addEventListener('message',onMessage);
+      const data={...payload,action:'uploadWithTicket',transport:'iframe_photo',requestId};
+      Object.entries(data).forEach(([k,v])=>{const i=document.createElement('input');i.type='hidden';i.name=k;i.value=String(v??'');form.appendChild(i)});
+      document.body.append(frame,form);form.submit();
+    });
+  }
+
   async function processOne_(job){
     if(!job?.attendanceId||!job?.photo)return false;
     const now=Date.now();
@@ -10884,12 +10906,18 @@ body.sidet-student-nav-active #modalBox:has(.actions.sidet-retry-center){
       if(known.done){await clearPhoto_(job.attendanceId);badge_('ok','Foto presensi sudah tersimpan di Drive.',false);hideBadge_();return true}
     }
     try{
-      const r=await api('syncAttendance',{
-        attendanceId:job.attendanceId,userId:job.userId,nisn:job.nisn,
-        name:job.name,kelas:job.kelas,type:job.type,photo:job.photo
-      });
-      const url=String(r?.linkFotoDrive||r?.photoUrl||'').trim();
-      if(!r?.ok||!url)throw Error(r?.message||'Server belum mengembalikan link foto.');
+      const ticket=await api('photoUploadTicket',{attendanceId:job.attendanceId,type:job.type});
+      let url=String(ticket?.linkFotoDrive||ticket?.photoUrl||'').trim();
+      if(!url){
+        if(!ticket?.ticket||!ticket?.uploadUrl)throw Error('Email A belum mengembalikan tiket upload.');
+        const uploaded=await directPhotoUpload_(ticket.uploadUrl,{
+          attendanceId:job.attendanceId,ticket:ticket.ticket,photo:job.photo
+        });
+        if(!uploaded?.receipt)throw Error('Photo Server belum mengembalikan bukti upload.');
+        const done=await api('photoUploadFinalize',{attendanceId:job.attendanceId,receipt:uploaded.receipt});
+        url=String(done?.linkFotoDrive||done?.photoUrl||uploaded?.linkFotoDrive||uploaded?.photoUrl||'').trim();
+      }
+      if(!url)throw Error('Server belum mengembalikan link foto.');
       await clearPhoto_(job.attendanceId);
       badge_('ok','Foto presensi berhasil tersimpan di Drive.',false);hideBadge_();
       return true;
@@ -10943,6 +10971,15 @@ body.sidet-student-nav-active #modalBox:has(.actions.sidet-retry-center){
   }
   window.sidetV12ResumePhotoQueue_=drain_;
   window.sidetV11ResumePhotoQueue_=drain_;
+  window.v7RunPhotoSync_=async function(payload){
+    if(payload?.attendanceId&&payload?.photo){
+      await savePhoto_({...payload,attendanceId:String(payload.attendanceId),
+        userId:String(payload.userId||uid_()),queuedAt:Number(payload.queuedAt||Date.now()),nextAttemptAt:0});
+    }
+    await drain_();
+    const known=payload?.attendanceId?await status_(payload):{done:false};
+    return !!known.done;
+  };
   window.sidetV12RetryPhotoNow_=async function(){
     const jobs=await photoJobs_();
     for(const j of jobs){j.nextAttemptAt=0;await savePhoto_(j)}
@@ -10956,16 +10993,16 @@ body.sidet-student-nav-active #modalBox:has(.actions.sidet-retry-center){
     let canvas=document.createElement('canvas');canvas.width=w;canvas.height=h;
     let ctx=canvas.getContext('2d',{alpha:false});ctx.fillStyle='#fff';ctx.fillRect(0,0,w,h);ctx.drawImage(video,0,0,w,h);
     const bytes=x=>Math.ceil((x.length-(x.indexOf(',')+1))*3/4);
-    let quality=.70,data=canvas.toDataURL('image/jpeg',quality);
-    while(bytes(data)>85*1024&&quality>.28){quality-=.06;data=canvas.toDataURL('image/jpeg',quality)}
-    if(bytes(data)>95*1024){
-      w=Math.min(w,560);h=Math.max(1,Math.round(sourceH*(w/sourceW)));
+    let quality=.62,data=canvas.toDataURL('image/jpeg',quality);
+    while(bytes(data)>68*1024&&quality>.26){quality-=.05;data=canvas.toDataURL('image/jpeg',quality)}
+    if(bytes(data)>70*1024){
+      w=Math.min(w,520);h=Math.max(1,Math.round(sourceH*(w/sourceW)));
       const c=document.createElement('canvas');c.width=w;c.height=h;
       const cctx=c.getContext('2d',{alpha:false});cctx.fillStyle='#fff';cctx.fillRect(0,0,w,h);cctx.drawImage(video,0,0,w,h);
-      quality=.58;data=c.toDataURL('image/jpeg',quality);
-      while(bytes(data)>95*1024&&quality>.24){quality-=.05;data=c.toDataURL('image/jpeg',quality)}
+      quality=.54;data=c.toDataURL('image/jpeg',quality);
+      while(bytes(data)>68*1024&&quality>.22){quality-=.05;data=c.toDataURL('image/jpeg',quality)}
     }
-    if(bytes(data)>100*1024)throw Error('Foto masih melebihi 100 KB. Ambil foto kembali dengan pencahayaan lebih sederhana.');
+    if(bytes(data)>80*1024)throw Error('Foto masih melebihi 80 KB. Ambil foto kembali dengan pencahayaan lebih sederhana.');
     return {dataUrl:data,sizeKB:Math.ceil(bytes(data)/1024)}
   }
 
@@ -11013,7 +11050,7 @@ body.sidet-student-nav-active #modalBox:has(.actions.sidet-retry-center){
       if(!job){
         const video=document.getElementById('cam');
         if(!video?.videoWidth)throw Error('Kamera belum siap. Tunggu sebentar lalu coba lagi.');
-        v7SetProgress_(10,'Mengompres foto hingga sekitar 85 KB…');
+        v7SetProgress_(10,'Mengompres foto hingga sekitar 50–70 KB…');
         const photo=await compress_(video);
         job={
           coreKey:coreKey_(uid_(),type),type:type,photo:photo.dataUrl,
@@ -11055,7 +11092,8 @@ body.sidet-student-nav-active #modalBox:has(.actions.sidet-retry-center){
         photoJob=await savePhoto_({
           attendanceId:job.attendanceId,attendanceRequestId:job.attendanceRequestId,
           userId:job.userId,nisn:job.nisn,name:job.name,kelas:job.kelas,
-          type:job.type,photo:job.photo,queuedAt:Date.now(),attempts:0,nextAttemptAt:0
+          type:job.type,photo:job.photo,queuedAt:Date.now(),attempts:0,
+          nextAttemptAt:Date.now()+Math.floor(Math.random()*45000)
         });
       }
       await clearCore_(job);
@@ -11064,7 +11102,7 @@ body.sidet-student-nav-active #modalBox:has(.actions.sidet-retry-center){
       if(button){button.disabled=true;button.textContent='Berhasil ✓'}
       home_();
       toast((type==='PULANG'?'Presensi pulang':'Presensi masuk')+' berhasil'+(job.serverTime?' · '+job.serverTime:'')+'.',true);
-      if(photoJob)setTimeout(()=>drain_(),150);
+      if(photoJob)setTimeout(()=>drain_(),500);
       Promise.resolve().then(()=>window.loadData?.()).catch(()=>{}).finally(()=>setTimeout(home_,200));
     }catch(e){
       SIDET_V7.sending=false;
@@ -11132,7 +11170,7 @@ body.sidet-student-nav-active #modalBox:has(.actions.sidet-retry-center){
   document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&navigator.onLine!==false)setTimeout(drain_,jitter_(1000))});
   setTimeout(()=>{ensureAdmin_();drain_()},1200);
 
-  function mark_(){const b=document.getElementById('sidetVersionBadge');if(b)b.textContent='SiDEt V12.2.5 • Scanner FIFO';document.documentElement.dataset.sidetVersion='12.2.5'}
+  function mark_(){const b=document.getElementById('sidetVersionBadge');if(b)b.textContent='SiDEt V12.3 • Foto Langsung Email B';document.documentElement.dataset.sidetVersion='12.3'}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',mark_,{once:true});else mark_();
   setTimeout(mark_,700);
 })();
